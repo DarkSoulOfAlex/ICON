@@ -1849,3 +1849,74 @@ giorno. I test `test_si_misura_l_effetto_della_data_nella_chiave`,
 `test_sotto_la_politica_ultimo_la_data_nella_chiave_salva_un_passaggio`
 costruiscono i casi separatamente e verificano che ciascun contatore risponda al
 proprio e non all'altro, sotto entrambe le politiche.
+
+---
+
+### 59. Due filosofie di pubblicazione, misurate su quattro grandezze indipendenti
+
+**Decisione.** La differenza fra i due produttori di dati viene registrata come
+fatto misurato e non come impressione, e vincola la Fase 3: le colonne
+`ritardo_secondi` delle due citta' non entrano nello stesso modello senza che la
+differenza sia dichiarata e trattata.
+
+**Alternative considerate.** Trattare Roma e Torino come due repliche dello stesso
+fenomeno, con un modello unico e la citta' come semplice variabile esplicativa.
+
+**Il dato che ha chiuso il quadro: i payload corrotti.** Contati sul journal fra
+il 27 agosto e il 5 settembre, undici giorni:
+
+| | payload protobuf corrotti |
+| --- | ---: |
+| Roma, `trip_updates` | 42 |
+| Roma, `vehicle_positions` | 52 |
+| Torino, entrambi i feed | 0 |
+
+Sui `trip_updates`, che sono la fonte del progetto, sono **42 su circa 32.000
+interrogazioni, cioe' lo 0,13%**: trascurabile per i risultati. Il collector li
+rileva, li scarta e prosegue, che e' il comportamento voluto e gia' documentato
+alla voce 11; se li accettasse, il parquet conterrebbe righe interpretate da byte
+casuali senza che nulla lo segnali.
+
+**Le quattro misure, e perche' contano insieme.**
+
+| grandezza | Roma | Torino |
+| --- | ---: | ---: |
+| Anticipo mediano delle previsioni | 15,8 min | 2,1 min |
+| Righe con ritardo oltre l'ora (28 agosto) | 100.856 | 27 |
+| Revisioni dell'orario statico | quasi una al giorno | circa una ogni tre |
+| Payload corrotti in undici giorni | 94 | 0 |
+
+Prese una alla volta sarebbero quattro anomalie separate, ciascuna con la propria
+spiegazione locale. Prese insieme descrivono **due modi diversi di intendere la
+pubblicazione di dati aperti**, e la coerenza fra misure indipendenti e' cio' che
+trasforma un'impressione in un'osservazione. Roma pubblica molto, lontano nel
+tempo e con qualita' variabile: previsioni emesse con un quarto d'ora di anticipo,
+orario che cambia quasi ogni giorno, una frazione piccola ma non nulla di
+trasmissioni malformate. Torino pubblica poco, vicino e pulito: previsioni a due
+minuti dal passaggio, orario stabile, nessun payload corrotto in undici giorni.
+
+**Motivo per cui questo vincola la Fase 3.** Le due colonne `ritardo_secondi` non
+descrivono la stessa grandezza con la stessa affidabilita'. Su Roma il valore e'
+in larga parte una previsione emessa con quindici minuti di anticipo; su Torino
+e' quasi una constatazione. Un modello unico che le tratti come repliche
+imparerebbe una distribuzione mediata fra due processi diversi, e la citta' come
+variabile esplicativa non basterebbe a separarli, perche' la differenza non e' di
+livello ma di **natura della misura**. Si stimeranno percio' distribuzioni
+separate per citta', e il confronto fra le due sara' esso stesso un risultato da
+riportare invece che un fastidio da assorbire.
+
+Va aggiunto che questa differenza si somma a quella gia' registrata sulla
+copertura: su Roma il tempo reale non comprende la metropolitana, quindi il
+modello romano sara' un modello dei ritardi degli autobus. Le due citta'
+differiscono dunque per che cosa osservano, con quale anticipo, con quale
+stabilita' dell'orario di riferimento e con quale qualita' di trasmissione.
+
+**Come si potrebbe verificare.** I payload corrotti si contano nel journal del
+servizio, cercando le righe di scarto emesse dal collector. L'anticipo delle
+previsioni e' il quadro 4 di `scripts/diagnosi_consolidamento.py`, le righe con
+ritardo oltre l'ora il quadro 1, e le revisioni dell'orario si leggono dalla
+sezione `versioni` di `data/raw/gtfs/<citta>/index.json`. In Fase 3, la verifica
+decisiva sara' un'altra: stimare il modello su una citta' e valutarlo sull'altra.
+Se la differenza fosse di solo livello, la perdita sarebbe modesta; se e' di
+natura, il modello trasferito sara' mal calibrato, e la misura di quanto lo sia
+e' il modo di quantificare tutto questo con un numero solo.
