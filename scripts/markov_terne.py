@@ -63,16 +63,26 @@ from src.delays.markov import (  # noqa: E402
     EsitoMarkov,
     Terne,
     discretizza,
+    confronta_con_contesto,
     confronta_strutture,
     granularita_sostenibili,
+    quota_valori_ripetuti,
     scala_per_granularita,
     verdetto_sulla_scala,
     valuta,
 )
 
 CITTA = ("roma", "torino")
-COLONNE = ["service_date", "trip_id", "stop_sequence", "ritardo_secondi",
+COLONNE = ["service_date", "trip_id", "route_id", "stop_sequence", "ritardo_secondi",
            "orario_programmato", "timestamp_feed"]
+FUSO = "Europe/Rome"
+FASCE_ORARIE = (6, 9, 12, 15, 20)
+"""Confini delle sei fasce: notte, punta mattino, morbida, pranzo, punta sera, sera.
+
+Bande di congestione e non ore uniformi, come gia"'" nella base di conoscenza:
+la differenza fra le otto e le nove conta piu' di quella fra le quattordici e le
+quindici.
+"""
 RISULTATI = RADICE / "results"
 GRANULARITA = (4, 6, 8, 12, 20)
 
@@ -89,26 +99,28 @@ class Grezze:
     a0: list[np.ndarray]
     giorno: list[np.ndarray]
     ampiezza: list[np.ndarray]
+    contesto: list[np.ndarray]
     osservazioni: int = 0
     passaggi: int = 0
     con_buco: int = 0
 
     @classmethod
     def vuote(cls) -> "Grezze":
-        return cls([], [], [], [], [], [], [], [])
+        return cls([], [], [], [], [], [], [], [], [])
 
-    def aggiungi(self, r2, r1, r0, a2, a1, a0, giorno, ampiezza) -> None:
+    def aggiungi(self, r2, r1, r0, a2, a1, a0, giorno, ampiezza, contesto) -> None:
         self.r2.append(r2); self.r1.append(r1); self.r0.append(r0)
         self.a2.append(a2); self.a1.append(a1); self.a0.append(a0)
         self.giorno.append(giorno); self.ampiezza.append(ampiezza)
+        self.contesto.append(contesto)
 
     def unite(self) -> tuple[np.ndarray, ...]:
         if not self.r2:
             v = np.empty(0, dtype=np.float32)
-            return v, v, v, v, v, v, v.astype(np.int32), v
+            return v, v, v, v, v, v, v.astype(np.int32), v, v.astype(np.int32)
         return tuple(np.concatenate(x) for x in
                      (self.r2, self.r1, self.r0, self.a2, self.a1, self.a0,
-                      self.giorno, self.ampiezza))
+                      self.giorno, self.ampiezza, self.contesto))
 
 
 def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> None:
@@ -137,15 +149,18 @@ def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> No
     prog = tabella.column("orario_programmato").to_pandas().to_numpy(dtype="float64",
                                                                     na_value=np.nan)
     feed = tabella.column("timestamp_feed").to_numpy().astype(np.float64)
+    linea = pd.factorize(tabella.column("route_id").to_pandas(), sort=False)[0]
     del tabella
 
     # Ultima osservazione per passaggio: si ordina e si prende il fondo di ogni gruppo.
     ordine = np.lexsort((feed, seq, codice))
-    codice, seq, rit, prog, feed = (a[ordine] for a in (codice, seq, rit, prog, feed))
+    codice, seq, rit, prog, feed, linea = (
+        a[ordine] for a in (codice, seq, rit, prog, feed, linea))
     ultimo = np.empty(n, dtype=bool)
     ultimo[-1] = True
     ultimo[:-1] = (codice[1:] != codice[:-1]) | (seq[1:] != seq[:-1])
-    codice, seq, rit, prog, feed = (a[ultimo] for a in (codice, seq, rit, prog, feed))
+    codice, seq, rit, prog, feed, linea = (
+        a[ultimo] for a in (codice, seq, rit, prog, feed, linea))
     grezze.passaggi += int(codice.size)
     if codice.size < 3:
         return
@@ -169,12 +184,21 @@ def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> No
     # la sua maggiore dipendenza sarebbe spiegata dalla vicinanza e non dalla
     # natura del dato.
     ampiezza = (prog[2:] - prog[:-2])[tieni].astype(np.float32)
+    # Contesto della transizione, preso alla fermata di arrivo: linea, fascia
+    # oraria e tipo di giorno. La distanza percorsa non entra, perche' nelle terne
+    # e' sempre una fermata per costruzione.
+    quando = pd.to_datetime(prog[2:][tieni], unit="s", utc=True).tz_convert(FUSO)
+    fascia = np.searchsorted(np.asarray(FASCE_ORARIE), quando.hour.to_numpy(), side="right")
+    settimana = quando.dayofweek.to_numpy()
+    tipo_giorno = np.where(settimana < 5, 0, np.where(settimana == 5, 1, 2))
+    contesto = (linea[2:][tieni].astype(np.int64) * (len(FASCE_ORARIE) + 1) + fascia) * 3         + tipo_giorno
     grezze.aggiungi(
         rit[:-2][tieni].astype(np.float32), rit[1:-1][tieni].astype(np.float32),
         rit[2:][tieni].astype(np.float32),
         anticipo[:-2][tieni].astype(np.float32), anticipo[1:-1][tieni].astype(np.float32),
         anticipo[2:][tieni].astype(np.float32),
         np.full(int(tieni.sum()), indice_giorno, dtype=np.int32), ampiezza,
+        contesto.astype(np.int32),
     )
 
 
@@ -195,7 +219,7 @@ def _riga(citta: str, popolazione: str, etichetta: str, esito: EsitoMarkov) -> d
 
 
 def analizza(citta: str, grezze: Grezze, generatore: np.random.Generator) -> list[dict]:
-    r2, r1, r0, a2, a1, a0, giorno, ampiezza = grezze.unite()
+    r2, r1, r0, a2, a1, a0, giorno, ampiezza, contesto = grezze.unite()
     if r2.size == 0:
         print(f"  [{citta}] nessuna terna utilizzabile")
         return []
@@ -259,6 +283,8 @@ def analizza(citta: str, grezze: Grezze, generatore: np.random.Generator) -> lis
         print(f"        -> {spiegazione}")
 
     righe += costo_beneficio(citta, r2, r1, r0, giorno, popolazioni)
+    righe += costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazioni)
+    valori_ripetuti(citta, r2, r1, r0, popolazioni)
     confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0)
     return righe
 
@@ -321,6 +347,96 @@ def costo_beneficio(citta, r2, r1, r0, giorno, popolazioni) -> list[dict]:
                 "compatibile_con_zero": int(c.guadagno <= 0),
             })
     return righe
+
+
+def costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazioni) -> list[dict]:
+    """L'arco misurato **dentro il modello vero**, con linea, fascia e tipo di giorno.
+
+    E' la misura che decide la struttura, e non coincide con quella senza
+    contesto. Li' si confrontano 64 celle contro 512 su milioni di osservazioni,
+    quindi entrambe stimate benissimo, e la domanda a cui si risponde e' "il
+    secondo antenato porta informazione". Qui il ritardo e' condizionato anche al
+    contesto, le celle passano da 403 mila a 3,2 milioni, e le osservazioni per
+    cella da una ventina a due e mezzo su Roma. Un guadagno misurato in abbondanza
+    di dati non si trasferisce a un regime di scarsita': il numero che autorizza
+    l'arco e' questo, non quello.
+    """
+    print()
+    print("    --- Costo-beneficio DENTRO il modello con contesto ---")
+    disponibili = sorted(set(giorno.tolist()))
+    if len(disponibili) < 5:
+        print(f"      solo {len(disponibili)} giornate: separazione non eseguibile")
+        return []
+    addestramento = ~np.isin(giorno, disponibili[-3:])
+    n_contesto = int(contesto.max()) + 1
+    print(f"      combinazioni di contesto osservate: {n_contesto:,}")
+    righe = []
+    for nome, maschera in popolazioni:
+        quante = int(maschera.sum())
+        if quante < 100_000:
+            print(f"      {nome:<20} {quante:>10,} terne: base insufficiente")
+            continue
+        bordi = BORDI_OTTO
+        n_bin = len(bordi) + 1
+        try:
+            c = confronta_con_contesto(
+                contesto[maschera], discretizza(r2[maschera], bordi),
+                discretizza(r1[maschera], bordi), discretizza(r0[maschera], bordi),
+                addestramento[maschera], n_bin, n_contesto,
+            )
+        except Exception as errore:
+            print(f"      {nome}: non calcolabile ({errore})")
+            continue
+        print(f"      {nome:<20} perdita senza arco {c.perdita_senza:.4f} bit, "
+              f"con arco {c.perdita_con:.4f} bit")
+        print(f"      {'':<20} guadagno {c.guadagno:+.4f} bit ({c.guadagno_relativo:+.2%}), "
+              f"celle da {c.celle_senza:,} a {c.celle_con:,}")
+        print(f"      {'':<20} osservazioni per cella in addestramento: "
+              f"{c.terne_addestramento / c.celle_con:.2f} con l'arco, "
+              f"{c.terne_addestramento / c.celle_senza:.1f} senza")
+        righe.append({
+            "citta": citta, "popolazione": nome,
+            "granularita": "costo-beneficio con contesto",
+            "terne": c.terne_addestramento + c.terne_verifica,
+            "condizionata": float("nan"), "riferimento": float("nan"),
+            "scarto_riferimento": float("nan"), "eccesso": c.guadagno,
+            "mutua_semplice": c.perdita_senza, "quota": c.guadagno_relativo,
+            "compatibile_con_zero": int(c.guadagno <= 0),
+        })
+    print("      Se qui il guadagno sparisce, l'arco non si aggiunge: il modello vero")
+    print("      non ha i dati per sostenerlo, per quanta informazione ci sia.")
+    return righe
+
+
+def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> None:
+    """Il ritardo si ripete identico fra fermate consecutive?
+
+    Mette alla prova la spiegazione che invertirebbe la lettura del capovolgimento
+    fra previsioni e constatazioni. Se il produttore, passato il mezzo,
+    **congelasse** il ritardo ripetendolo sulle fermate seguenti, i valori
+    consecutivi sarebbero uguali per costruzione: l'entropia condizionata
+    risulterebbe bassa e la dipendenza forte, ma si tratterebbe di copie e non di
+    osservazioni. Spiegherebbe insieme le due anomalie, cioe' la perdita di 0,34
+    bit su Torino gia' passate e il guadagno maggiore proprio su quelle
+    popolazioni.
+
+    Il confronto e' sui secondi e non sui bin: due ritardi diversi che cadono nello
+    stesso bin non sono una ripetizione, e contarli come tale nasconderebbe cio'
+    che si cerca.
+    """
+    print()
+    print("    --- Il ritardo si ripete identico fra fermate consecutive? ---")
+    for nome, maschera in popolazioni:
+        if int(maschera.sum()) < 1_000:
+            print(f"      {nome:<20} base insufficiente")
+            continue
+        uno = quota_valori_ripetuti(r1[maschera], r0[maschera])
+        due = quota_valori_ripetuti(r2[maschera], r1[maschera])
+        tre = float(np.mean((r2[maschera] == r1[maschera]) & (r1[maschera] == r0[maschera])))
+        print(f"      {nome:<20} identico alla precedente: {uno:>6.2%} | "
+              f"due volte di fila: {tre:>6.2%}")
+    print("      Una quota alta sulle gia' passate, e bassa sulle previsioni,")
+    print("      spiegherebbe il capovolgimento come propagazione e non come traffico.")
 
 
 def confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0) -> None:

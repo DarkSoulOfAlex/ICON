@@ -365,3 +365,34 @@ def test_una_separazione_vuota_e_un_errore() -> None:
     r2, r1, r0 = _catena_markoviana(1_000)
     with pytest.raises(ErroreMarkov, match="vuoto"):
         confronta_strutture(r2, r1, r0, np.ones(1_000, dtype=bool), BIN)
+
+
+def test_il_confronto_con_contesto_penalizza_la_scarsita() -> None:
+    """Lo stesso arco, misurato in abbondanza e in scarsita' di dati.
+
+    E' la ragione per cui la misura senza contesto non autorizza la scelta di
+    struttura: con molte combinazioni di contesto e le stesse osservazioni, le
+    celle si svuotano e il guadagno puo' sparire o invertirsi.
+    """
+    from src.delays.markov import confronta_con_contesto, confronta_strutture
+    r2, r1, r0 = _catena_non_markoviana(300_000)
+    separa = _separazione(r2.size)
+    senza_contesto = confronta_strutture(r2, r1, r0, separa, BIN)
+    # Un contesto fine e privo di informazione: serve solo a moltiplicare le celle.
+    contesto = np.random.default_rng(53).integers(0, 2_000, r2.size)
+    con_contesto = confronta_con_contesto(contesto, r2, r1, r0, separa, BIN, 2_000)
+    assert senza_contesto.guadagno > 0.05
+    assert con_contesto.guadagno < senza_contesto.guadagno, (
+        f"in scarsita' il guadagno deve ridursi: {con_contesto.guadagno:.4f} "
+        f"contro {senza_contesto.guadagno:.4f}"
+    )
+
+
+def test_i_valori_ripetuti_si_contano_sui_secondi_non_sui_bin() -> None:
+    """Due ritardi diversi nello stesso bin non sono una ripetizione."""
+    from src.delays.markov import quota_valori_ripetuti
+    precedente = np.array([100.0, 100.0, 100.0, 100.0])
+    corrente = np.array([100.0, 100.0, 110.0, 500.0])
+    assert quota_valori_ripetuti(precedente, corrente) == pytest.approx(0.5)
+    # sui bin, i primi tre cadrebbero insieme e la quota sarebbe 0,75
+    assert discretizza(np.array([100.0]))[0] == discretizza(np.array([110.0]))[0]

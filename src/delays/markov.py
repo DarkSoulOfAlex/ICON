@@ -479,3 +479,74 @@ def confronta_strutture(
                                         corrente[verifica], (n_bin, n_bin)),
         alfa=alfa,
     )
+
+
+def confronta_con_contesto(
+    contesto: np.ndarray,
+    monte2: np.ndarray,
+    monte1: np.ndarray,
+    corrente: np.ndarray,
+    addestramento: np.ndarray,
+    n_bin: int,
+    n_contesto: int,
+    alfa: float = 0.5,
+) -> Confronto:
+    """Il costo-beneficio dell'arco **dentro il modello vero**, con il contesto.
+
+    E' una misura diversa da :func:`confronta_strutture`, e la differenza decide
+    una scelta di struttura. Quella confronta ``P(R0|R-1)`` con
+    ``P(R0|R-1,R-2)``: sessantaquattro celle contro cinquecentododici, con milioni
+    di osservazioni, quindi entrambe stimate benissimo. Risponde alla domanda "il
+    secondo antenato porta informazione", che e' una domanda sui dati.
+
+    La domanda che decide la rete e' un'altra: nel modello vero il ritardo e'
+    condizionato anche a linea, fascia oraria, tipo di giorno e distanza percorsa,
+    e li' l'arco porta le celle da 1,6 a 12,9 milioni a fronte di 8,4 milioni di
+    terne, cioe' meno di una osservazione per cella. Un guadagno misurato in
+    abbondanza di dati non si trasferisce a un regime in cui i dati sono scarsi:
+    va misurato dove la decisione si applica.
+    """
+    forme_senza = (n_contesto, n_bin)
+    forme_con = (n_contesto, n_bin, n_bin)
+    verifica = ~addestramento
+    if not addestramento.any() or not verifica.any():
+        raise ErroreMarkov("la separazione lascia vuoto uno dei due insiemi")
+
+    senza = tabella_condizionata((contesto[addestramento], monte1[addestramento]),
+                                 corrente[addestramento], forme_senza, n_bin, alfa)
+    con = tabella_condizionata(
+        (contesto[addestramento], monte1[addestramento], monte2[addestramento]),
+        corrente[addestramento], forme_con, n_bin, alfa)
+    return Confronto(
+        terne_addestramento=int(addestramento.sum()),
+        terne_verifica=int(verifica.sum()),
+        celle_senza=int(np.prod(forme_senza)) * n_bin,
+        celle_con=int(np.prod(forme_con)) * n_bin,
+        perdita_senza=perdita_logaritmica(
+            senza, (contesto[verifica], monte1[verifica]), corrente[verifica], forme_senza),
+        perdita_con=perdita_logaritmica(
+            con, (contesto[verifica], monte1[verifica], monte2[verifica]),
+            corrente[verifica], forme_con),
+        alfa=alfa,
+    )
+
+
+def quota_valori_ripetuti(precedente: np.ndarray, corrente: np.ndarray) -> float:
+    """Frazione di coppie in cui il ritardo e' **identico** a quello della fermata prima.
+
+    Serve a mettere alla prova una spiegazione che invertirebbe la lettura del
+    capovolgimento fra previsioni e constatazioni. Se il produttore, una volta che
+    un mezzo e' passato, **congelasse** il ritardo e lo ripetesse sulle fermate
+    seguenti, i valori consecutivi risulterebbero uguali per costruzione: il
+    ritardo sembrerebbe quasi deterministico dato l'antenato - entropia bassa - e
+    la dipendenza apparirebbe piu' forte. Sarebbero pero' copie, non osservazioni,
+    e la maggiore prevedibilita' delle constatazioni sarebbe un artefatto di
+    propagazione invece che un fatto sul traffico.
+
+    Si confronta sui valori **grezzi in secondi** e non sui bin: due ritardi
+    diversi che cadono nello stesso bin non sono una ripetizione, e contarli come
+    tale nasconderebbe proprio cio' che si vuole misurare.
+    """
+    if precedente.size == 0:
+        raise ErroreMarkov("campione vuoto")
+    return float(np.mean(precedente == corrente))
