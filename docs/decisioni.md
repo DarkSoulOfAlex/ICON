@@ -2020,6 +2020,68 @@ non un errore. Ma e' un **limite del modello da dichiarare**, accanto alla scelt
 degli otto bin e non in fondo alle conclusioni, perche' qualifica il significato
 di ogni arco assente nel grafo.
 
+**Esito sui dati veri, e perche' la risposta non e' binaria.** Il criterio ha
+funzionato, nel senso che ha distinto un caso reale da un artefatto: su 8,4
+milioni di terne per Roma e 2,5 per Torino l'eccesso **non si dissolve** in
+nessuna delle sei combinazioni di citta' e popolazione, mentre sulla catena
+markoviana costruita si dissolveva. Il riferimento per permutazione e' ormai
+trascurabile, 0,00003 bit, a conferma che con questa numerosita' il confondente
+che misura non e' piu' in gioco.
+
+Quota dell'eccesso su cio' che il primo antenato spiega, per granularita':
+
+| | 4 bin | 6 bin | 8 bin | 12 bin | 20 bin |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Roma, tutte | 2,52% | 2,21% | 2,17% | 1,97% | 1,63% |
+| Roma, solo previsioni | 1,94% | 1,60% | 1,58% | 1,47% | 1,25% |
+| Roma, solo gia' passate | 4,73% | 3,87% | 3,58% | 3,01% | 2,41% |
+| Torino, tutte | 2,13% | 5,31% | 2,95% | 3,15% | 2,88% |
+| Torino, solo previsioni | 1,51% | 5,69% | 2,13% | 2,43% | 2,42% |
+| Torino, solo gia' passate | 2,71% | 2,71% | 3,20% | 3,32% | - |
+
+**Il criterio era binario e i dati hanno prodotto un terzo caso.** Su Roma la
+scala non si dissolve secondo la soglia - l'ultimo valore non scende sotto un
+terzo del primo - ma **cala in modo regolare e monotono** su tutte e tre le
+popolazioni. Non e' ne' la dissoluzione dell'artefatto ne' la persistenza di una
+struttura: e' compatibile con la presenza di **entrambe**, dove la parte di
+artefatto si dissolve e quella di struttura resta. Se cosi' fosse, il valore alla
+granularita' piu' fine e' la stima migliore della dipendenza vera, e i valori a
+bin larghi la sovrastimano. Su Torino la scala oscilla invece di calare, e il
+5,31% a sei bin e' fuori linea rispetto ai vicini: li' la lettura e' meno
+leggibile e va trattata con piu' cautela.
+
+**Il capovolgimento su Roma, che smentisce l'attesa.** Ci si aspettava che, se la
+dipendenza fosse un artefatto del produttore, le previsioni risultassero **piu'**
+correlate delle constatazioni, perche' previsioni successive della stessa corsa
+sono prodotte dallo stesso algoritmo a pochi minuti di distanza. Il dato dice il
+contrario, e a ogni granularita': sulle osservazioni **gia' passate** l'eccesso e'
+circa il **doppio** che sulle previsioni, 3,58% contro 1,58% a otto bin e 2,41%
+contro 1,25% a venti. La dipendenza non viene dunque dal modo in cui il feed e'
+prodotto ma dalle osservazioni piu' vicine alla realta'. Resta da escludere una
+spiegazione alternativa prima di considerarlo acquisito: le terne gia' passate
+sono circa un decimo del totale e potrebbero avere fermate piu' ravvicinate nel
+tempo, e fermate vicine condividono piu' informazione a prescindere dalla natura
+del dato. Il controllo e' un confronto **a parita' di ampiezza temporale della
+terna**, ed e' implementato in `scripts/markov_terne.py`.
+
+**Che cosa ne consegue per la decisione, e il punto di metodo aggiornato.** "Non
+si dissolve" **non implica "aggiungi l'arco"**: implica "misura quanto vale". La
+dipendenza c'e' ma e' piccola, fra l'1,3% e il 4,8% di quanto il primo antenato
+gia' spiega, e un arco in piu' moltiplica per otto le celle da stimare. La
+domanda che decide la struttura non e' se la dipendenza esista - la risposta e'
+si' - ma se **sopravviva fuori campione** al costo della propria stima, e si
+risponde confrontando la perdita logaritmica dei due modelli su giornate non usate
+per stimarli. Se il guadagno fosse dell'ordine dell'uno o due per cento, l'arco
+non si aggiunge e l'assunzione markoviana si tiene come **approssimazione
+dichiarata** e non come verita': e' una differenza che va scritta nel documento,
+perche' cambia cio' che il modello promette.
+
+Il punto di metodo si somma a quello gia' registrato sopra. Non basta scegliere la
+misura prima di correggere, ne' provarla su casi di risposta nota: bisogna anche
+chiedersi **se la domanda ammetta le risposte che il criterio prevede**. Qui il
+criterio ne prevedeva due, si dissolve o non si dissolve, e i dati ne hanno
+prodotta una terza che non era contemplata.
+
 **Come si potrebbe verificare.** I test
 `test_discretizzare_una_catena_markoviana_crea_dipendenza_apparente`,
 `test_l_artefatto_della_discretizzazione_si_dissolve_al_raffinarsi_dei_bin` e
