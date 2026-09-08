@@ -309,3 +309,59 @@ def test_su_granularita_sufficienti_il_verdetto_si_pronuncia() -> None:
                                   generatore=np.random.default_rng(47))
     esito, spiegazione = verdetto_sulla_scala(scala)
     assert esito is True, spiegazione
+
+
+# =============================================================================
+# Il costo-beneficio dell'arco, fuori campione
+# =============================================================================
+
+
+def _separazione(n: int, quota: float = 0.7) -> np.ndarray:
+    """Maschera di addestramento: i primi in ordine, non a caso."""
+    m = np.zeros(n, dtype=bool)
+    m[: int(n * quota)] = True
+    return m
+
+
+def test_su_una_catena_markoviana_l_arco_non_paga() -> None:
+    """Se il secondo antenato non porta informazione, aggiungerlo peggiora.
+
+    Fuori campione un genitore inutile non e' neutro: moltiplica per otto le celle
+    da stimare, quindi ogni cella riceve meno osservazioni e la stima peggiora.
+    """
+    from src.delays.markov import confronta_strutture
+    r2, r1, r0 = _catena_markoviana(300_000)
+    c = confronta_strutture(r2, r1, r0, _separazione(r2.size), BIN)
+    assert c.celle_con == 8 * c.celle_senza
+    assert c.guadagno <= 0.01, f"guadagno {c.guadagno:.5f} bit"
+
+
+def test_su_una_catena_non_markoviana_l_arco_paga() -> None:
+    """Controllo speculare: se l'informazione c'e', deve emergere fuori campione."""
+    from src.delays.markov import confronta_strutture
+    r2, r1, r0 = _catena_non_markoviana(300_000)
+    c = confronta_strutture(r2, r1, r0, _separazione(r2.size), BIN)
+    assert c.guadagno > 0.05, f"guadagno {c.guadagno:.5f} bit"
+    assert c.guadagno_relativo > 0.02
+
+
+def test_il_lisciamento_evita_la_perdita_infinita() -> None:
+    """Senza priore, una combinazione mai vista darebbe probabilita' nulla.
+
+    E' il modello con piu' genitori a soffrirne, perche' ha piu' combinazioni: un
+    confronto senza lisciamento lo punirebbe per un difetto della stima invece che
+    per la propria struttura.
+    """
+    from src.delays.markov import confronta_strutture
+    g = np.random.default_rng(51)
+    n = 3_000  # piccolo: garantisce combinazioni mai viste in addestramento
+    r2, r1, r0 = (g.integers(0, BIN, n) for _ in range(3))
+    c = confronta_strutture(r2, r1, r0, _separazione(n), BIN, alfa=0.5)
+    assert np.isfinite(c.perdita_con) and np.isfinite(c.perdita_senza)
+
+
+def test_una_separazione_vuota_e_un_errore() -> None:
+    from src.delays.markov import confronta_strutture
+    r2, r1, r0 = _catena_markoviana(1_000)
+    with pytest.raises(ErroreMarkov, match="vuoto"):
+        confronta_strutture(r2, r1, r0, np.ones(1_000, dtype=bool), BIN)

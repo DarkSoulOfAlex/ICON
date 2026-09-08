@@ -366,3 +366,116 @@ def verdetto_sulla_scala(
         "l'eccesso NON si dissolve al raffinarsi dei bin: la dipendenza e' "
         "strutturale e la struttura della rete va rivista"
     )
+
+
+# =============================================================================
+# Quanto vale l'arco: il costo-beneficio fuori campione
+# =============================================================================
+
+
+def _indice_piatto(genitori: tuple[np.ndarray, ...], forme: tuple[int, ...]) -> np.ndarray:
+    """Indice unico della combinazione dei genitori."""
+    indice = np.zeros(genitori[0].size, dtype=np.int64)
+    for colonna, dimensione in zip(genitori, forme):
+        indice = indice * dimensione + colonna
+    return indice
+
+
+def tabella_condizionata(
+    genitori: tuple[np.ndarray, ...],
+    figlio: np.ndarray,
+    forme_genitori: tuple[int, ...],
+    forma_figlio: int,
+    alfa: float = 0.5,
+) -> np.ndarray:
+    """Probabilita' del figlio dati i genitori, con priore di Dirichlet uniforme.
+
+    Il lisciamento non e' un dettaglio implementativo ma la condizione perche' il
+    confronto sia onesto: senza, una combinazione di genitori mai vista in
+    addestramento darebbe probabilita' nulla e perdita infinita, e il modello con
+    piu' genitori - che ha otto volte le celle e quindi molte piu' combinazioni
+    mai viste - verrebbe punito per un difetto della stima invece che per la
+    propria struttura. Lo stesso ``alfa`` si applica a entrambi.
+    """
+    conteggi = np.zeros((int(np.prod(forme_genitori)), forma_figlio), dtype=np.float64)
+    np.add.at(conteggi, (_indice_piatto(genitori, forme_genitori), figlio), 1.0)
+    conteggi += alfa
+    return conteggi / conteggi.sum(axis=1, keepdims=True)
+
+
+def perdita_logaritmica(
+    tabella: np.ndarray,
+    genitori: tuple[np.ndarray, ...],
+    figlio: np.ndarray,
+    forme_genitori: tuple[int, ...],
+) -> float:
+    """Bit medi necessari a codificare il figlio con quella tabella.
+
+    E' la grandezza in cui si misura se un arco valga il proprio prezzo: dentro il
+    campione un genitore in piu' non puo' che migliorarla, fuori campione paga il
+    costo delle celle che deve stimare.
+    """
+    if figlio.size == 0:
+        raise ErroreMarkov("campione di verifica vuoto")
+    probabilita = tabella[_indice_piatto(genitori, forme_genitori), figlio]
+    return float(-np.mean(np.log2(probabilita)))
+
+
+@dataclass(frozen=True)
+class Confronto:
+    """Il costo e il beneficio dell'arco in piu', misurati fuori campione."""
+
+    terne_addestramento: int
+    terne_verifica: int
+    celle_senza: int
+    celle_con: int
+    perdita_senza: float
+    perdita_con: float
+    alfa: float
+
+    @property
+    def guadagno(self) -> float:
+        """Bit risparmiati per osservazione aggiungendo l'arco. Negativo se peggiora."""
+        return self.perdita_senza - self.perdita_con
+
+    @property
+    def guadagno_relativo(self) -> float:
+        return self.guadagno / self.perdita_senza if self.perdita_senza > 0 else float("nan")
+
+
+def confronta_strutture(
+    monte2: np.ndarray,
+    monte1: np.ndarray,
+    corrente: np.ndarray,
+    addestramento: np.ndarray,
+    n_bin: int,
+    alfa: float = 0.5,
+) -> Confronto:
+    """Perdita fuori campione con e senza l'arco dal secondo antenato.
+
+    ``addestramento`` e' una maschera booleana che separa le terne su cui si stima
+    da quelle su cui si verifica. La separazione deve essere **per giornata** e non
+    casuale: terne della stessa corsa nello stesso giorno sono legate fra loro, e
+    dividerle a caso metterebbe in verifica osservazioni quasi identiche a quelle
+    di addestramento, gonfiando entrambi i modelli e soprattutto quello con piu'
+    parametri, che e' quello che si vuole mettere alla prova.
+    """
+    verifica = ~addestramento
+    if not addestramento.any() or not verifica.any():
+        raise ErroreMarkov("la separazione lascia vuoto uno dei due insiemi")
+
+    senza = tabella_condizionata((monte1[addestramento],), corrente[addestramento],
+                                 (n_bin,), n_bin, alfa)
+    con = tabella_condizionata((monte1[addestramento], monte2[addestramento]),
+                               corrente[addestramento], (n_bin, n_bin), n_bin, alfa)
+    return Confronto(
+        terne_addestramento=int(addestramento.sum()),
+        terne_verifica=int(verifica.sum()),
+        celle_senza=n_bin * n_bin,
+        celle_con=n_bin * n_bin * n_bin,
+        perdita_senza=perdita_logaritmica(senza, (monte1[verifica],), corrente[verifica],
+                                          (n_bin,)),
+        perdita_con=perdita_logaritmica(con, (monte1[verifica], monte2[verifica]),
+                                        corrente[verifica], (n_bin, n_bin)),
+        alfa=alfa,
+    )

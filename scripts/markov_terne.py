@@ -63,6 +63,7 @@ from src.delays.markov import (  # noqa: E402
     EsitoMarkov,
     Terne,
     discretizza,
+    confronta_strutture,
     granularita_sostenibili,
     scala_per_granularita,
     verdetto_sulla_scala,
@@ -86,27 +87,31 @@ class Grezze:
     a2: list[np.ndarray]
     a1: list[np.ndarray]
     a0: list[np.ndarray]
+    giorno: list[np.ndarray]
+    ampiezza: list[np.ndarray]
     osservazioni: int = 0
     passaggi: int = 0
     con_buco: int = 0
 
     @classmethod
     def vuote(cls) -> "Grezze":
-        return cls([], [], [], [], [], [])
+        return cls([], [], [], [], [], [], [], [])
 
-    def aggiungi(self, r2, r1, r0, a2, a1, a0) -> None:
+    def aggiungi(self, r2, r1, r0, a2, a1, a0, giorno, ampiezza) -> None:
         self.r2.append(r2); self.r1.append(r1); self.r0.append(r0)
         self.a2.append(a2); self.a1.append(a1); self.a0.append(a0)
+        self.giorno.append(giorno); self.ampiezza.append(ampiezza)
 
     def unite(self) -> tuple[np.ndarray, ...]:
         if not self.r2:
             v = np.empty(0, dtype=np.float32)
-            return v, v, v, v, v, v
+            return v, v, v, v, v, v, v.astype(np.int32), v
         return tuple(np.concatenate(x) for x in
-                     (self.r2, self.r1, self.r0, self.a2, self.a1, self.a0))
+                     (self.r2, self.r1, self.r0, self.a2, self.a1, self.a0,
+                      self.giorno, self.ampiezza))
 
 
-def terne_di_un_giorno(percorso: Path, grezze: Grezze) -> None:
+def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> None:
     """Estrae le terne di una giornata e le accumula, senza tenere le righe.
 
     Per ogni passaggio si conserva **una sola** osservazione, l'ultima per istante
@@ -158,11 +163,18 @@ def terne_di_un_giorno(percorso: Path, grezze: Grezze) -> None:
     tieni = valida & contigue
     if not tieni.any():
         return
+    # L'ampiezza temporale della terna, cioe' quanto tempo passa fra la prima e
+    # l'ultima delle tre fermate secondo l'orario. Serve a mettere alla prova una
+    # spiegazione alternativa: se una popolazione avesse fermate piu' ravvicinate,
+    # la sua maggiore dipendenza sarebbe spiegata dalla vicinanza e non dalla
+    # natura del dato.
+    ampiezza = (prog[2:] - prog[:-2])[tieni].astype(np.float32)
     grezze.aggiungi(
         rit[:-2][tieni].astype(np.float32), rit[1:-1][tieni].astype(np.float32),
         rit[2:][tieni].astype(np.float32),
         anticipo[:-2][tieni].astype(np.float32), anticipo[1:-1][tieni].astype(np.float32),
         anticipo[2:][tieni].astype(np.float32),
+        np.full(int(tieni.sum()), indice_giorno, dtype=np.int32), ampiezza,
     )
 
 
@@ -183,7 +195,7 @@ def _riga(citta: str, popolazione: str, etichetta: str, esito: EsitoMarkov) -> d
 
 
 def analizza(citta: str, grezze: Grezze, generatore: np.random.Generator) -> list[dict]:
-    r2, r1, r0, a2, a1, a0 = grezze.unite()
+    r2, r1, r0, a2, a1, a0, giorno, ampiezza = grezze.unite()
     if r2.size == 0:
         print(f"  [{citta}] nessuna terna utilizzabile")
         return []
@@ -245,7 +257,115 @@ def analizza(citta: str, grezze: Grezze, generatore: np.random.Generator) -> lis
                      None: "NON GIUDICABILE"}[dissolve]
         print(f"      VERDETTO: {etichetta}")
         print(f"        -> {spiegazione}")
+
+    righe += costo_beneficio(citta, r2, r1, r0, giorno, popolazioni)
+    confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0)
     return righe
+
+
+def costo_beneficio(citta, r2, r1, r0, giorno, popolazioni) -> list[dict]:
+    """Quanto vale l'arco fuori campione, contro l'ottuplicarsi delle celle.
+
+    Dentro il campione un genitore in piu' migliora sempre, e di esattamente
+    l'informazione condizionata misurata sopra: e' la stessa quantita' vista da un
+    altro lato. La domanda che decide la struttura e' un'altra, cioe' se quel
+    guadagno **sopravviva** al costo di stimare otto volte le celle, e si risponde
+    solo fuori campione.
+
+    La separazione e' **per giornata** e non casuale. Terne della stessa corsa
+    nello stesso giorno sono legate fra loro, e dividerle a caso metterebbe in
+    verifica osservazioni quasi identiche a quelle di addestramento: entrambi i
+    modelli sembrerebbero migliori, e soprattutto quello con piu' parametri, che e'
+    proprio quello da mettere alla prova.
+    """
+    print()
+    print("    --- Costo-beneficio dell'arco, fuori campione ---")
+    disponibili = sorted(set(giorno.tolist()))
+    # Servono almeno due giorni di addestramento oltre ai tre di verifica: con
+    # meno, la separazione lascerebbe un insieme vuoto e i due modelli verrebbero
+    # confrontati su una stima costruita sul nulla.
+    if len(disponibili) < 5:
+        print(f"      solo {len(disponibili)} giornate disponibili: la separazione "
+              f"temporale non e' eseguibile, e il confronto non si fa")
+        return []
+    ultimi = disponibili[-3:]
+    addestramento = ~np.isin(giorno, ultimi)
+    print(f"      separazione per giornata: {int(addestramento.sum()):,} terne di "
+          f"addestramento, {int((~addestramento).sum()):,} di verifica "
+          f"(ultimi {len(ultimi)} giorni)")
+    righe = []
+    for nome, maschera in popolazioni:
+        if int(maschera.sum()) < 100_000:
+            print(f"      {nome:<20} {int(maschera.sum()):>10,} terne: base insufficiente")
+            continue
+        for etichetta, bordi in (("otto bin", BORDI_OTTO),):
+            n_bin = len(bordi) + 1
+            try:
+                c = confronta_strutture(
+                    discretizza(r2[maschera], bordi), discretizza(r1[maschera], bordi),
+                    discretizza(r0[maschera], bordi), addestramento[maschera], n_bin,
+                )
+            except Exception as errore:
+                print(f"      {nome}: non calcolabile ({errore})")
+                continue
+            print(f"      {nome:<20} {etichetta}: perdita senza arco "
+                  f"{c.perdita_senza:.4f} bit, con arco {c.perdita_con:.4f} bit")
+            print(f"      {'':<20} guadagno {c.guadagno:+.4f} bit "
+                  f"({c.guadagno_relativo:+.2%}), celle da {c.celle_senza} a {c.celle_con}")
+            righe.append({
+                "citta": citta, "popolazione": nome, "granularita": f"costo-beneficio {etichetta}",
+                "terne": c.terne_addestramento + c.terne_verifica,
+                "condizionata": float("nan"), "riferimento": float("nan"),
+                "scarto_riferimento": float("nan"), "eccesso": c.guadagno,
+                "mutua_semplice": c.perdita_senza, "quota": c.guadagno_relativo,
+                "compatibile_con_zero": int(c.guadagno <= 0),
+            })
+    return righe
+
+
+def confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0) -> None:
+    """Le due popolazioni differiscono per quanto sono ravvicinate le fermate?
+
+    E' la spiegazione alternativa da escludere prima di attribuire alla natura del
+    dato la maggiore dipendenza delle osservazioni gia' passate. Se in quella
+    popolazione le tre fermate fossero piu' vicine nel tempo, la dipendenza
+    maggiore sarebbe spiegata dalla vicinanza: fermate a un minuto l'una
+    dall'altra condividono piu' informazione di fermate a dieci, e non perche' il
+    dato sia di natura diversa.
+    """
+    print()
+    print("    --- Ampiezza temporale della terna nelle due popolazioni ---")
+    if not previsioni.any() or not passate.any():
+        print("      una delle due popolazioni e' vuota: confronto non eseguibile")
+        return
+    for nome, maschera in (("solo previsioni", previsioni), ("solo gia' passate", passate)):
+        a = ampiezza[maschera] / 60.0
+        print(f"      {nome:<20} n={int(maschera.sum()):>10,} | mediana "
+              f"{np.median(a):>6.1f} min | q1 {np.quantile(a, .25):>6.1f} | "
+              f"q3 {np.quantile(a, .75):>6.1f}")
+
+    # Il controllo decisivo: si confrontano le due popolazioni sulla stessa
+    # ampiezza. Se la differenza sopravvive a parita' di distanza fra le fermate,
+    # non e' la vicinanza a spiegarla.
+    basso = max(np.quantile(ampiezza[previsioni], .25), np.quantile(ampiezza[passate], .25))
+    alto = min(np.quantile(ampiezza[previsioni], .75), np.quantile(ampiezza[passate], .75))
+    if not basso < alto:
+        print("      le due distribuzioni non si sovrappongono abbastanza: "
+              "confronto a parita' di ampiezza non eseguibile")
+        return
+    print(f"      A PARITA' DI AMPIEZZA, fra {basso/60:.1f} e {alto/60:.1f} minuti:")
+    dentro = (ampiezza >= basso) & (ampiezza <= alto)
+    for nome, maschera in (("solo previsioni", previsioni & dentro),
+                           ("solo gia' passate", passate & dentro)):
+        quante = int(maschera.sum())
+        if quante < 10_000:
+            print(f"        {nome:<20} {quante:>10,} terne: base insufficiente")
+            continue
+        esito = valuta(_terne_discrete(r2[maschera], r1[maschera], r0[maschera], BORDI_OTTO),
+                       ripetizioni=8)
+        print(f"        {nome:<20} {quante:>10,} terne | quota "
+              f"{esito.quota_sul_primo_antenato:>6.2%}")
+    print(f"      Se la differenza sopravvive qui, non e' la vicinanza a spiegarla.")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -275,8 +395,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"  [{citta}] nessun parquet in {cartella}")
             continue
         grezze = Grezze.vuote()
-        for percorso in giorni:
-            terne_di_un_giorno(percorso, grezze)
+        for indice, percorso in enumerate(giorni):
+            terne_di_un_giorno(percorso, grezze, indice)
             print(f"  [{citta}] {percorso.stem}: {grezze.passaggi:,} passaggi cumulati",
                   flush=True)
         tutte.extend(analizza(citta, grezze, generatore))
