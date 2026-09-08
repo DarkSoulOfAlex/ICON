@@ -542,10 +542,12 @@ quindi non distinguerebbe una revisione vera da una ripubblicazione. La scelta d
 MD5 non e' crittografica ma di interoperabilita': e' l'impronta che l'agenzia
 pubblica, e usarne un'altra renderebbe impossibile il confronto senza scaricare.
 
-**Aggiornamento: la frequenza di cambiamento e' stata misurata.** Sui quattro
-giorni mappati dal 25 al 28 agosto, **Roma ha prodotto quattro revisioni distinte
-su quattro giorni** e **Torino due su quattro**, essendo cambiato una volta fra il
-25 e il 26 agosto, da **19.905.201 a 20.264.224 byte**. La formulazione corretta
+**Aggiornamento: la frequenza di cambiamento e' stata misurata.** Sui **quindici
+giorni mappati** fra il 25 agosto e l'8 settembre, **Roma ha prodotto quindici
+revisioni distinte su quindici giorni**, cioe' cambia archivio ogni giorno **senza
+una sola eccezione**, e **Torino cinque su quindici**, cioe' esattamente una ogni
+tre. Il primo cambiamento di Torino, fra il 25 e il 26 agosto, portava l'archivio
+da **19.905.201 a 20.264.224 byte**. La formulazione corretta
 non e' quindi che Roma aggiorna l'orario e Torino no, ma che **entrambe lo
 aggiornano con frequenza diversa**, ed e' una versione piu' forte della
 motivazione: se l'archivio fosse stato scaricato una volta sola, per esempio il 27
@@ -1883,7 +1885,7 @@ casuali senza che nulla lo segnali.
 | --- | ---: | ---: |
 | Anticipo mediano delle previsioni | 15,8 min | 2,1 min |
 | Righe con ritardo oltre l'ora (28 agosto) | 100.856 | 27 |
-| Revisioni dell'orario statico | quasi una al giorno | circa una ogni tre |
+| Revisioni dell'orario in quindici giorni | 15 su 15 | 5 su 15 |
 | Payload corrotti in undici giorni | 94 | 0 |
 
 Prese una alla volta sarebbero quattro anomalie separate, ciascuna con la propria
@@ -1891,9 +1893,10 @@ spiegazione locale. Prese insieme descrivono **due modi diversi di intendere la
 pubblicazione di dati aperti**, e la coerenza fra misure indipendenti e' cio' che
 trasforma un'impressione in un'osservazione. Roma pubblica molto, lontano nel
 tempo e con qualita' variabile: previsioni emesse con un quarto d'ora di anticipo,
-orario che cambia quasi ogni giorno, una frazione piccola ma non nulla di
-trasmissioni malformate. Torino pubblica poco, vicino e pulito: previsioni a due
-minuti dal passaggio, orario stabile, nessun payload corrotto in undici giorni.
+orario che cambia **ogni giorno senza eccezioni**, una frazione piccola ma non
+nulla di trasmissioni malformate. Torino pubblica poco, vicino e pulito:
+previsioni a due minuti dal passaggio, orario che cambia una volta ogni tre
+giorni, nessun payload corrotto in undici giorni.
 
 **Motivo per cui questo vincola la Fase 3.** Le due colonne `ritardo_secondi` non
 descrivono la stessa grandezza con la stessa affidabilita'. Su Roma il valore e'

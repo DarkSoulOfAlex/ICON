@@ -1813,9 +1813,10 @@ settimane fa produrrebbe ritardi inventati. Ogni giorno si verifica se l'archivi
 sia cambiato e, in caso affermativo, se ne conserva una nuova revisione; un
 indice associa a ogni data la revisione valida quel giorno.
 
-*Quanto spesso cambia, misurato.* Sui quattro giorni finora mappati, dal 25 al 28
-agosto, **Roma ha prodotto quattro revisioni distinte su quattro giorni** e
-**Torino due su quattro**: l'archivio di Torino e' cambiato una volta, fra il 25 e
+*Quanto spesso cambia, misurato.* Sui quindici giorni mappati fra il 25 agosto e
+l'8 settembre, **Roma ha prodotto quindici revisioni distinte su quindici giorni**,
+cioe' cambia archivio ogni giorno senza una sola eccezione, e **Torino cinque su
+quindici**, cioe' una ogni tre: l'archivio di Torino e' cambiato la prima volta fra il 25 e
 il 26 agosto, passando da **19.905.201 a 20.264.224 byte**. La lettura corretta
 non e' dunque che Roma aggiorna l'orario e Torino no, ma che **entrambe lo
 aggiornano, con frequenza diversa**. E' la differenza che trasforma
