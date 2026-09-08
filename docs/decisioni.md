@@ -1887,8 +1887,17 @@ casuali senza che nulla lo segnali.
 | Righe con ritardo oltre l'ora (28 agosto) | 100.856 | 27 |
 | Revisioni dell'orario in quindici giorni | 15 su 15 | 5 su 15 |
 | Payload corrotti in undici giorni | 94 | 0 |
+| Osservazioni conservate per passaggio | 17,0 | 7,0 |
 
-Prese una alla volta sarebbero quattro anomalie separate, ciascuna con la propria
+La quinta riga e' arrivata dopo le altre, con la rigenerazione completa, e le
+conferma dall'interno: 172,4 milioni di righe per 10,1 milioni di passaggi su
+Roma, 18,5 milioni per 2,7 su Torino. Chi emette previsioni con quindici minuti
+di anticipo ha il tempo di correggersi molte volte prima del passaggio; chi le
+emette con due non ce l'ha. Non e' una misura indipendente dalle altre ma la loro
+conseguenza aritmetica, ed e' per questo che vale: se fosse risultata uguale nelle
+due citta', una delle altre quattro sarebbe stata da rivedere.
+
+Prese una alla volta sarebbero anomalie separate, ciascuna con la propria
 spiegazione locale. Prese insieme descrivono **due modi diversi di intendere la
 pubblicazione di dati aperti**, e la coerenza fra misure indipendenti e' cio' che
 trasforma un'impressione in un'osservazione. Roma pubblica molto, lontano nel
@@ -1923,3 +1932,97 @@ decisiva sara' un'altra: stimare il modello su una citta' e valutarlo sull'altra
 Se la differenza fosse di solo livello, la perdita sarebbe modesta; se e' di
 natura, il modello trasferito sara' mal calibrato, e la misura di quanto lo sia
 e' il modo di quantificare tutto questo con un numero solo.
+
+---
+
+### 60. Condizionare sul bin non e' condizionare sulla variabile
+
+**Decisione.** Il test della proprieta' markoviana non si giudica sul solo
+riferimento per permutazione, ma sul **verso con cui l'eccesso varia al raffinarsi
+della discretizzazione**.
+
+**Che cosa avremmo concluso con il solo riferimento per permutazione.** Il criterio
+approvato nel piano era: si stima `I(R0 ; R-2 | R-1)`, si costruisce lo zero
+effettivo rimescolando `R-2` dentro gli strati di `R-1`, e si confronta. E'
+corretto per cio' che quel riferimento misura, cioe' il bias di stima su campioni
+finiti, ed e' indispensabile: l'informazione mutua stimata da frequenze e' sempre
+positiva anche quando la vera e' zero.
+
+Non basta. Su una catena costruita in modo da essere **markoviana in senso esatto**
+- `R0 = R-1 + rumore`, quindi `R0` indipendente da `R-2` dato `R-1` per
+costruzione - e discretizzata negli otto bin del progetto, la misura da:
+
+| | valore in bit |
+| --- | ---: |
+| Informazione condizionata | 0,01174 |
+| Riferimento per permutazione | 0,00087 ± 0,00007 |
+| Eccesso | **0,01086** |
+
+L'eccesso e' **dodici volte** il riferimento. Applicando il criterio approvato,
+avremmo dichiarato non markoviano un processo markoviano per costruzione, e
+aggiunto alla rete un arco che moltiplica per otto il numero delle celle da
+stimare, sulla base di un artefatto.
+
+**Perche' succede.** Perche' **condizionare sul bin non e' condizionare sulla
+variabile**. Il bin di `R-1` non porta tutta l'informazione del valore continuo
+che rappresenta: dentro lo stesso bin si trovano ritardi diversi, e `R-2`
+conserva un residuo di informazione su *dove dentro il bin* fosse `R-1`. Quel
+residuo si manifesta come dipendenza condizionata, ed e' reale nella
+rappresentazione discretizzata pur non esistendo nel processo.
+
+**Il discriminante: il verso della scala.** L'artefatto ha una firma che una
+dipendenza vera non ha, e si dissolve al raffinarsi dei bin, perche' bin piu'
+stretti perdono meno informazione. Sulla stessa catena markoviana per costruzione:
+
+| bin | eccesso, in quota su cio' che il primo antenato spiega |
+| ---: | ---: |
+| 2 | 3,6% |
+| 4 | 5,0% |
+| 6 | 3,0% |
+| 8 | 1,0% |
+| 12 | 0,2% |
+| 20 | 0,1% |
+
+Una dipendenza vera non ha ragione di svanire, e anzi emerge meglio quando i bin
+smettono di confonderla: verificato su una catena in cui `R0` dipende
+direttamente anche da `R-2`, dove la quota non si dissolve. Il criterio e' quindi
+che **se l'eccesso cala verso zero al crescere dei bin e' discretizzazione, se
+resta o cresce e' struttura**. Il suo pregio rispetto a un surrogato simulato e'
+che non richiede alcuna ipotesi sul processo continuo sottostante, che sui dati
+veri non conosciamo.
+
+**Il punto di metodo.** Questo non e' stato progettato, e' stato **trovato
+costruendo il collaudo**. Il criterio della permutazione era stato pensato a
+tavolino e sembrava sufficiente a entrambi; il difetto e' emerso perche' il test
+dell'estimatore era stato scritto su catene **a struttura nota**, dove la risposta
+giusta era decisa in anticipo, e una di quelle catene ha dato la risposta
+sbagliata. Un collaudo su dati veri non avrebbe potuto rivelarlo, perche' li' la
+risposta non e' nota e un eccesso di 0,011 bit sarebbe sembrato un risultato.
+
+E' la stessa lezione della voce 58 vista da un altro lato. Li' la misura di
+verifica era stata scelta dopo la correzione, e confermava cio' che si credeva
+gia'. Qui il criterio era stato scelto prima, ma **non era stato messo alla prova
+su un caso di cui si conoscesse la risposta**: sceglierla prima non basta, bisogna
+anche provare che sappia distinguere i casi che deve distinguere.
+
+**Una conseguenza che va oltre questo test, e che va nel documento.** Se
+condizionare sul bin non e' condizionare sulla variabile, allora **ogni
+indipendenza condizionata che la struttura della rete assume e' approssimata dalla
+discretizzazione, non esatta**. L'arco che non c'e' fra due variabili significa
+"indipendenti dato il genitore", ma il genitore che la rete osserva e' un bin, non
+un ritardo: una parte di dipendenza sopravvive sempre, tanto maggiore quanto piu'
+grossolani sono i bin.
+
+Non e' un difetto da correggere. Discretizzare e' necessario, perche' senza non ci
+sarebbero tabelle di probabilita' da stimare, e bin piu' fini che riducono
+l'approssimazione moltiplicano le celle e peggiorano la stima: e' un compromesso,
+non un errore. Ma e' un **limite del modello da dichiarare**, accanto alla scelta
+degli otto bin e non in fondo alle conclusioni, perche' qualifica il significato
+di ogni arco assente nel grafo.
+
+**Come si potrebbe verificare.** I test
+`test_discretizzare_una_catena_markoviana_crea_dipendenza_apparente`,
+`test_l_artefatto_della_discretizzazione_si_dissolve_al_raffinarsi_dei_bin` e
+`test_una_dipendenza_vera_non_si_dissolve` fissano i tre comportamenti su catene
+costruite. Sui dati veri, la funzione `scala_per_granularita` di
+`src/delays/markov.py` produce la tabella della scala per ciascuna citta'.
