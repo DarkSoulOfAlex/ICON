@@ -314,3 +314,55 @@ def eccesso_si_dissolve(scala: list[tuple[int, EsitoMarkov]]) -> bool:
     if not np.isfinite(prima) or not np.isfinite(ultima) or prima <= 0:
         return False
     return ultima < prima / 3.0
+
+
+TERNE_PER_CELLA = 50
+"""Terne minime per cella della tabella condizionata, perche' una stima sia leggibile.
+
+Il numero di celle cresce con il **cubo** dei bin: a venti bin sono ottomila, e
+una scala calcolata su poche migliaia di terne avrebbe meno di una osservazione
+per cella. La stima non diventa allora imprecisa, diventa **priva di significato**,
+e continua a produrre un numero: sulla giornata di sviluppo la scala oscillava fra
+il 2,0% e il 4,8% senza alcun andamento, e il criterio del verso avrebbe emesso un
+verdetto sul rumore.
+
+Cinquanta per cella e' un requisito prudente ma non arbitrario: sotto quella
+soglia la frequenza congiunta di una cella e' dominata dalla variabilita'
+campionaria, e l'informazione mutua che se ne stima e' quasi tutta bias.
+"""
+
+
+def granularita_sostenibili(
+    terne: int, numeri_di_bin: tuple[int, ...], per_cella: int = TERNE_PER_CELLA
+) -> tuple[int, ...]:
+    """Le granularita' che il campione puo' sostenere, dato il numero di terne.
+
+    Una granularita' esclusa non e' un dato mancante: e' una misura che non va
+    calcolata, perche' il numero che produrrebbe verrebbe letto come gli altri.
+    """
+    return tuple(k for k in numeri_di_bin if terne >= per_cella * k ** 3)
+
+
+def verdetto_sulla_scala(
+    scala: list[tuple[int, EsitoMarkov]], granularita_minime: int = 3
+) -> tuple[bool | None, str]:
+    """Il verdetto, oppure il rifiuto di pronunciarlo.
+
+    Restituisce ``None`` quando le granularita' sostenibili sono troppo poche per
+    leggere un andamento. Un verdetto emesso su due punti non e' un verdetto
+    debole, e' una coincidenza con un'etichetta sopra.
+    """
+    if len(scala) < granularita_minime:
+        return None, (
+            f"solo {len(scala)} granularita' sostenibili dal campione, ne servono "
+            f"almeno {granularita_minime}: la scala non e' leggibile e non si giudica"
+        )
+    if eccesso_si_dissolve(scala):
+        return True, (
+            "l'eccesso si dissolve al raffinarsi dei bin: e' l'artefatto della "
+            "discretizzazione, e l'assunzione markoviana regge"
+        )
+    return False, (
+        "l'eccesso NON si dissolve al raffinarsi dei bin: la dipendenza e' "
+        "strutturale e la struttura della rete va rivista"
+    )

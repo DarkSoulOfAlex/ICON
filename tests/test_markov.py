@@ -272,3 +272,40 @@ def test_campione_vuoto_e_un_errore() -> None:
     vuoto = np.empty(0, dtype=np.int64)
     with pytest.raises(ErroreMarkov, match="vuot"):
         informazione_mutua_condizionata(vuoto, vuoto, vuoto)
+
+
+# =============================================================================
+# Il campione deve sostenere la granularita', altrimenti non si giudica
+# =============================================================================
+
+
+def test_le_granularita_troppo_fini_vengono_escluse() -> None:
+    """A venti bin la tabella condizionata ha ottomila celle.
+
+    Su poche migliaia di terne la stima non e' imprecisa, e' priva di
+    significato: escluderla e' l'unico modo di non farla leggere come le altre.
+    """
+    from src.delays.markov import granularita_sostenibili
+    assert granularita_sostenibili(11_591, (4, 6, 8, 12, 20)) == (4, 6)
+    assert granularita_sostenibili(9_800_000, (4, 6, 8, 12, 20)) == (4, 6, 8, 12, 20)
+
+
+def test_su_poche_granularita_il_verdetto_si_rifiuta() -> None:
+    """Un verdetto su due punti e' una coincidenza con un'etichetta sopra."""
+    from src.delays.markov import verdetto_sulla_scala
+    grezzo2, grezzo1, grezzo0 = _catena_continua(60_000)
+    scala = scala_per_granularita(grezzo2, grezzo1, grezzo0, (4, 6),
+                                  generatore=np.random.default_rng(43))
+    esito, spiegazione = verdetto_sulla_scala(scala)
+    assert esito is None
+    assert "non si giudica" in spiegazione
+
+
+def test_su_granularita_sufficienti_il_verdetto_si_pronuncia() -> None:
+    """Controllo speculare: un criterio che rifiuta sempre passerebbe l'altro test."""
+    from src.delays.markov import verdetto_sulla_scala
+    grezzo2, grezzo1, grezzo0 = _catena_continua(400_000)
+    scala = scala_per_granularita(grezzo2, grezzo1, grezzo0, (4, 6, 8, 12, 20),
+                                  generatore=np.random.default_rng(47))
+    esito, spiegazione = verdetto_sulla_scala(scala)
+    assert esito is True, spiegazione
