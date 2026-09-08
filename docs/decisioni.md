@@ -2190,6 +2190,20 @@ diagonale, e il modello ne uscirebbe convinto che il ritardo cambi meno di quant
 cambi: proprio l'errore che un pianificatore robusto non puo' permettersi, perche'
 sottostimerebbe la variabilita' su cui si fonda la sua ragione di esistere.
 
+**Su quante osservazioni il modello poggia davvero.** Le coppie in cui **entrambe**
+le osservazioni sono constatazioni sono il **16,5% su Roma** e il **23,3% su
+Torino**. Sono numeri diversi sia da quelli delle terne, 10% e 15,6%, sia
+dall'attesa, e la differenza ha una ragione: conservando per ogni passaggio
+l'ultima osservazione, quella e' la piu' probabile constatazione, e una coppia ne
+richiede due mentre una terna tre. Misurarli sulle coppie non era un dettaglio,
+perche' e' sulle coppie che la matrice di transizione si stima.
+
+Vale la pena riportarli nel documento come dimensionamento reale: il modello si
+fonda su circa **1,7 milioni di transizioni constatate su Roma** e **600 mila su
+Torino**, non sui 172 e 18 milioni di righe grezze ne' sui 10 e 2,7 milioni di
+passaggi. E' onesto che il lettore sappia su quante osservazioni poggia cio' che
+legge.
+
 **Perche' un ordine e non un peso.** Una ponderazione richiederebbe di scegliere
 quanto valga una previsione rispetto a una constatazione, e quel numero non lo
 sappiamo. L'ordine nella scala di risalita non lo richiede: una cella si stima
@@ -2204,3 +2218,51 @@ con il test che ne fissa il comportamento sui secondi invece che sui bin. Sulla
 stima, il confronto fra le due politiche di risalita sulla perdita logaritmica di
 giornate non usate per stimare: se preferire le constatazioni non migliorasse,
 l'ordine si semplifica e questa voce va rivista.
+
+---
+
+### 62. Le celle scoperte non sono traffico scoperto
+
+**Decisione.** Il livello piu' fine della scala di risalita - linea per fascia
+oraria per tipo di giorno - si usa su entrambe le citta'. Il modello e' per linea,
+non per tipo di linea.
+
+**Alternative considerate.** Ripiegare sul livello per tipo di linea, che la
+prima lettura dei conteggi sembrava imporre.
+
+**Il numero che avrebbe portato alla decisione sbagliata.** Alla soglia di venti
+osservazioni per cella, le constatazioni coprono il **29,1% delle celle su Roma** e
+il **19,9% su Torino**. Guardando solo quello si concluderebbe che il livello fine
+non regge: quattro celle su cinque restano senza dati propri.
+
+**Il numero che decide.** Quelle stesse celle coperte servono il **91,5% delle
+osservazioni su Roma** e il **98,8% su Torino**. Un quinto della tabella copre
+quasi tutto il traffico torinese.
+
+Le due letture divergono perche' una rete di trasporto non e' uniforme: poche
+linee portanti concentrano la maggior parte dei passaggi, e molte combinazioni di
+linea e fascia oraria corrispondono a servizi marginali che quasi nessuno percorre
+- una linea periferica in una fascia morta genera pochissimi passaggi, e la sua
+cella resta vuota perche' quel servizio quasi non esiste, non perche' i dati
+manchino. La risalita le coprira' senza costo pratico, perche' cio' che copre e'
+raro per costruzione.
+
+**Il punto di metodo.** Contare le celle e contare le osservazioni sono due
+domande diverse, e su una distribuzione fortemente disuguale danno risposte
+opposte. La prima chiede quanta parte della **tabella** si riesce a stimare, la
+seconda quanta parte del **fenomeno** si riesce a servire, e il modello esiste per
+servire il fenomeno. Riportare la sola quota di celle avrebbe fatto ripiegare su
+un modello piu' grossolano di quanto i dati richiedessero, e la perdita di
+risoluzione sarebbe stata reale mentre il problema che la motivava non lo era.
+
+**Una conseguenza sulla scelta della soglia.** Alzando la soglia da venti a
+cinquanta, Roma scende al **79,8%** delle osservazioni servite mentre Torino resta
+al **95,6%**: la soglia pesa molto piu' su Roma. Non e' quindi un parametro da
+fissare a un valore tondo per comodita' e uguale per le due citta', e viene tarato
+per misura insieme alla concentrazione del priore, con cui forma un solo
+meccanismo.
+
+**Come si potrebbe verificare.** `scripts/copertura_constatazioni.py` riporta
+entrambe le letture a tre soglie, e la loro divergenza e' visibile a colpo
+d'occhio: se un giorno coincidessero, vorrebbe dire che il traffico si e'
+uniformato fra le linee.
