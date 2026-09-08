@@ -2082,9 +2082,125 @@ chiedersi **se la domanda ammetta le risposte che il criterio prevede**. Qui il
 criterio ne prevedeva due, si dissolve o non si dissolve, e i dati ne hanno
 prodotta una terza che non era contemplata.
 
+**Esito finale: due misure dello stesso arco, di segno opposto.** La decisione e'
+stata presa confrontando la perdita logaritmica fuori campione con e senza
+l'arco. La misura e' stata fatta due volte, e i due risultati si contraddicono
+solo in apparenza.
+
+| | senza contesto | dentro il modello con contesto |
+| --- | ---: | ---: |
+| Roma, tutte | +4,59% | **-6,14%** |
+| Roma, solo previsioni | +4,10% | **-7,50%** |
+| Roma, solo gia' passate | +7,67% | **-5,46%** |
+| Torino, tutte | +3,76% | **-4,04%** |
+| Torino, solo previsioni | +2,37% | **-6,35%** |
+| Torino, solo gia' passate | +4,29% | **-8,58%** |
+
+La prima colonna confronta `P(R0|R-1)` con `P(R0|R-1,R-2)`: sessantaquattro celle
+contro cinquecentododici, su un milione e settecentomila terne di verifica.
+Entrambi i modelli sono stimati in abbondanza, e l'arco guadagna fra il 2 e l'8%.
+La seconda colonna rifa' lo stesso confronto **dentro il modello vero**, dove il
+ritardo e' condizionato anche a linea, fascia oraria e tipo di giorno: li' le
+celle passano da 403 mila a 3,2 milioni, e l'arco **peggiora fra il 4 e il 9%** su
+tutte e sei le combinazioni.
+
+La causa e' nei conteggi: con l'arco le osservazioni per cella in addestramento
+scendono a **1,80 su Roma**, a 0,69 sulle sole previsioni e a **0,16** sulle sole
+constatazioni. La maggior parte delle celle non riceve nemmeno un dato, e una
+tabella stimata su celle vuote e' peggiore di una tabella piu' grossolana stimata
+su celle piene.
+
+**I due numeri non si contraddicono: rispondono a domande diverse.** "Il secondo
+antenato porta informazione?" e' una domanda **sui dati**, e la risposta e' si',
+misurata e non trascurabile. "L'arco migliora il modello?" e' una domanda **sul
+modello**, e la risposta e' no. Confonderle avrebbe fatto aggiungere un arco che
+peggiora del 6%, e per giunta sulla base di una misura corretta.
+
+**Decisione: l'arco non si aggiunge, e l'assunzione markoviana si tiene come
+approssimazione dichiarata.** La dipendenza esiste, e' misurata, e vale fra l'1,3%
+e il 4,8% di cio' che il primo antenato spiega. Non la si rappresenta perche' il
+modello non ha i dati per sostenerla. E' una posizione **piu' forte** di quella di
+partenza, non piu' debole: la Fase 4 assumeva la markovianita' senza averla
+verificata, mentre ora si sa che cosa si sta trascurando e quanto vale.
+
+**Il punto di metodo, che e' la ragione per cui questa voce e' cresciuta tre
+volte.** Una misura va fatta **nel regime in cui la decisione si applica**, non in
+quello in cui e' piu' comoda da calcolare. Il confronto senza contesto era piu'
+semplice da scrivere, piu' rapido da eseguire e piu' facile da leggere, ed era
+corretto: misurava esattamente cio' che dichiarava. Era pero' calcolato in
+abbondanza di dati, mentre la decisione si applica in scarsita', e fra i due
+regimi il segno del risultato cambia. Nessun controllo sulla correttezza della
+misura avrebbe potuto rivelarlo, perche' la misura non era sbagliata: era fatta
+altrove.
+
 **Come si potrebbe verificare.** I test
 `test_discretizzare_una_catena_markoviana_crea_dipendenza_apparente`,
 `test_l_artefatto_della_discretizzazione_si_dissolve_al_raffinarsi_dei_bin` e
 `test_una_dipendenza_vera_non_si_dissolve` fissano i tre comportamenti su catene
-costruite. Sui dati veri, la funzione `scala_per_granularita` di
+costruite, e `test_il_confronto_con_contesto_penalizza_la_scarsita` fissa il
+capovolgimento fra i due regimi. Sui dati veri, la funzione `scala_per_granularita` di
 `src/delays/markov.py` produce la tabella della scala per ciascuna citta'.
+
+---
+
+### 61. Le previsioni contengono copie: le constatazioni vengono prima nella stima
+
+**Decisione.** La stima delle distribuzioni di ritardo si fonda in primo luogo
+sulle osservazioni **gia' passate** al momento dell'emissione, e ricorre alle
+previsioni solo dove le prime non bastano. Non e' una ponderazione ma un ordine
+nella scala di risalita.
+
+**Il fatto misurato.** Quota di terne in cui il ritardo e' **identico al secondo**
+a quello della fermata precedente, misurata sui valori grezzi e non sui bin,
+perche' due ritardi diversi che cadono nello stesso bin non sono una ripetizione:
+
+| | previsioni | gia' passate |
+| --- | ---: | ---: |
+| Roma | **23,07%** | 4,66% |
+| Torino | 1,27% | 1,30% |
+
+**L'ipotesi che questo doveva mettere alla prova, ed e' stata esclusa.** Le
+constatazioni risultavano molto piu' prevedibili delle previsioni: su Torino la
+perdita logaritmica senza arco valeva 0,34 bit contro 1,28. Una spiegazione
+possibile era che il produttore **congelasse** il ritardo dopo il passaggio,
+ripetendolo sulle fermate seguenti: i valori consecutivi sarebbero stati copie e
+non osservazioni, l'entropia sarebbe risultata bassa per costruzione, e la
+maggiore prevedibilita' delle constatazioni sarebbe stata un artefatto di
+propagazione invece che un fatto sul trasporto.
+
+La misura dice l'**opposto**. Su Roma a ripetersi sono le previsioni, cinque volte
+piu' delle constatazioni, il che ha una spiegazione semplice: una previsione che
+il produttore non ricalcola resta identica, mentre una constatazione registra cio'
+che e' accaduto e non ha ragione di coincidere al secondo con quella della fermata
+prima. Il congelamento e' quindi escluso, e resta la lettura diretta: **le
+constatazioni sono osservazioni migliori**, e la loro maggiore prevedibilita' e'
+un fatto sul trasporto.
+
+Va aggiunto che su Torino il fenomeno **non esiste affatto**, 1,3% in entrambe le
+popolazioni, ed e' la sesta grandezza su cui i due produttori differiscono in modo
+sistematico dopo le cinque della voce 59. Anche qui nella stessa direzione: chi
+emette previsioni con due minuti di anticipo non ha il tempo di lasciarle invecchiare.
+
+**La conseguenza sulla stima, che e' la ragione di questa voce.** Su Roma quasi un
+quarto delle transizioni osservate fra previsioni e' l'identita', e non perche' il
+mezzo abbia mantenuto esattamente lo stesso ritardo ma perche' il valore non e'
+stato ricalcolato. Sono **copie, non informazione indipendente**. Stimare la
+matrice di transizione pesandole come le constatazioni la spingerebbe verso la
+diagonale, e il modello ne uscirebbe convinto che il ritardo cambi meno di quanto
+cambi: proprio l'errore che un pianificatore robusto non puo' permettersi, perche'
+sottostimerebbe la variabilita' su cui si fonda la sua ragione di esistere.
+
+**Perche' un ordine e non un peso.** Una ponderazione richiederebbe di scegliere
+quanto valga una previsione rispetto a una constatazione, e quel numero non lo
+sappiamo. L'ordine nella scala di risalita non lo richiede: una cella si stima
+sulle constatazioni se ne ha abbastanza; altrimenti si sale a un contesto piu'
+grossolano **restando sulle constatazioni**; e solo dopo, se anche li' non
+bastano, si ricorre alle previsioni. E' la scelta di preferire un dato migliore a
+risoluzione minore rispetto a un dato peggiore a risoluzione piena, ed e'
+verificabile: si misura la perdita fuori campione delle due politiche.
+
+**Come si potrebbe verificare.** `quota_valori_ripetuti` in `src/delays/markov.py`,
+con il test che ne fissa il comportamento sui secondi invece che sui bin. Sulla
+stima, il confronto fra le due politiche di risalita sulla perdita logaritmica di
+giornate non usate per stimare: se preferire le constatazioni non migliorasse,
+l'ordine si semplifica e questa voce va rivista.
