@@ -47,6 +47,7 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+from scipy.stats import spearmanr
 
 RADICE = Path(__file__).resolve().parents[1]
 if str(RADICE) not in sys.path:
@@ -304,20 +305,66 @@ def valori_rappresentativi(dati: dict[str, np.ndarray], n_bin: int) -> np.ndarra
     return np.divide(somma, quanti, out=np.zeros(n_bin), where=quanti > 0)
 
 
-def correlazione_empirica(dati: dict[str, np.ndarray], m: np.ndarray) -> float:
-    """La correlazione fra i ritardi in secondi, senza passare dai bin.
-
-    E' la grandezza direttamente confrontabile con lo 0,7 della Fase 4, che era un
-    parametro su ritardi continui. Va misurata anche quando si dispone della
-    matrice, perche' la matrice vive sui bin e la discretizzazione attenua ogni
-    dipendenza: la differenza fra le due e' il prezzo dei bin, non un errore.
-    """
-    if int(m.sum()) < 2:
-        return float("nan")
-    x, y = dati["secondi_monte"][m], dati["secondi_valle"][m]
-    if x.std() <= 0 or y.std() <= 0:
+def _pearson(x: np.ndarray, y: np.ndarray) -> float:
+    if x.size < 2 or x.std() <= 0 or y.std() <= 0:
         return float("nan")
     return float(np.corrcoef(x, y)[0, 1])
+
+
+def _spearman(x: np.ndarray, y: np.ndarray) -> float:
+    if x.size < 2:
+        return float("nan")
+    return float(spearmanr(x, y).statistic)
+
+
+def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray) -> dict[str, float]:
+    """Le letture della dipendenza fra i ritardi in secondi, in un quadrato due per due.
+
+    Una sola lettura non basta, e la ragione e' emersa dai dati: sul primo giro
+    Torino ha dato una correlazione di Pearson di 0,999 con deviazione 0,001, che
+    non e' una misura ma la firma di pochi valori enormi che dominano le somme. Un
+    ritardo ha coda pesante per natura - un mezzo puo' accumulare un'ora, non puo'
+    recuperarne una - e Pearson su code pesanti misura le code.
+
+    Il secondo giro ha mostrato un difetto nel confronto stesso: mettere accanto un
+    Pearson ristretto e uno Spearman su tutto varia **due** cose insieme, la
+    statistica e l'intervallo, e non permette di attribuire la differenza a
+    nessuna delle due. Le combinazioni sono quindi quattro, Pearson e Spearman
+    ciascuno su tutto e ciascuno dentro l'intervallo che i bin risolvono, piu' la
+    quota di coppie in cui i due ritardi sono **identici al secondo**, che distingue
+    una dipendenza da una copia.
+    """
+    vuoto = dict.fromkeys(("pearson", "pearson_dentro", "spearman", "spearman_dentro",
+                           "identiche", "quota_dentro"), float("nan"))
+    if int(m.sum()) < 2:
+        return vuoto
+    x = dati["secondi_monte"][m].astype(np.float64)
+    y = dati["secondi_valle"][m].astype(np.float64)
+    # L'intervallo risolto dai bin: oltre il primo e l'ultimo bordo la matrice non
+    # distingue piu' nulla, quindi li' ogni correlazione misura cio' che il modello
+    # per costruzione ignora.
+    dentro = ((x >= BORDI_OTTO[0]) & (x <= BORDI_OTTO[-1])
+              & (y >= BORDI_OTTO[0]) & (y <= BORDI_OTTO[-1]))
+    xd, yd = x[dentro], y[dentro]
+    return {
+        "pearson": _pearson(x, y), "pearson_dentro": _pearson(xd, yd),
+        "spearman": _spearman(x, y), "spearman_dentro": _spearman(xd, yd),
+        "identiche": float(np.mean(x == y)), "quota_dentro": float(dentro.mean()),
+    }
+
+
+def code_dei_ritardi(dati: dict[str, np.ndarray], m: np.ndarray) -> dict[str, float]:
+    """I quantili del ritardo osservato, per sapere che cosa c'e' nelle code.
+
+    Serve a leggere le correlazioni: se Pearson su tutto e Pearson dentro i bordi
+    divergono, la spiegazione sta qui, e va riportata invece che dedotta.
+    """
+    x = dati["secondi_monte"][m].astype(np.float64)
+    if x.size == 0:
+        return {}
+    q = np.percentile(x, [0, 1, 25, 50, 75, 99, 100])
+    return dict(zip(("minimo", "p1", "p25", "mediana", "p75", "p99", "massimo"),
+                    (float(v) for v in q)))
 
 
 def correlazione_matrice(modello, nome: str, c: Codifica, dati: dict[str, np.ndarray],
@@ -359,33 +406,40 @@ def confronto_sulla_correlazione(modello, nome: str, c: Codifica,
     somiglianza il modello a bin conservi, il terzo quanto un parametro scelto per
     buon senso si discosti da entrambi.
     """
+    def media_e_scarto(valori: list[float]) -> tuple[float, float]:
+        a = np.asarray(valori, dtype=np.float64)
+        return (float(np.nanmean(a)),
+                float(np.nanstd(a, ddof=1)) if a.size > 1 else 0.0)
+
+    chiavi = ("pearson", "pearson_dentro", "spearman", "spearman_dentro",
+              "identiche", "quota_dentro")
     righe = []
     for fascia in [None] + list(range(N_FASCE)):
-        empiriche, implicite, coppie = [], [], 0
+        raccolta: dict[str, list[float]] = {k: [] for k in chiavi}
+        implicite, coppie = [], 0
         for g in giornate:
             m = (dati["giornata"] == g) & (dati["constatata"] == 1)
             if fascia is not None:
                 m = m & (dati["fascia"] == fascia)
             if int(m.sum()) < 100:
                 continue
-            empiriche.append(correlazione_empirica(dati, m))
+            letture = correlazioni_empiriche(dati, m)
+            for k in chiavi:
+                raccolta[k].append(letture[k])
             implicite.append(correlazione_matrice(modello, nome, c, dati, m,
                                                   rappresentanti))
             coppie += int(m.sum())
-        if not empiriche:
+        if not implicite:
             continue
-        e, i = np.asarray(empiriche), np.asarray(implicite)
-        righe.append({
-            "citta": citta, "fascia": "tutte" if fascia is None else str(fascia),
-            "giornate": e.size, "coppie": coppie,
-            "correlazione_empirica": float(np.nanmean(e)),
-            "deviazione_empirica": float(np.nanstd(e, ddof=1)) if e.size > 1 else 0.0,
-            "correlazione_matrice": float(np.nanmean(i)),
-            "deviazione_matrice": float(np.nanstd(i, ddof=1)) if i.size > 1 else 0.0,
-            "sintetica": CORRELAZIONE_SINTETICA,
-            "scarto_empirica_sintetica": float(np.nanmean(e)) - CORRELAZIONE_SINTETICA,
-            "attenuazione_dei_bin": float(np.nanmean(i)) - float(np.nanmean(e)),
-        })
+        riga = {"citta": citta, "fascia": "tutte" if fascia is None else str(fascia),
+                "giornate": len(implicite), "coppie": coppie}
+        for k in chiavi:
+            riga[k], riga[f"deviazione_{k}"] = media_e_scarto(raccolta[k])
+        riga["correlazione_matrice"], riga["deviazione_matrice"] = media_e_scarto(implicite)
+        riga["sintetica"] = CORRELAZIONE_SINTETICA
+        riga["scarto_spearman_sintetica"] = riga["spearman"] - CORRELAZIONE_SINTETICA
+        riga["scarto_pearson_sintetica"] = riga["pearson"] - CORRELAZIONE_SINTETICA
+        righe.append(riga)
     return righe
 
 
@@ -465,6 +519,11 @@ def elabora(citta: str, cartella: Path, cartella_gtfs: Path, risultati: Path,
     rappresentanti = valori_rappresentativi(dati, n_bin)
     print(f"  [{citta}] ritardo medio per bin (s): "
           + ", ".join(f"{v:.0f}" for v in rappresentanti))
+    code = code_dei_ritardi(dati, np.isin(dati["giornata"], verifica)
+                            & (dati["constatata"] == 1))
+    if code:
+        print(f"  [{citta}] ritardo constatato in verifica (s): "
+              + ", ".join(f"{k} {v:.0f}" for k, v in code.items()))
 
     righe: list[dict] = []
     correlazioni: list[dict] = []
@@ -481,6 +540,10 @@ def elabora(citta: str, cartella: Path, cartella_gtfs: Path, risultati: Path,
         print("      alfa per gradino: "
               + ", ".join(f"{SIGLE[l]}/{p[:5]}={a:g}"
                           for (l, p), a in zip(SCALE[nome], esito.alfa)))
+        if esito.al_bordo:
+            print(f"      ATTENZIONE: {len(esito.al_bordo)} gradini con alfa a un "
+                  f"estremo della griglia ({', '.join(esito.al_bordo)}): non e' una "
+                  f"scelta ma un troncamento")
         modello = stima(costruisci_scala(nome, c, dati, in_stima), n_bin, list(esito.alfa))
         su_const = perdite_per_giornata(modello, nome, c, dati, verifica, C)
         su_prev = perdite_per_giornata(modello, nome, c, dati, verifica, P)
@@ -501,6 +564,7 @@ def elabora(citta: str, cartella: Path, cartella_gtfs: Path, risultati: Path,
         righe.append({
             "citta": citta, "scala": nome, "bin": n_bin,
             "gradini": len(SCALE[nome]), "alfa": " ".join(f"{a:g}" for a in esito.alfa),
+            "alfa_al_bordo": len(esito.al_bordo),
             "perdita_constatazioni": float(np.mean(su_const)) if su_const else float("nan"),
             "deviazione_constatazioni": (float(np.std(su_const, ddof=1))
                                          if len(su_const) > 1 else 0.0),
@@ -515,16 +579,23 @@ def elabora(citta: str, cartella: Path, cartella_gtfs: Path, risultati: Path,
     if correlazioni:
         print()
         print("    --- correlazione fra ritardo a monte e a valle ---")
-        print(f"      {'fascia':<8} {'empirica':>18} {'nella matrice':>18} "
-              f"{'scarto da 0,7':>14} {'attenuazione':>13}")
+        print(f"      {'':<7} {'--- su tutte le coppie ---':^33} "
+              f"{'--- dentro i bordi dei bin ---':^33}")
+        print(f"      {'fascia':<7} {'Pearson':>16} {'Spearman':>16} "
+              f"{'Pearson':>16} {'Spearman':>16} {'dentro':>7} {'uguali':>7} "
+              f"{'matrice':>16}")
         for r in correlazioni:
-            print(f"      {r['fascia']:<8} "
-                  f"{r['correlazione_empirica']:>+9.3f} +/- {r['deviazione_empirica']:<5.3f} "
-                  f"{r['correlazione_matrice']:>+9.3f} +/- {r['deviazione_matrice']:<5.3f} "
-                  f"{r['scarto_empirica_sintetica']:>+14.3f} "
-                  f"{r['attenuazione_dei_bin']:>+13.3f}")
-        print("      L'attenuazione e' il prezzo degli otto bin, non un errore: la")
-        print("      matrice non puo' esprimere le differenze interne a un bin.")
+            print(f"      {r['fascia']:<7} "
+                  f"{r['pearson']:>+8.3f} +/-{r['deviazione_pearson']:<5.3f} "
+                  f"{r['spearman']:>+8.3f} +/-{r['deviazione_spearman']:<5.3f} "
+                  f"{r['pearson_dentro']:>+8.3f} +/-{r['deviazione_pearson_dentro']:<5.3f} "
+                  f"{r['spearman_dentro']:>+8.3f} +/-{r['deviazione_spearman_dentro']:<5.3f} "
+                  f"{r['quota_dentro']:>6.1%} {r['identiche']:>6.1%} "
+                  f"{r['correlazione_matrice']:>+8.3f} +/-{r['deviazione_matrice']:<5.3f}")
+        print(f"      Il valore sintetico della Fase 4 e' {CORRELAZIONE_SINTETICA:.2f}.")
+        print("      Le due colonne di sinistra e le due di destra differiscono per")
+        print("      l'intervallo, le righe di ciascuna coppia per la statistica: cosi'")
+        print("      la differenza si attribuisce all'una o all'altra e non a entrambe.")
     return righe, correlazioni
 
 

@@ -2266,3 +2266,62 @@ meccanismo.
 entrambe le letture a tre soglie, e la loro divergenza e' visibile a colpo
 d'occhio: se un giorno coincidessero, vorrebbe dire che il traffico si e'
 uniformato fra le linee.
+
+### 63. Su Torino le constatazioni non esistono, e non e' un dettaglio
+
+**Constatazione, prima della decisione.** GTFS Real-Time non offre alcun segnale di
+"il mezzo e' gia' passato": il progetto lo deduce confrontando l'orario atteso -
+programmato piu' ritardo - con l'istante in cui il produttore ha pubblicato. La
+deduzione presuppone che il produttore pubblichi **anche** le fermate gia' passate.
+Nessuno lo aveva verificato.
+
+Non e' vero su Torino. Su tutte e quattordici le giornate, il massimo di
+`timestamp_feed - orario_programmato` vale **fra 0 e 4 secondi**: il feed torinese
+toglie la fermata dal `trip_updates` appena il mezzo vi transita, e nel dato non
+esiste alcun passaggio avvenuto da osservare. Su Roma lo stesso massimo sta fra
+**10.020 e 69.656 secondi**, e il novantanovesimo percentile intorno ai **2.000**:
+il feed romano continua a pubblicare le fermate passate per una mezz'ora buona.
+
+**Che cosa contiene allora il gradino "constatazioni" su Torino.** Le righe che
+superano il criterio, dal 4,1% all'8,2% a seconda del giorno, sono quelle il cui
+orario atteso e' talmente in anticipo da precedere l'istante di pubblicazione. La
+prova del nove e' netta: **lo 0,00% di esse ha ritardo positivo, tutti i giorni**, e
+il ritardo massimo fra loro e' di **1 secondo**. Non sono passaggi avvenuti: sono
+previsioni selezionate per essere molto in anticipo, cioe' una selezione
+sistematica e non casuale, che restituisce per costruzione la coda negativa della
+distribuzione. Su Roma la stessa quota vale fra il **21,5% e il 35,4%**, e il
+massimo arriva a **59.486 secondi**: li' il criterio seleziona davvero dei fatti.
+
+**Che cosa questo invalida.** Ogni numero torinese che porti il nome
+"constatazioni" descrive quella coda negativa e non la realta' dei ritardi: la
+copertura di D1 (19,9% delle celle, 98,8% delle osservazioni al livello fine), il
+23,3% di coppie constatate della voce 61, e le stime odierne - 0,379 bit di perdita
+su un campione confinato a ritardo non positivo, 3,16 bit sulle previsioni,
+correlazione di Pearson 0,240 dentro i bordi dei bin contro 0,999 su tutto. Sono
+numeri corretti come calcoli e ingannevoli come misure, perche' la popolazione non
+e' quella che il nome promette. Su Roma nulla di tutto questo si applica.
+
+**Il punto di metodo, che vale oltre questo caso.** Il criterio era una deduzione
+travestita da osservazione. Era stato verificato che il **calcolo** fosse giusto,
+mai che la **premessa** lo fosse, e la premessa riguardava il comportamento di un
+produttore esterno su cui non si ha alcun controllo. Il segnale d'allarme non e'
+arrivato dal criterio ma da un quantile chiesto per altro: il ritardo massimo fra
+le constatazioni torinesi valeva zero, e un massimo esattamente zero non e' un
+dato, e' una definizione che si e' chiusa su se stessa. Le statistiche di contorno
+- minimo, massimo, quantili estremi - vanno guardate anche quando non servono alla
+domanda, perche' sono le uniche che smascherano una popolazione mal definita.
+
+**Alternative aperte, la scelta e' da fare.** (a) Su Torino si stima il modello
+sulle previsioni e lo si dichiara, accettando che contengano copie in quantita' non
+misurata su quella citta'. (b) Torino esce dal modello dei ritardi e resta solo
+dove non ne ha bisogno. (c) Si tenta di ricostruire i passaggi avvenuti dalla
+**sparizione** di una fermata dal feed fra due dump consecutivi, che e' l'unico
+segnale che il produttore torinese offre, al costo di uno strumento nuovo e di
+un'ipotesi ulteriore - che una fermata sparisca perche' e' passata e non per altro.
+
+**Come si potrebbe verificare.** `scripts/diagnosi_constatazioni.py` riporta per
+ogni giornata il massimo di `timestamp_feed - orario_programmato`, la quota di
+constatazioni e quanta parte di esse abbia ritardo positivo, e pronuncia un
+verdetto per citta'. Se un giorno il produttore torinese cominciasse a pubblicare
+il passato, il massimo salirebbe di ordini di grandezza e il verdetto si
+ribalterebbe da solo.

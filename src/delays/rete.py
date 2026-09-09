@@ -246,7 +246,23 @@ def stima(livelli: list[Livello], n_valori: int, alfa: float | list[float]) -> M
     return componi(conta(livelli, n_valori), alfa)
 
 
-CANDIDATI = (0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0)
+CANDIDATI = (0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 1_000.0, 5_000.0,
+             25_000.0, 100_000.0, 1_000_000.0)
+"""I valori provati per la concentrazione, su scala logaritmica.
+
+L'estremo superiore e' alto di proposito. Un gradino che scegliesse il massimo
+disponibile non sarebbe tarato ma troncato: direbbe solo che il suo ottimo sta
+oltre il punto dove si e' smesso di cercare, e ``Taratura.al_bordo`` lo segnala.
+
+Con una concentrazione molto maggiore del numero di osservazioni della cella, il
+gradino diventa **trasparente**: la sua stima coincide con quella del genitore.
+E' una risposta legittima e non un troncamento - vuol dire che il gradino non
+serve - e su Roma capita davvero, perche' con tutte le linee di superficie
+classificate come autobus il livello per tipo di veicolo ripete quello sotto di
+se'. Distinguere i due casi richiede una misura: se allargando la griglia la
+perdita non si muove, la saturazione e' trasparenza; se si muove, era un
+troncamento.
+"""
 
 
 @dataclass(frozen=True)
@@ -257,6 +273,26 @@ class Taratura:
     perdita: float
     traccia: tuple[tuple[str, float, float], ...]
     """Per ogni mossa: gradino toccato, valore scelto, perdita risultante."""
+    candidati: tuple[float, ...] = ()
+
+    @property
+    def al_bordo(self) -> tuple[str, ...]:
+        """I gradini la cui concentrazione e' finita a un estremo della griglia.
+
+        Un valore all'estremo non e' una scelta ma un troncamento: dice che
+        l'ottimo sta oltre il punto in cui si e' smesso di cercare, e va allargata
+        la griglia invece di riportarlo.
+        """
+        if not self.candidati:
+            return ()
+        estremi = {min(self.candidati), max(self.candidati)}
+        return tuple(nome for nome, a in zip(self.nomi_dei_gradini(), self.alfa)
+                     if a in estremi)
+
+    def nomi_dei_gradini(self) -> tuple[str, ...]:
+        """I nomi nell'ordine dei gradini, letti dall'ultima passata della traccia."""
+        quanti = len(self.alfa)
+        return tuple(nome for nome, _, _ in self.traccia[-quanti:]) if self.traccia else ()
 
 
 def tara(
@@ -304,4 +340,4 @@ def tara(
                     migliore, perdita = a, candidata
             corrente[i] = migliore
             traccia.append((conteggi.nomi[i], migliore, perdita))
-    return Taratura(tuple(corrente), perdita, tuple(traccia))
+    return Taratura(tuple(corrente), perdita, tuple(traccia), tuple(candidati))

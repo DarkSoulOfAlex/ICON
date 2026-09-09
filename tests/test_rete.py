@@ -257,6 +257,30 @@ def test_la_taratura_non_peggiora_di_passata_in_passata():
     assert esito.alfa[0] in CANDIDATI and esito.alfa[1] in CANDIDATI
 
 
+def test_un_alfa_sul_bordo_della_griglia_viene_segnalato():
+    """Un valore all'estremo non e' una scelta ma un troncamento.
+
+    Sul primo giro sui dati veri quasi tutti i gradini di Roma hanno scelto il
+    massimo disponibile, il che diceva solo che l'ottimo stava oltre il punto in cui
+    si era smesso di cercare. Il segnale deve venire dal codice, non da chi legge.
+    """
+    celle, valori = _campione(_distribuzioni(1e6, 141), _numerosita_disuguale(142), 143)
+    celle_v, valori_v = _campione(_distribuzioni(1e6, 141),
+                                  _numerosita_disuguale(144, 0.5), 145)
+    stretta = tara(_scala(celle, valori), celle_v, valori_v, N_VALORI,
+                   candidati=(0.5, 1.0, 2.0))
+    assert stretta.al_bordo, "celle fini identiche al gruppo: alfa deve saturare in alto"
+    larga = tara(_scala(celle, valori), celle_v, valori_v, N_VALORI)
+    assert set(larga.alfa) <= set(CANDIDATI)
+    assert larga.perdita <= stretta.perdita + 1e-12
+
+
+def test_senza_candidati_dichiarati_non_si_pronuncia_sul_bordo():
+    """Una ``Taratura`` costruita a mano non deve fingere di sapere la griglia."""
+    from src.delays.rete import Taratura
+    assert Taratura((1.0,), 0.0, (("a", 1.0, 0.0),)).al_bordo == ()
+
+
 def test_contare_una_volta_sola_da_le_stesse_tabelle():
     """La separazione fra conteggio e composizione e' un'ottimizzazione.
 
