@@ -74,13 +74,17 @@ if str(RADICE) not in sys.path:
 from google.transit import gtfs_realtime_pb2 as pb  # noqa: E402
 
 from src.consolida.notturno import carica_orario  # noqa: E402
+from src.delays.contesto import (  # noqa: E402
+    GIORNO,
+    RESIDUO_PLAUSIBILE,
+    maschera_rollover,
+)
 from src.consolida.sorgente import SorgenteDump  # noqa: E402
 from src.gtfs.calendar import istante_di_servizio  # noqa: E402
 from src.gtfs.loader import carica_archivio  # noqa: E402
 
 CITTA = ("roma", "torino")
 FUSO = ZoneInfo("Europe/Rome")
-GIORNO = 86_400
 SOGLIA_CONFRONTO_MODI = 3_000
 """Righe minime per modo, su fermate condivise, perche' il confronto sia un risultato.
 
@@ -99,18 +103,6 @@ stampato accanto agli altri sembrerebbe dello stesso rango. Sotto la soglia si
 dichiara l'indecidibilita' invece del valore.
 """
 
-RESIDUO_PLAUSIBILE = 3_600
-"""Scarto massimo, tolte 24 ore, perche' un ritardo sia un salto di giorno.
-
-Il criterio precedente era la distanza da +/- 86.400 entro dieci minuti, ed era
-sbagliato: un salto di giorno **piu' un ritardo reale di quaranta minuti** vale
--84.000 s, cade fuori da quella finestra e finiva contato fra le anomalie di
-altra natura, mescolando due fenomeni distinti. La regola giusta non guarda la
-distanza dal valore tondo ma il **residuo**: si tolgono ventiquattro ore e si
-guarda se cio' che resta sia un ritardo plausibile. Un'ora di residuo copre i
-ritardi reali senza catturare nient'altro, perche' un ritardo autentico di
-ventitre ore - il solo che verrebbe scambiato - non esiste.
-"""
 
 TIPI_LINEA = {
     0: "tram", 1: "metro", 2: "treno", 3: "bus", 4: "traghetto",
@@ -125,20 +117,6 @@ FASCE_ANTICIPO = (
     (1800, 3600, "30-60 min"),
     (3600, 10**9, "oltre 60 min"),
 )
-
-
-def maschera_rollover(ritardo: pd.Series) -> pd.Series:
-    """Righe il cui ritardo e' un salto di giorno, eventualmente con un ritardo vero sopra.
-
-    Si toglie una giornata intera, nell'uno e nell'altro verso, e si guarda cosa
-    resta: se il residuo e' un ritardo plausibile, la riga e' un salto di giorno.
-    Guardare invece la distanza dal valore tondo di 86.400 lascerebbe fuori
-    proprio i casi piu' frequenti, quelli in cui il mezzo era anche realmente in
-    ritardo, e li mescolerebbe con anomalie di natura diversa.
-    """
-    return ((ritardo + GIORNO).abs() <= RESIDUO_PLAUSIBILE) | (
-        (ritardo - GIORNO).abs() <= RESIDUO_PLAUSIBILE
-    )
 
 
 def _mediana(valori: Sequence[float]) -> str:

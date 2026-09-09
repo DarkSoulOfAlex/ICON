@@ -42,19 +42,13 @@ RADICE = Path(__file__).resolve().parents[1]
 if str(RADICE) not in sys.path:
     sys.path.insert(0, str(RADICE))
 
-from src.delays.contesto import constatazione  # noqa: E402
+from src.delays.contesto import (  # noqa: E402
+    SOGLIA_PUBBLICA_IL_PASSATO,
+    constatazione,
+)
 
 CITTA = ("roma", "torino")
 COLONNE = ["ritardo_secondi", "orario_programmato", "timestamp_feed"]
-
-SOGLIA_PUBBLICA_IL_PASSATO = 60.0
-"""Secondi oltre l'orario programmato entro cui il feed deve arrivare almeno una volta.
-
-Un minuto e' una soglia larga di proposito: serve a distinguere "pubblica il
-passato" da "non lo pubblica affatto", non a misurare quanto lo pubblichi. Un feed
-che si fermasse a pochi secondi non offre alcuna constatazione, quale che sia la
-soglia scelta entro l'ordine di grandezza del minuto.
-"""
 
 
 def esamina_giornata(percorso: Path) -> dict | None:

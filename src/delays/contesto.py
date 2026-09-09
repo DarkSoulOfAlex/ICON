@@ -94,6 +94,56 @@ def coppie_contigue(codice: np.ndarray, sequenza: np.ndarray) -> np.ndarray:
     return (codice[1:] == codice[:-1]) & (sequenza[1:] - sequenza[:-1] == 1)
 
 
+GIORNO = 86_400
+RESIDUO_PLAUSIBILE = 3_600
+"""Scarto massimo, tolte ventiquattro ore, perche' un ritardo sia un salto di giorno.
+
+Il criterio precedente era la distanza da +/- 86.400 entro dieci minuti, ed era
+sbagliato: un salto di giorno **piu' un ritardo reale di quaranta minuti** vale
+-84.000 s, cade fuori da quella finestra e finiva contato fra le anomalie di altra
+natura, mescolando due fenomeni distinti. La regola giusta non guarda la distanza
+dal valore tondo ma il **residuo**: si tolgono ventiquattro ore e si guarda se cio'
+che resta sia un ritardo plausibile. Un'ora di residuo copre i ritardi reali senza
+catturare nient'altro, perche' un ritardo autentico di ventitre ore - il solo che
+verrebbe scambiato - non esiste.
+"""
+
+
+def maschera_rollover(ritardo):
+    """Righe il cui ritardo e' un salto di giorno, con sopra un ritardo vero o meno.
+
+    Si toglie una giornata intera, nell'uno e nell'altro verso, e si guarda cosa
+    resta: se il residuo e' un ritardo plausibile, la riga e' un salto di giorno.
+    Guardare invece la distanza dal valore tondo di 86.400 lascerebbe fuori proprio
+    i casi piu' frequenti, quelli in cui il mezzo era anche realmente in ritardo, e
+    li mescolerebbe con anomalie di natura diversa.
+
+    Scritta con ``np.abs`` invece del metodo ``.abs()`` perche' la usano sia la
+    diagnosi del consolidamento, che lavora su ``pandas.Series``, sia la stima, che
+    lavora su ``numpy.ndarray``: una sola definizione per due chiamanti, cosi' il
+    criterio con cui si diagnostica e quello con cui si scarta non possono divergere.
+    """
+    return ((np.abs(ritardo + GIORNO) <= RESIDUO_PLAUSIBILE)
+            | (np.abs(ritardo - GIORNO) <= RESIDUO_PLAUSIBILE))
+
+
+SOGLIA_PUBBLICA_IL_PASSATO = 60.0
+"""Secondi oltre l'orario programmato entro cui il feed deve arrivare almeno una volta.
+
+Serve a decidere se su un feed le constatazioni **esistano**. Se il produttore
+togliesse la fermata dal `trip_updates` appena il mezzo vi transita, nessun
+passaggio avvenuto sarebbe mai osservabile, e il criterio di ``constatazione``
+selezionerebbe soltanto le previsioni piu' anticipate - una selezione sistematica
+che restituisce la coda negativa della distribuzione. Vedere la voce 63.
+
+Un minuto e' una soglia larga di proposito: distingue "pubblica il passato" da
+"non lo pubblica affatto", non misura quanto lo pubblichi. Sui dati raccolti la
+separazione e' netta di quattro ordini di grandezza - Roma arriva a decine di
+migliaia di secondi, Torino a quattro - quindi nessun valore ragionevole entro
+l'ordine del minuto cambierebbe il verdetto.
+"""
+
+
 def constatazione(orario_programmato: np.ndarray, ritardo: np.ndarray,
                   istante_feed: np.ndarray) -> np.ndarray:
     """Il passaggio era gia' avvenuto quando il feed lo ha pubblicato?

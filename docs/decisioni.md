@@ -1888,6 +1888,7 @@ casuali senza che nulla lo segnali.
 | Revisioni dell'orario in quindici giorni | 15 su 15 | 5 su 15 |
 | Payload corrotti in undici giorni | 94 | 0 |
 | Osservazioni conservate per passaggio | 17,0 | 7,0 |
+| Fin dove nel passato arriva il feed | 70.229 s | **4 s** |
 
 La quinta riga e' arrivata dopo le altre, con la rigenerazione completa, e le
 conferma dall'interno: 172,4 milioni di righe per 10,1 milioni di passaggi su
@@ -1896,6 +1897,16 @@ di anticipo ha il tempo di correggersi molte volte prima del passaggio; chi le
 emette con due non ce l'ha. Non e' una misura indipendente dalle altre ma la loro
 conseguenza aritmetica, ed e' per questo che vale: se fosse risultata uguale nelle
 due citta', una delle altre quattro sarebbe stata da rivedere.
+
+**La sesta riga e' arrivata per ultima ed e' la piu' grave**, perche' non misura
+la qualita' del dato ma che cosa il dato sia. E' il massimo, su quattordici
+giornate, di `timestamp_feed - orario_programmato`: quanto in la' nel passato il
+produttore continua a pubblicare una fermata. Roma arriva a diciannove ore, Torino
+a **quattro secondi**. Torino cioe' toglie la fermata dal feed appena il mezzo vi
+transita, e nei suoi dati non esiste un solo passaggio osservato dopo che e'
+avvenuto. Le altre cinque righe dicono che i due produttori pubblicano lo stesso
+genere di cosa con cura diversa; la sesta dice che uno dei due non pubblica affatto
+il genere di cosa che l'altro pubblica. Le conseguenze sono nella voce 63.
 
 Prese una alla volta sarebbero anomalie separate, ciascuna con la propria
 spiegazione locale. Prese insieme descrivono **due modi diversi di intendere la
@@ -1921,13 +1932,24 @@ Va aggiunto che questa differenza si somma a quella gia' registrata sulla
 copertura: su Roma il tempo reale non comprende la metropolitana, quindi il
 modello romano sara' un modello dei ritardi degli autobus. Le due citta'
 differiscono dunque per che cosa osservano, con quale anticipo, con quale
-stabilita' dell'orario di riferimento e con quale qualita' di trasmissione.
+stabilita' dell'orario di riferimento, con quale qualita' di trasmissione e - la
+piu' profonda - se **osservino affatto** il passaggio o soltanto lo prevedano.
+
+**Una conseguenza sulla Fase 5, da dichiarare ora.** Su Torino il backtesting non
+potra' verificare gli itinerari contro i ritardi realmente avvenuti, perche' quei
+numeri non esistono nel dato: li verifichera' contro l'ultima stima del produttore
+prima che la fermata sparisca dal feed, emessa con una mediana di circa due minuti
+di anticipo. E' una limitazione della **misura**, non del metodo, e va scritta
+accanto ai risultati torinesi invece che lasciata implicita. Su Roma non si
+applica, perche' li' il feed continua a pubblicare la fermata per una mezz'ora
+buona dopo il passaggio e le constatazioni ci sono davvero.
 
 **Come si potrebbe verificare.** I payload corrotti si contano nel journal del
 servizio, cercando le righe di scarto emesse dal collector. L'anticipo delle
 previsioni e' il quadro 4 di `scripts/diagnosi_consolidamento.py`, le righe con
 ritardo oltre l'ora il quadro 1, e le revisioni dell'orario si leggono dalla
-sezione `versioni` di `data/raw/gtfs/<citta>/index.json`. In Fase 3, la verifica
+sezione `versioni` di `data/raw/gtfs/<citta>/index.json`. La sesta riga e' la
+colonna `feed_meno_programmato_max` di `scripts/diagnosi_constatazioni.py`. In Fase 3, la verifica
 decisiva sara' un'altra: stimare il modello su una citta' e valutarlo sull'altra.
 Se la differenza fosse di solo livello, la perdita sarebbe modesta; se e' di
 natura, il modello trasferito sara' mal calibrato, e la misura di quanto lo sia
@@ -2325,3 +2347,122 @@ constatazioni e quanta parte di esse abbia ritardo positivo, e pronuncia un
 verdetto per citta'. Se un giorno il produttore torinese cominciasse a pubblicare
 il passato, il massimo salirebbe di ordini di grandezza e il verdetto si
 ribalterebbe da solo.
+
+### 64. I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno
+
+**Decisione.** I bordi passano da `(-60, 0, 60, 120, 300, 600, 1200)` a
+**`(-308, -145, -42, 0, 66, 179, 504)`**: tre bordi nell'anticipo disposti per
+quantili del solo anticipo, lo zero, tre nel ritardo disposti per quantili del solo
+ritardo. Restano otto bin e restano **gli stessi per le due citta'**, altrimenti le
+loro perdite non sarebbero confrontabili e il paragone della voce 59 perderebbe il
+suo termine di riferimento.
+
+**Il difetto che li ha rimessi in discussione.** I bordi vecchi erano stati scelti
+nella Fase 3 sulla popolazione intera, previsioni comprese. La popolazione su cui
+si stima e' invece un'altra, e ha mediana **-139 s** su Roma: piu' della meta' del
+campione cadeva sotto il primo bordo, cioe' dentro il bin zero, che e' aperto verso
+il basso. Misurato: con i bordi vecchi il **65,6%** delle osservazioni romane e il
+**41,6%** delle torinesi finivano in uno dei due bin aperti, dove il modello
+dichiara di non distinguere nulla.
+
+**Alternative considerate.** Quattro insiemi, tutti a otto bin. `attuali`, come
+termine di paragone. `ottili`, i quantili della popolazione di stima, cioe' bin a
+frequenza uguale. `centrati`, la spaziatura degli attuali traslata sulla mediana.
+`misti`, quello scelto.
+
+**Il punto di metodo, che vale piu' della scelta.** *La perdita fuori campione non
+puo' decidere questa domanda, e nemmeno il guadagno sul marginale.* Sono due
+criteri che sbagliano per costruzione, in versi opposti:
+
+- la **perdita grezza** premia i bordi che ammucchiano massa in pochi bin, perche'
+  cosi' l'entropia marginale cala e la perdita con lei, per quanto male il modello
+  lavori. Con i bordi vecchi Roma perde 0,5992 bit contro gli 0,8481 dei nuovi, e
+  sembrerebbe che i vecchi vincano di larga misura;
+- il **guadagno sul marginale**, cioe' quanto il modello aggiunga a chi non sa
+  nulla, corregge quel difetto ma ne introduce uno simmetrico: a numero di bin
+  fisso, i bin a frequenza uguale massimizzano l'entropia marginale e quindi il
+  tetto del guadagno. Sul guadagno vincono infatti gli ottili, 1,898 bit su Roma
+  contro 1,338 dei vecchi, che e' quasi una tautologia.
+
+Nessuno dei due sa che cosa serva al pianificatore. Serve **distinguere secondi**,
+dell'ordine di un margine di coincidenza. Si e' misurata quindi anche l'ampiezza
+fra primo e novantanovesimo percentile del ritardo dentro ciascun bin, mediata coi
+pesi delle numerosita': sono secondi, non bit, e si confrontano con un margine di
+coincidenza invece che con un'altra discretizzazione.
+
+| bordi | guadagno Roma | guadagno Torino | massa nei bin aperti | ampiezza confusa |
+| --- | ---: | ---: | ---: | ---: |
+| attuali | 1,338 | 1,289 | 65,6% / 41,6% | 1.241 s / 334 s |
+| ottili | **1,898** | **1,579** | 40,7% / 21,7% | 1.540 s / 374 s |
+| centrati | 1,856 | 1,184 | 21,8% / 3,6% | 14.257 s / 301 s |
+| misti | 1,879 | 1,569 | 35,5% / **10,5%** | **1.053 s** / **223 s** |
+
+La regola con cui si e' scelto usa il guadagno per **escludere** e i secondi per
+decidere: fra i candidati che perdono in guadagno meno della variabilita' fra
+giornate - 0,0606 bit, misurata e non fissata - vince quello che confonde meno
+secondi. Ottili e misti sono indistinguibili sul guadagno, distano 0,010 bit; sui
+secondi misti confonde 1.053 s contro 1.540 s su Roma e 223 s contro 374 s su
+Torino.
+
+**Perche' i quantili puri erano da scartare anche senza misurare i secondi.** Gli
+ottili di Roma cadono tutti nell'anticipo: `-372, -236, -151, -85, -30, 23, 122`.
+Sopra i due minuti di ritardo c'e' un unico bin aperto. Il modello risolverebbe
+finemente di quanto un mezzo sia in anticipo e per niente di quanto sia in ritardo
+- ma la domanda a cui serve e' `P(arrivo <= T)`, che e' sensibile **solo** al lato
+del ritardo. Un mezzo in anticipo di tre minuti o di dieci fa perdere la stessa
+quantita' di coincidenze, cioe' nessuna. I quantili seguono la massa; la massa e'
+nell'anticipo; la decisione no.
+
+**Come si potrebbe verificare.** `python scripts/stima_rete.py --bordi misura`
+ricalcola la tabella e ripronuncia la scelta; `--bordi attuali` rifa' la stima coi
+vecchi. Se un giorno la distribuzione dei ritardi si spostasse, i candidati che
+dipendono dai dati si spostano con lei e la scelta si rifa' da sola.
+
+---
+
+### 65. Su Torino il dato non e' un ritardo osservato, ed e' un solo dato
+
+**Decisione.** Su Torino cade la seconda dimensione della scala di risalita. Non si
+stima piu' su "constatazioni" con le previsioni a fare da priore: si stima su
+**un'unica popolazione**, tutte le coppie, con la sola dimensione del contesto.
+Cambia anche il nome di cio' che si stima, e va scritto come si legge:
+
+> su Torino il ritardo non e' mai osservato come fatto compiuto. Il dato e'
+> l'**ultima stima del produttore** prima che la fermata sparisca dal feed, emessa
+> con una mediana di circa due minuti di anticipo.
+
+Su Roma la scala a due dimensioni resta, perche' li' la distinzione fra fatto e
+previsione e' reale.
+
+**Alternative considerate.** (a) Stimare su Torino "sulle previsioni invece che
+sulle constatazioni": formulazione sbagliata, perche' presuppone due popolazioni di
+cui una si scarta, mentre ce n'e' una sola e la distinzione collassa. (b) Togliere
+Torino dal modello dei ritardi: farebbe perdere la seconda citta' e con essa il
+criterio di generalita' su cui il progetto e' valutato. (c) Ricostruire i passaggi
+avvenuti dalla **sparizione** di una fermata dal feed fra due dump consecutivi: e'
+l'unico segnale che quel produttore offre, ma i nostri stessi dati lo indeboliscono,
+perche' su 288 corse torinesi presenti in due dump distanti 130 risultavano
+accorciate e **113 allungate**. Se le liste crescono e calano, la sparizione non e'
+un segnale pulito di passaggio, e costruirci sopra uno strumento nuovo e' spesa a
+rischio.
+
+**Motivo.** L'estrazione non cambia di una riga: `ultima_revisione` tiene gia'
+l'ultima pubblicazione di ciascun passaggio, che su Torino e' esattamente la stima
+piu' vicina al transito. Cio' che cambia e' smettere di chiamare "constatazioni" un
+quarto di quelle righe e di trattarle a parte. Quel quarto non era una popolazione
+ma il risultato di una selezione sistematica - le previsioni tanto anticipate da
+precedere l'istante di pubblicazione - e separarlo significava stimare sulla coda
+negativa della distribuzione chiamandola realta'.
+
+**Che cosa la riformulazione ha rimesso a posto.** Le quattro letture della
+correlazione, che sulla popolazione fasulla si contraddicevano - Pearson +0,999 su
+tutto contro +0,240 dentro i bordi - ora concordano: **+0,908, +0,936, +0,923,
++0,879**, con la matrice a +0,907. Una popolazione mal definita si riconosce anche
+cosi', dal fatto che misure che dovrebbero dire quasi la stessa cosa non la dicono.
+
+**Come si potrebbe verificare.** La scelta e' fatta dal codice sui dati, non
+scritta a mano: `Citta.scale` guarda il massimo di `timestamp_feed -
+orario_programmato` e passa a una sola dimensione sotto la soglia. Se il produttore
+torinese cominciasse a pubblicare le fermate passate, la scala tornerebbe a due
+dimensioni da sola. `--scala due-dimensioni` forza il comportamento precedente, per
+riprodurre i numeri anteriori a questa voce.
