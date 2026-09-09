@@ -139,8 +139,19 @@ class Codifica:
 
     def celle(self, livello: int, linea: np.ndarray, fascia: np.ndarray,
               giorno: np.ndarray, bin_monte: np.ndarray) -> np.ndarray:
-        """Il codice di cella di ciascuna osservazione, al livello richiesto."""
+        """Il codice di cella di ciascuna osservazione, al livello richiesto.
+
+        I fattori vengono promossi a interi lunghi prima di comporli. Chi chiama li
+        conserva in tipi stretti - con milioni di coppie la differenza e' fra
+        centosettanta megabyte e mezzo gigabyte - e il prodotto ``linea * nf`` in
+        int8 traboccherebbe in silenzio dando codici di cella sbagliati anziche' un
+        errore.
+        """
         nb, nf, ng = self.n_bin, N_FASCE, N_GIORNI
+        linea = np.asarray(linea, dtype=np.int64)
+        fascia = np.asarray(fascia, dtype=np.int64)
+        giorno = np.asarray(giorno, dtype=np.int64)
+        bin_monte = np.asarray(bin_monte, dtype=np.int64)
         tipo = self.tipo_di_linea[linea]
         if livello == 0:
             return bin_monte
@@ -153,6 +164,16 @@ class Codifica:
         if livello == 4:
             return ((linea * nf + fascia) * ng + giorno) * nb + bin_monte
         raise ErroreContesto(f"livello {livello} inesistente")
+
+    def bin_di_cella(self, celle: np.ndarray) -> np.ndarray:
+        """Il bin del ritardo a monte di una cella, a qualunque livello.
+
+        Il bin e' l'ultimo fattore della codifica a ogni livello, quindi si legge
+        col resto della divisione. Sta qui e non nel chiamante perche' e' una
+        proprieta' della codifica: se un giorno il bin non fosse piu' l'ultimo
+        fattore, questo metodo cambierebbe e nessun altro.
+        """
+        return celle % self.n_bin
 
     def padre(self, livello: int) -> np.ndarray:
         """Per ogni cella del livello, la cella del livello precedente che la contiene.

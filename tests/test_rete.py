@@ -25,6 +25,8 @@ from src.delays.rete import (
     CANDIDATI,
     ErroreRete,
     Livello,
+    componi,
+    conta,
     mappa_annidata,
     stima,
     tara,
@@ -253,6 +255,33 @@ def test_la_taratura_non_peggiora_di_passata_in_passata():
     assert all(b <= a + 1e-12 for a, b in zip(perdite, perdite[1:]))
     assert esito.perdita == pytest.approx(perdite[-1])
     assert esito.alfa[0] in CANDIDATI and esito.alfa[1] in CANDIDATI
+
+
+def test_contare_una_volta_sola_da_le_stesse_tabelle():
+    """La separazione fra conteggio e composizione e' un'ottimizzazione.
+
+    Serve perche' la taratura prova decine di concentrazioni sugli stessi dati, ma
+    un'ottimizzazione che cambia i numeri e' un difetto: le tabelle devono
+    coincidere a meno dell'errore di macchina, per ogni concentrazione.
+    """
+    celle, valori = _campione(_distribuzioni(8.0, 131), _numerosita_disuguale(132), 133)
+    conteggi = conta(_scala(celle, valori), N_VALORI)
+    for a in (0.5, 7.0, [1.0, 250.0]):
+        insieme = stima(_scala(celle, valori), N_VALORI, a)
+        separato = componi(conteggi, a)
+        for prima, dopo in zip(insieme.tabelle, separato.tabelle):
+            assert np.array_equal(prima, dopo)
+
+
+def test_i_conteggi_sono_le_frequenze_osservate():
+    """Un conteggio sbagliato passerebbe inosservato dietro il priore."""
+    celle = np.array([0, 0, 1, 1, 1], dtype=np.int64)
+    valori = np.array([2, 2, 0, 3, 3], dtype=np.int64)
+    conteggi = conta([Livello("cella", celle, valori, 2)], N_VALORI)
+    attesa = np.zeros((2, N_VALORI))
+    attesa[0, 2], attesa[1, 0], attesa[1, 3] = 2, 1, 2
+    assert np.array_equal(conteggi.matrici[0], attesa)
+    assert conteggi.campioni == (5,)
 
 
 # --- errori che i dati locali non attraversano -----------------------------------

@@ -67,6 +67,21 @@ def test_ogni_cella_del_livello_e_raggiunta_da_qualche_osservazione(livello):
     assert sorted(set(celle.tolist())) == list(range(c.quante(livello)))
 
 
+def test_i_fattori_in_tipi_stretti_non_traboccano():
+    """Chi chiama conserva i fattori in int8 per risparmiare memoria.
+
+    Senza promozione esplicita ``linea * N_FASCE`` resterebbe a otto bit e darebbe
+    codici di cella sbagliati invece di un errore: un difetto che nessun test sui
+    dati locali troverebbe, perche' dipende solo dal tipo dell'array.
+    """
+    c = _codifica()
+    linea, fascia, giorno, bin_monte = _tutte_le_osservazioni(c)
+    stretti = c.celle(4, linea.astype(np.int8), fascia.astype(np.int8),
+                      giorno.astype(np.int8), bin_monte.astype(np.int8))
+    assert (stretti == c.celle(4, linea, fascia, giorno, bin_monte)).all()
+    assert stretti.dtype == np.int64
+
+
 def test_la_mappa_dei_genitori_e_definita_anche_dove_non_e_passato_nessuno():
     """E' la ragione per cui la mappa si calcola dalla codifica e non dai dati."""
     c = _codifica()
@@ -78,6 +93,15 @@ def test_la_mappa_dei_genitori_e_definita_anche_dove_non_e_passato_nessuno():
     sola = c.celle(4, np.array([5]), np.array([2]), np.array([1]), np.array([3]))
     assert padre[sola][0] == c.celle(3, np.array([5]), np.array([2]),
                                      np.array([1]), np.array([3]))[0]
+
+
+@pytest.mark.parametrize("livello", range(len(LIVELLI)))
+def test_il_bin_si_rilegge_dal_codice_di_cella(livello):
+    """La correlazione implicita ha bisogno del ritardo a monte di ciascuna cella."""
+    c = _codifica()
+    linea, fascia, giorno, bin_monte = _tutte_le_osservazioni(c)
+    celle = c.celle(livello, linea, fascia, giorno, bin_monte)
+    assert (c.bin_di_cella(celle) == bin_monte).all()
 
 
 def test_i_livelli_estremi_non_hanno_genitore_o_non_esistono():

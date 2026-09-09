@@ -159,54 +159,91 @@ def mappa_annidata(codice_figlio: np.ndarray, codice_padre: np.ndarray,
     return mappa
 
 
-def stima(livelli: list[Livello], n_valori: int, alfa: float | list[float]) -> Modello:
-    """Incatena i gradini, ciascuno con priore la stima del precedente.
+@dataclass(frozen=True)
+class Conteggi:
+    """I conteggi per cella di ogni gradino, che non dipendono da ``alfa``.
 
-    ``livelli`` va fornito **ordinato**, dal gradino piu' generale al piu'
-    specifico: l'ultimo e' la tabella che il pianificatore adopera. ``alfa`` puo'
-    essere un solo numero, applicato a tutti i gradini, oppure uno per gradino.
+    Sono separati dalla composizione perche' la taratura prova decine di
+    concentrazioni sugli stessi dati: ricontare a ogni tentativo costerebbe una
+    passata sulle osservazioni per candidato, cioe' ore invece di minuti sul
+    campione vero, e conterebbe ogni volta gli stessi numeri.
     """
+
+    nomi: tuple[str, ...]
+    matrici: tuple[np.ndarray, ...]
+    padri: tuple[np.ndarray | None, ...]
+    n_valori: int
+    campioni: tuple[int, ...]
+
+
+def conta(livelli: list[Livello], n_valori: int) -> Conteggi:
+    """Conta le osservazioni di ciascun gradino, e verifica che la scala regga."""
     if not livelli:
         raise ErroreRete("nessun gradino nella scala")
     if n_valori <= 0:
         raise ErroreRete(f"{n_valori} valori nel supporto della distribuzione")
-    concentrazioni = ([float(alfa)] * len(livelli) if np.ndim(alfa) == 0
-                      else [float(a) for a in alfa])
-    if len(concentrazioni) != len(livelli):
-        raise ErroreRete(f"{len(concentrazioni)} concentrazioni per {len(livelli)} gradini")
-    if any(a <= 0 for a in concentrazioni):
-        raise ErroreRete("la concentrazione del priore deve essere positiva")
     if livelli[0].padre is not None:
         raise ErroreRete("il primo gradino non puo' avere un genitore")
     if any(l.padre is None for l in livelli[1:]):
         raise ErroreRete("ogni gradino dopo il primo deve dichiarare la mappa dei genitori")
 
+    matrici, quante_prima = [], 1
+    for livello in livelli:
+        if livello.padre is not None:
+            _controlla_indici(livello.padre, quante_prima,
+                              f"livello '{livello.nome}': genitore")
+        _controlla_indici(livello.valori, n_valori, f"livello '{livello.nome}': valore")
+        # bincount su un indice appiattito e non add.at: le celle sono molte e quasi
+        # tutte vuote, e add.at su un indice a due dimensioni e' di un ordine di
+        # grandezza piu' lento proprio sui campioni grandi che qui interessano.
+        piatto = livello.celle * n_valori + livello.valori
+        matrici.append(np.bincount(piatto, minlength=livello.quante * n_valori)
+                       .astype(np.float64).reshape(livello.quante, n_valori))
+        quante_prima = livello.quante
+    return Conteggi(
+        nomi=tuple(l.nome for l in livelli),
+        matrici=tuple(matrici),
+        padri=tuple(l.padre for l in livelli),
+        n_valori=n_valori,
+        campioni=tuple(int(l.valori.size) for l in livelli),
+    )
+
+
+def componi(conteggi: Conteggi, alfa: float | list[float]) -> Modello:
+    """Incatena i gradini gia' contati, ciascuno con priore la stima del precedente."""
+    quanti = len(conteggi.matrici)
+    concentrazioni = ([float(alfa)] * quanti if np.ndim(alfa) == 0
+                      else [float(a) for a in alfa])
+    if len(concentrazioni) != quanti:
+        raise ErroreRete(f"{len(concentrazioni)} concentrazioni per {quanti} gradini")
+    if any(a <= 0 for a in concentrazioni):
+        raise ErroreRete("la concentrazione del priore deve essere positiva")
+
     tabelle: list[np.ndarray] = []
     # Il priore della radice e' uniforme: senza alcun gradino a monte non c'e'
     # ragione di preferire un bin a un altro, e dichiararlo esplicitamente evita
     # che il primo gradino debba essere un caso speciale del ciclo.
-    precedente = np.full((1, n_valori), 1.0 / n_valori)
-
-    for livello, concentrazione in zip(livelli, concentrazioni):
-        padre = (np.zeros(livello.quante, dtype=np.int64) if livello.padre is None
-                 else livello.padre)
-        _controlla_indici(padre, precedente.shape[0], f"livello '{livello.nome}': genitore")
-        _controlla_indici(livello.valori, n_valori, f"livello '{livello.nome}': valore")
-        conteggi = np.zeros((livello.quante, n_valori), dtype=np.float64)
-        # add.at e non un istogramma bidimensionale: le celle sono molte e quasi
-        # tutte vuote, e accumulare in posto evita di materializzarne una copia.
-        np.add.at(conteggi, (livello.celle, livello.valori), 1.0)
-        atteso = precedente[padre]
-        totale = conteggi.sum(axis=1, keepdims=True)
-        tabelle.append((conteggi + concentrazione * atteso) / (totale + concentrazione))
+    precedente = np.full((1, conteggi.n_valori), 1.0 / conteggi.n_valori)
+    for matrice, padre, concentrazione in zip(conteggi.matrici, conteggi.padri,
+                                              concentrazioni):
+        atteso = (np.broadcast_to(precedente[0], matrice.shape) if padre is None
+                  else precedente[padre])
+        totale = matrice.sum(axis=1, keepdims=True)
+        tabelle.append((matrice + concentrazione * atteso) / (totale + concentrazione))
         precedente = tabelle[-1]
 
-    return Modello(
-        nomi=tuple(l.nome for l in livelli),
-        tabelle=tuple(tabelle),
-        alfa=tuple(concentrazioni),
-        campioni=tuple(int(l.valori.size) for l in livelli),
-    )
+    return Modello(nomi=conteggi.nomi, tabelle=tuple(tabelle),
+                   alfa=tuple(concentrazioni), campioni=conteggi.campioni)
+
+
+def stima(livelli: list[Livello], n_valori: int, alfa: float | list[float]) -> Modello:
+    """Conta e compone in un colpo solo.
+
+    ``livelli`` va fornito **ordinato**, dal gradino piu' generale al piu'
+    specifico: l'ultimo e' la tabella che il pianificatore adopera. ``alfa`` puo'
+    essere un solo numero, applicato a tutti i gradini, oppure uno per gradino.
+    """
+    return componi(conta(livelli, n_valori), alfa)
 
 
 CANDIDATI = (0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0)
@@ -223,7 +260,7 @@ class Taratura:
 
 
 def tara(
-    livelli: list[Livello],
+    livelli: list[Livello] | Conteggi,
     celle_verifica: np.ndarray,
     valori_verifica: np.ndarray,
     n_valori: int,
@@ -248,21 +285,23 @@ def tara(
         raise ErroreRete("nessun candidato da provare")
     if passate < 1:
         raise ErroreRete(f"{passate} passate di taratura")
+    conteggi = livelli if isinstance(livelli, Conteggi) else conta(livelli, n_valori)
+    quanti = len(conteggi.matrici)
     # Si parte dal candidato mediano: partire da un estremo renderebbe la prima
     # passata una discesa in un solo verso, e la seconda dovrebbe disfarla.
-    corrente = [float(sorted(candidati)[len(candidati) // 2])] * len(livelli)
+    corrente = [float(sorted(candidati)[len(candidati) // 2])] * quanti
     perdita = float("inf")
     traccia: list[tuple[str, float, float]] = []
     for _ in range(passate):
-        for i, livello in enumerate(livelli):
+        for i in range(quanti):
             migliore, perdita = corrente[i], float("inf")
             for a in candidati:
                 prova = list(corrente)
                 prova[i] = a
-                candidata = stima(livelli, n_valori, prova).perdita(
-                    celle_verifica, valori_verifica)
+                candidata = componi(conteggi, prova).perdita(celle_verifica,
+                                                             valori_verifica)
                 if candidata < perdita:
                     migliore, perdita = a, candidata
             corrente[i] = migliore
-            traccia.append((livello.nome, migliore, perdita))
+            traccia.append((conteggi.nomi[i], migliore, perdita))
     return Taratura(tuple(corrente), perdita, tuple(traccia))
