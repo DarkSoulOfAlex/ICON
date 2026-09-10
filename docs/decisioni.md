@@ -2411,11 +2411,13 @@ che sbagliano per costruzione, in versi opposti:
 
 Nessuno dei due sa che cosa serva al pianificatore. Serve **distinguere secondi**,
 dell'ordine di un margine di coincidenza. Si e' misurata quindi anche l'**ampiezza
-confusa**: 1 - la frazione di coppie in cui il ritardo a monte cade dentro lo stesso
-bin del valore atteso a valle, con attesa data dai rappresentanti dei bin (le medie)
-- ristretta alle coppie il cui valore atteso sta nei trenta minuti, che e' l'orizzonte
-del margine di coincidenza. Sono secondi, non bit, e si confrontano con un margine di
-coincidenza invece che con un'altra discretizzazione.
+confusa**: per ciascun bin, la differenza fra il novantanovesimo e l'unesimo
+percentile dei ritardi che vi cadono - i secondi che il modello dichiara quando dice
+solo "bin b" - mediata sui bin con il peso delle loro numerosita', **ristretta** alle
+sole osservazioni fra zero e trenta minuti (0-1800 s), che e' l'orizzonte del margine
+di coincidenza. Sono secondi, non bit, e si confrontano con un margine di coincidenza
+invece che con un'altra discretizzazione. Il calcolo e' in `risoluzione()` con
+`ristretto=(0, 1800)`; la colonna nel CSV e' `ampiezza_confusa_decisione`.
 
 | bordi | guadagno Roma | guadagno Torino | massa nei bin aperti | ampiezza confusa 0-30 min |
 | --- | ---: | ---: | ---: | ---: |
@@ -2429,7 +2431,8 @@ La regola usa il guadagno per **escludere** e i secondi per decidere: un candida
 ammesso se il suo guadagno, in **ciascuna** citta', non dista dal migliore piu' della
 soglia di quella citta'; fra gli ammessi vince quello che confonde meno secondi. Su
 questa corsa solo gli **ottili** superano l'esclusione - misti resta indietro di
-0,096 bit su Roma e 0,097 su Torino, oltre le soglie - e la scelta ricade su di loro
+0,066 bit su Roma (2,0717 contro 2,0061) e di 0,097 bit su Torino (1,5406 contro
+1,4438), oltre le soglie di 0,0040 e 0,0167 - e la scelta ricade su di loro
 senza che i secondi decidano nulla. E' un esito onesto della regola, non una sua
 conferma: con dati diversi la regola potrebbe pronunciare un vincitore diverso, e va
 riletta a ogni riacquisto dei dati.
@@ -2451,6 +2454,35 @@ vecchi bordi. Se un giorno la distribuzione dei ritardi si spostasse, i candidat
 dipendono dai dati si spostano con lei e la scelta si rifa' da sola. La separazione
 fra banco e verifica e' verificabile a mano: le giornate del banco sono `bordo_holdout`
 (ultime due di addestramento) e non compaiono in `stima`.
+
+**Due limiti di questa scelta, dichiarati.** *Il primo riguarda la soglia.* La
+deviazione che la fissa e' calcolata su **due sole giornate di banco**, e vale 0,0040
+bit su Roma e 0,0167 su Torino: e' la variabilita' fra due giorni, non quella del
+regime di verifica, dove la stessa quantita' misurata sulla scala principale vale
++-0,0625 bit. La soglia piccola rende l'esclusione severa: a parita' di dati, la
+scelta non cambia per alcuna soglia fino a 0,066 bit su Roma e 0,097 su Torino, cioe'
+finche' il secondo candidato (misti) resta escluso; oltre quel valore misti rientra in
+gara e i secondi lo scavalcano sugli ottili (309 s contro 701). La severita' e' quindi
+una conseguenza del banco corto, non una proprieta' robusta della regola. *Il secondo
+riguarda il criterio.* Se si normalizza la perdita per l'entropia marginale propria di
+ciascun candidato - il rapporto fra quanto il modello perde e quanto c'e' da perdere
+con quei bordi - gli ottili sono **ultimi ex aequo** su Roma (0,3074 contro 0,2785 del
+`decisione`) e quartultimi su Torino, e il candidato `decisione` confonde **2,4 volte
+meno secondi** (293 s contro 701). La scelta fra guadagno assoluto e perdita relativa
+non e' neutra: e' la stessa domanda aperta che la voce 64 aveva posto sui criteri, e
+rimane aperta. Si rimette alla sola misura che puo' chiuderla, cioe' il confronto fra
+`--bordi ottili` e `--bordi decisione` nel regime in cui la decisione si applica - il
+backtesting della Fase 5, dove la grandezza che conta non e' piu' la perdita sui bin ma
+le coincidenze perse a parita' di tempo nominale. Fino a quella misura questa scelta va
+letta come provvisoria: gli ottili sono i bordi con cui si lavora, non i bordi che il
+metodo ha dimostrato migliori.
+
+**Su quale popolazione stanno i quantili degli ottili.** I candidati che dipendono dai
+dati si calcolano sulla **sola Roma e sulla sola popolazione di stima**, cioe' le
+constatazioni: 458.695 osservazioni su questa corsa, banco escluso. La verifica finale
+percorre anche la popolazione `tutte`, dove l'entropia marginale e' piu' bassa (2,951
+bit contro 2,998) perche' le previsioni si addensano in meno bin: chi legge una perdita
+su `tutte` deve sapere che il tetto di quella colonna non e' lo stesso della principale.
 
 ---
 
@@ -2493,6 +2525,13 @@ correlazione, che sulla popolazione fasulla si contraddicevano - Pearson +0,999 
 tutto contro +0,240 dentro i bordi - ora concordano: **+0,908, +0,936, +0,923,
 +0,879**, con la matrice a +0,907. Una popolazione mal definita si riconosce anche
 cosi', dal fatto che misure che dovrebbero dire quasi la stessa cosa non la dicono.
+
+**La tabella che entra nel documento.** Quella della voce 59 - le sei grandezze
+misurate sui due produttori - e' la tabella di riferimento per questa voce e per il
+paragrafo del documento che descrive Torino: in particolare la sesta riga, "fin dove
+nel passato arriva il feed" (Roma 70.229 s, Torino **4 s**), e' quella che fonda la
+dichiarazione con cui ogni numero torinese va letto, cioe' che li si verifica contro la
+stima del produttore a circa due minuti e non contro un transito osservato.
 
 **Come si potrebbe verificare.** La scelta e' fatta dal codice sui dati, non
 scritta a mano: `Citta.scale` guarda il massimo di `timestamp_feed -
