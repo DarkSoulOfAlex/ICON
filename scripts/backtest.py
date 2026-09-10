@@ -268,6 +268,16 @@ def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
     differenza, altrimenti un vantaggio inesistente e un vantaggio reale ma raro si
     leggono allo stesso modo.
     """
+    # Una riga ripetuta non cambia le medie ma gonfia i conteggi, e soprattutto e'
+    # il sintomo di due esecuzioni che hanno scritto sullo stesso file: si toglie e
+    # si dice, invece di assorbirla in silenzio.
+    identificativo = ["citta", "bordi", "giornata", "coppia", "margine", "strategia"]
+    ripetute = int(tabella.duplicated(subset=identificativo).sum())
+    if ripetute:
+        print(f"  ATTENZIONE: {ripetute:,} righe ripetute sulla stessa chiave, tolte. "
+              f"Di norma significa che due esecuzioni hanno scritto sullo stesso CSV.")
+        tabella = tabella.drop_duplicates(subset=identificativo, keep="first")
+
     chiave = ["citta", "bordi", "giornata", "coppia", "margine"]
     scelte = (tabella.pivot_table(index=chiave, columns="strategia",
                                   values="arrivo_programmato", aggfunc="first")
@@ -337,6 +347,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--coppie", type=int, default=30)
     parser.add_argument("--giorni", type=int, default=0)
     parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG")
+    parser.add_argument("--solo-riepilogo", action="store_true",
+                        help="non rigioca nulla: rilegge results/backtest.csv e "
+                             "ricalcola il riepilogo")
     parser.add_argument("--riprendi", action="store_true",
                         help="riusa le righe gia' in results/backtest.csv e calcola "
                              "solo le combinazioni mancanti")
@@ -357,6 +370,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     # righe prodotte con altri parametri.
     fatte: set[tuple[str, str, str]] = set()
     tutte: list[dict] = []
+    if argomenti.solo_riepilogo:
+        if not dettaglio.is_file():
+            print(f"  {dettaglio} non esiste: nulla da riepilogare")
+            return 1
+        tutte = pd.read_csv(dettaglio).to_dict("records")
+        print(f"  riepilogo da {dettaglio.name}: {len(tutte):,} righe lette")
+        return riferisci(tutte, risultati, dettaglio)
     if argomenti.riprendi and dettaglio.is_file():
         gia = pd.read_csv(dettaglio)
         tutte = gia.to_dict("records")
@@ -448,6 +468,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                   f"ignote, {d['tratte_senza_ritardo_a_monte']:,} tratte senza ritardo "
                   f"a monte su {d['tratte_servite']:,}")
 
+    return riferisci(tutte, risultati, dettaglio)
+
+
+def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path) -> int:
+    """Riepiloga, scrive e stampa.
+
+    Separato dal ciclo che rigioca per poterlo rifare senza ricalcolare nulla: la
+    replica dura decine di minuti, il riepilogo un istante, e sbagliare una colonna
+    del riepilogo non deve costare una corsa intera.
+    """
     if not tutte:
         print("\nnessuna istanza rigiocabile: nessun risultato scritto")
         return 1
@@ -455,7 +485,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     riepilogo = riepiloga(tutte)
     destinazione = risultati / "backtest_riepilogo.csv"
     riepilogo.to_csv(destinazione, index=False)
-    print(f"\nscritto {dettaglio} ({len(tutte)} righe)")
+    # Il dettaglio non si scrive qui: viene aggiunto a ogni giornata conclusa,
+    # perche' un'interruzione non porti via ore di replica. Qui si dice soltanto
+    # quante righe lo compongono, che e' cio' su cui il riepilogo e' calcolato.
+    print(f"\n{dettaglio} contiene {len(tutte)} righe")
     print(f"scritto {destinazione} ({len(riepilogo)} righe)")
 
     print()
