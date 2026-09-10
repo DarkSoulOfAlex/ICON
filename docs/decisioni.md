@@ -2350,73 +2350,107 @@ ribalterebbe da solo.
 
 ### 64. I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno
 
-**Decisione.** I bordi passano da `(-60, 0, 60, 120, 300, 600, 1200)` a
-**`(-308, -145, -42, 0, 66, 179, 504)`**: tre bordi nell'anticipo disposti per
-quantili del solo anticipo, lo zero, tre nel ritardo disposti per quantili del solo
-ritardo. Restano otto bin e restano **gli stessi per le due citta'**, altrimenti le
-loro perdite non sarebbero confrontabili e il paragone della voce 59 perderebbe il
-suo termine di riferimento.
+**Decisione.** I bordi sono scelti dal programma confrontando cinque candidati a otto
+bin su un **banco di prova tenuto fuori dalla stima**, e la scelta ricade sugli
+**ottili**: `(-554, -366, -250, -158, -80, 18, 213)`, i quantili della popolazione di
+addestramento al 12,5%, 25%, ..., 87,5%. Restano **gli stessi per le due citta'**,
+altrimenti le loro perdite non sarebbero confrontabili e il paragone della voce 59
+perderebbe il suo termine di riferimento. La versione precedente di questa voce
+sceglieva i `misti` con una metodologia che aveva tre difetti, elencati piu' sotto: i
+numeri che seguono sono della corsa corretta, del 10 settembre su quindici giornate
+di raccolta (25 agosto - 8 settembre).
 
-**Il difetto che li ha rimessi in discussione.** I bordi vecchi erano stati scelti
-nella Fase 3 sulla popolazione intera, previsioni comprese. La popolazione su cui
-si stima e' invece un'altra, e ha mediana **-139 s** su Roma: piu' della meta' del
-campione cadeva sotto il primo bordo, cioe' dentro il bin zero, che e' aperto verso
-il basso. Misurato: con i bordi vecchi il **65,6%** delle osservazioni romane e il
-**41,6%** delle torinesi finivano in uno dei due bin aperti, dove il modello
-dichiara di non distinguere nulla.
+**Il difetto che li ha rimessi in discussione.** I bordi originari `(-60, 0, 60, 120,
+300, 600, 1200)` erano stati scelti nella Fase 3 sulla popolazione intera, previsioni
+comprese. La popolazione su cui si stima e' un'altra, e ha mediana **-139 s** su
+Roma: piu' della meta' del campione cadeva sotto il primo bordo, dentro il bin zero,
+che e' aperto verso il basso. Misurato: con i bordi vecchi il **62,3%** delle
+osservazioni romane e il **45,7%** delle torinesi finivano in uno dei due bin aperti,
+dove il modello dichiara di non distinguere nulla.
 
-**Alternative considerate.** Quattro insiemi, tutti a otto bin. `attuali`, come
-termine di paragone. `ottili`, i quantili della popolazione di stima, cioe' bin a
-frequenza uguale. `centrati`, la spaziatura degli attuali traslata sulla mediana.
-`misti`, quello scelto.
+**Alternative considerate.** Cinque insiemi a otto bin. `attuali`, i vecchi bordi come
+termine di paragone. `ottili`, i quantili della popolazione di stima. `centrati`, la
+spaziatura degli attuali traslata sulla mediana. `misti`, meta' tagli nell'anticipo e
+meta' nel ritardo, per quantili separati. `decisione`, bordi fissi a valori del
+problema - `-300, -60, 0, 120, 300, 900, 1800`, da cinque minuti di anticipo a
+trenta di ritardo - che non dipendono dai dati e servono da controllo: se un
+insieme ancorato a grandezze del problema non regge il confronto con uno adattivo,
+la struttura della distribuzione conta piu' dei suoi valori.
+
+**I tre difetti della metodologia precedente.** Il primo giro di scelta conteneva
+tre errori di metodo, che sono la ragione per cui i numeri sono cambiati:
+
+1. **La scelta guardava la verifica.** I candidati venivano valutati sulle stesse
+   giornate usate poi per misurare il modello finale: un iperparametro scelto sulla
+   verifica rende la stima dentro campione. Ora le ultime due giornate di
+   addestramento fanno da banco di prova - entrano nella valutazione dei bordi e non
+   nella stima che segue - e la verifica non viene toccata dalla scelta. Con meno di
+   nove giornate il banco collassa sulla verifica: il programma lo segnala, perche'
+   e' una condizione in cui i numeri vanno letti dichiarandola.
+2. **La soglia di indistinguibilita' era presa sul massimo fra i candidati.** La
+   variabilita' di un candidato dipende dai suoi bordi: usare il massimo fra tutti
+   gonfiava o sgonfiava la soglia a seconda di chi capitava in gara. Ora la soglia e'
+   la deviazione fra giornate del **riferimento** `attuali`, per citta': 0,0040 bit
+   su Roma e 0,0167 su Torino, misurata e non fissata.
+3. **I candidati dipendevano dalla popolazione di entrambe le citta'.** Calcolati sul
+   campione congiunto, spostavano gli insiemi al variare della popolazione dell'altra
+   citta', e le perdite non restavano confrontabili. Ora i candidati che dipendono
+   dai dati si calcolano sulla sola prima citta' (Roma), banco escluso: 458.695
+   osservazioni su questa corsa.
 
 **Il punto di metodo, che vale piu' della scelta.** *La perdita fuori campione non
-puo' decidere questa domanda, e nemmeno il guadagno sul marginale.* Sono due
-criteri che sbagliano per costruzione, in versi opposti:
+puo' decidere questa domanda, e nemmeno il guadagno sul marginale.* Sono due criteri
+che sbagliano per costruzione, in versi opposti:
 
 - la **perdita grezza** premia i bordi che ammucchiano massa in pochi bin, perche'
   cosi' l'entropia marginale cala e la perdita con lei, per quanto male il modello
-  lavori. Con i bordi vecchi Roma perde 0,5992 bit contro gli 0,8481 dei nuovi, e
-  sembrerebbe che i vecchi vincano di larga misura;
-- il **guadagno sul marginale**, cioe' quanto il modello aggiunga a chi non sa
-  nulla, corregge quel difetto ma ne introduce uno simmetrico: a numero di bin
-  fisso, i bin a frequenza uguale massimizzano l'entropia marginale e quindi il
-  tetto del guadagno. Sul guadagno vincono infatti gli ottili, 1,898 bit su Roma
-  contro 1,338 dei vecchi, che e' quasi una tautologia.
+  lavori;
+- il **guadagno sul marginale**, cioe' quanto il modello aggiunga a chi non sa nulla,
+  corregge quel difetto ma ne introduce uno simmetrico: a numero di bin fisso, i bin
+  a frequenza uguale massimizzano l'entropia marginale e quindi il tetto del guadagno.
 
 Nessuno dei due sa che cosa serva al pianificatore. Serve **distinguere secondi**,
-dell'ordine di un margine di coincidenza. Si e' misurata quindi anche l'ampiezza
-fra primo e novantanovesimo percentile del ritardo dentro ciascun bin, mediata coi
-pesi delle numerosita': sono secondi, non bit, e si confrontano con un margine di
+dell'ordine di un margine di coincidenza. Si e' misurata quindi anche l'**ampiezza
+confusa**: 1 - la frazione di coppie in cui il ritardo a monte cade dentro lo stesso
+bin del valore atteso a valle, con attesa data dai rappresentanti dei bin (le medie)
+- ristretta alle coppie il cui valore atteso sta nei trenta minuti, che e' l'orizzonte
+del margine di coincidenza. Sono secondi, non bit, e si confrontano con un margine di
 coincidenza invece che con un'altra discretizzazione.
 
-| bordi | guadagno Roma | guadagno Torino | massa nei bin aperti | ampiezza confusa |
+| bordi | guadagno Roma | guadagno Torino | massa nei bin aperti | ampiezza confusa 0-30 min |
 | --- | ---: | ---: | ---: | ---: |
-| attuali | 1,338 | 1,289 | 65,6% / 41,6% | 1.241 s / 334 s |
-| ottili | **1,898** | **1,579** | 40,7% / 21,7% | 1.540 s / 374 s |
-| centrati | 1,856 | 1,184 | 21,8% / 3,6% | 14.257 s / 301 s |
-| misti | 1,879 | 1,569 | 35,5% / **10,5%** | **1.053 s** / **223 s** |
+| attuali | 1,407 | 1,227 | 62,3% / 45,7% | 201 s / 122 s |
+| ottili | **2,072** | **1,541** | 23,4% / 8,1% | 701 s / 368 s |
+| centrati | 1,793 | 1,078 | 15,5% / 2,4% | 417 s / 275 s |
+| misti | 2,006 | 1,444 | 17,2% / 3,2% | 309 s / 201 s |
+| decisione | 1,787 | 1,338 | 28,2% / 9,9% | 293 s / 184 s |
 
-La regola con cui si e' scelto usa il guadagno per **escludere** e i secondi per
-decidere: fra i candidati che perdono in guadagno meno della variabilita' fra
-giornate - 0,0606 bit, misurata e non fissata - vince quello che confonde meno
-secondi. Ottili e misti sono indistinguibili sul guadagno, distano 0,010 bit; sui
-secondi misti confonde 1.053 s contro 1.540 s su Roma e 223 s contro 374 s su
-Torino.
+La regola usa il guadagno per **escludere** e i secondi per decidere: un candidato e'
+ammesso se il suo guadagno, in **ciascuna** citta', non dista dal migliore piu' della
+soglia di quella citta'; fra gli ammessi vince quello che confonde meno secondi. Su
+questa corsa solo gli **ottili** superano l'esclusione - misti resta indietro di
+0,096 bit su Roma e 0,097 su Torino, oltre le soglie - e la scelta ricade su di loro
+senza che i secondi decidano nulla. E' un esito onesto della regola, non una sua
+conferma: con dati diversi la regola potrebbe pronunciare un vincitore diverso, e va
+riletta a ogni riacquisto dei dati.
 
-**Perche' i quantili puri erano da scartare anche senza misurare i secondi.** Gli
-ottili di Roma cadono tutti nell'anticipo: `-372, -236, -151, -85, -30, 23, 122`.
-Sopra i due minuti di ritardo c'e' un unico bin aperto. Il modello risolverebbe
-finemente di quanto un mezzo sia in anticipo e per niente di quanto sia in ritardo
-- ma la domanda a cui serve e' `P(arrivo <= T)`, che e' sensibile **solo** al lato
-del ritardo. Un mezzo in anticipo di tre minuti o di dieci fa perdere la stessa
-quantita' di coincidenze, cioe' nessuna. I quantili seguono la massa; la massa e'
-nell'anticipo; la decisione no.
+**Perche' gli ottili hanno vinto stavolta.** Il guadagno li premia per costruzione -
+bin a frequenza uguale massimizzano il tetto - ma i loro numeri su questa corsa sono
+forti anche dove la tautologia non arriva: la massa nei bin aperti scende al 23,4% e
+all'8,1%, contro il 62,3% e il 45,7% degli attuali. Il difetto noto degli ottili -
+tutti i tagli nell'anticipo, un solo bin aperto sopra i due minuti di ritardo - qui
+non si presenta nella forma estrema di prima: l'ultimo bordo e' a +213 s, e il lato
+del ritardo, quello a cui `P(arrivo <= T)` e' sensibile, ha tre bin risolti. Va pero'
+dichiarato che i loro quantili sono calcolati sulla sola Roma, la cui distribuzione
+ha una coda di anticipo molto piu' lunga di Torino: su Torino gli ottili romani
+producono comunque il guadagno migliore fra i candidati, 1,541 bit.
 
 **Come si potrebbe verificare.** `python scripts/stima_rete.py --bordi misura`
 ricalcola la tabella e ripronuncia la scelta; `--bordi attuali` rifa' la stima coi
-vecchi. Se un giorno la distribuzione dei ritardi si spostasse, i candidati che
-dipendono dai dati si spostano con lei e la scelta si rifa' da sola.
+vecchi bordi. Se un giorno la distribuzione dei ritardi si spostasse, i candidati che
+dipendono dai dati si spostano con lei e la scelta si rifa' da sola. La separazione
+fra banco e verifica e' verificabile a mano: le giornate del banco sono `bordo_holdout`
+(ultime due di addestramento) e non compaiono in `stima`.
 
 ---
 
@@ -2466,3 +2500,38 @@ orario_programmato` e passa a una sola dimensione sotto la soglia. Se il produtt
 torinese cominciasse a pubblicare le fermate passate, la scala tornerebbe a due
 dimensioni da sola. `--scala due-dimensioni` forza il comportamento precedente, per
 riprodurre i numeri anteriori a questa voce.
+
+---
+
+### 66. I candidati di bordi si calcolano su una citta' sola, e la finestra si fissa
+
+**Decisione.** Due scelte di contorno alla scelta dei bordi, entrambe di
+separazione. La prima: i candidati che dipendono dai dati (`ottili`, `centrati`,
+`misti`) si calcolano sul campione della **sola Roma**, banco di prova escluso - non
+sul campione congiunto delle due citta'. La seconda: l'etichetta della finestra di
+stima, la data da passare a `--fino-a`, la stampa un programma
+(`scripts/etichetta_finestra.py`) che restituisce l'ultima giornata disponibile per
+**tutte** le citta', non la piu' recente in assoluto.
+
+**Alternative considerate.** Per i candidati: il campione congiunto, cioe' come si era
+fatto nel primo giro; oppure calcolarli citta' per citta', con bordi diversi. Per la
+finestra: lasciare che l'esecuzione prenda sempre l'ultimo giorno disponibile.
+
+**Motivo.** Il campione congiunto rendeva gli insiemi candidati dipendenti dalla
+popolazione di entrambe le citta': ricalcolare con una popolazione diversa spostava i
+bordi e rompeva la confrontabilita' delle perdite fra due esecuzioni, che e' cio' su
+cui poggia il paragone della voce 59. Calcolarli citta' per citta' avrebbe dato bordi
+diversi alle due citta', ed e' esattamente cio' che la voce 64 vieta. La prima citta'
+(Roma) e' quella con la popolazione di stima piu' ampia e meglio definita: usarla
+come riferimento rende i candidati stabili al variare dell'altra. Sulla finestra: la
+raccolta continua mentre si misura, e due esecuzioni a distanza di giorni cadono su
+giornate diverse; senza un'etichetta fissa un confronto fra due giri attribuirebbe
+alla correzione metodologica uno spostamento che e' solo un giorno nuovo. Prendere
+l'ultima giornata disponibile per tutte evita anche il caso in cui una citta' abbia
+un giorno in piu' a meta': la finestra comune e' `min` delle ultime giornate.
+
+**Come si potrebbe verificare.** Due esecuzioni dello stesso script con lo stesso
+`--fino-a` devono produrre insiemi candidati identici; due senza, su finestre diverse,
+devono produrne di diversi (e la differenza va attribuita alla finestra, non al
+metodo). `scripts/etichetta_finestra.py` si confronta a mano con `ls
+data/processed/osservazioni/*`.
