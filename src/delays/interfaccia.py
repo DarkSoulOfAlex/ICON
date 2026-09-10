@@ -66,6 +66,13 @@ class Tratta:
     """Istante POSIX dell'arrivo programmato."""
     ritardo_a_monte: int | None = None
     """Ritardo osservato all'ultima fermata gia' servita, se noto."""
+    sequenza_a_monte: int | None = None
+    """Posizione (stop_sequence) dell'ultima fermata gia' servita, se nota.
+
+    Retrocompatibile: aggiunto dopo `ritardo_a_monte` con valore predefinito `None`.
+    Interfaccia congelata e riaperta dalla Fase 5 per il backtesting, dove il modello
+    sa a che punto della corsa si trova e puo' usare la posizione come contesto.
+    """
 
 
 class Distribuzione(ABC):

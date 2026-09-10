@@ -274,3 +274,19 @@ def test_il_pianificatore_robusto_sceglie_il_massimo() -> None:
 def test_senza_candidati_il_pianificatore_lo_dice() -> None:
     with pytest.raises(ErrorePianificatore, match="nessun itinerario"):
         pianifica_robusto([], ModelloSintetico(), BASE + 3600)
+
+
+def test_tratta_riceve_sequenza_a_monte_in_coda() -> None:
+    """Il campo e' retrocompatibile: il costruttore vecchio funziona ancora."""
+    t = Tratta("roma", "L1", "T1", "S1", 10, BASE)
+    assert t.sequenza_a_monte is None
+    t2 = Tratta("roma", "L1", "T1", "S1", 10, BASE, ritardo_a_monte=120,
+                sequenza_a_monte=8)
+    assert t2.sequenza_a_monte == 8
+
+
+def test_tratta_e_immutable_con_sequenza_a_monte() -> None:
+    """Frozen=True: non si possono modificare i campi."""
+    t = Tratta("roma", "L1", "T1", "S1", 10, BASE, sequenza_a_monte=5)
+    with pytest.raises(Exception):
+        t.sequenza_a_monte = 6

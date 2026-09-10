@@ -2484,6 +2484,36 @@ percorre anche la popolazione `tutte`, dove l'entropia marginale e' piu' bassa (
 bit contro 2,998) perche' le previsioni si addensano in meno bin: chi legge una perdita
 su `tutte` deve sapere che il tetto di quella colonna non e' lo stesso della principale.
 
+**Glossario colonne `results/stima_rete.csv`.** Una riga per colonna, popolazione e
+confrontabilita':
+
+- `perdita`: perdita media fuori campione (bit) sulla popolazione di verifica usata per
+  la stima (Roma: constatazioni, Torino: tutte). Confrontabile fra scale diverse della
+  stessa citta'.
+- `perdita_previsioni`: perdita sulla popolazione complementare a quella di stima (Roma:
+  previsioni, Torino: non esiste). Serve come secondo campione out-of-sample, non e' la
+  perdita principale.
+- `raffronto_tutte_perdita`: perdita su **tutte le coppie** di verifica (Roma:
+  constatazioni+previsioni insieme). E' la riga di raffronto per il paragone con Torino,
+  che non ha due popolazioni.
+- `guadagno`: `entropia_marginale - perdita`. Grandezza confrontabile fra bordi diversi.
+- `entropia_marginale`: entropia del modello che ignora tutto (nessun contesto, nessun
+  ritardo a monte). Tetto della perdita, dipende dai bordi.
+- `coppie_stima`: numero di coppie usate per stimare la matrice con i bordi dati.
+  Dipende dalla popolazione di stima e dalla finestra addestramento+taratura.
+- `scarto_calibrazione`: scarto medio fra perdita prevista e perdita osservata per
+  giornata di verifica. Misura la calibrazione del modello.
+- `correlazione_implicita`: correlazione implicita nella matrice di transizione stimata.
+  Si confronta con la correlazione 0,70 della Fase 4.
+
+**Numeri superati da non riusare.** Questi numeri appartengono a esecuzioni precedenti
+con metodologia o dati diversi e vanno scartati dal documento:
+
+- `0,6171`: perdita precedente ai bordi rifatti (voce 64 prima correzione).
+- `0,0012`: deviazione precedente alla separazione banco/verifica.
+- `Pearson +0,885`: correlazione precedente alla correzione della popolazione torinese
+  (voce 63).
+
 ---
 
 ### 65. Su Torino il dato non e' un ritardo osservato, ed e' un solo dato
