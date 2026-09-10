@@ -108,6 +108,16 @@ SCALE_POPOLAZIONE_UNICA: dict[str, tuple[tuple[int, str], ...]] = {
 }
 SCALA_UNICA = "popolazione unica"
 
+RISTRETTO_DECISIONE = (0.0, 1800.0)
+"""L'intervallo di ritardo in cui la scelta dell'itinerario si decide davvero.
+
+Da zero a trenta minuti: i margini provati nella Fase 4 arrivano a trenta, e il
+guadagno del pianificatore ha il suo massimo fra quindici e venti. Sotto zero la
+coincidenza non e' mai in pericolo; oltre mezz'ora l'itinerario l'ha gia' persa
+qualsiasi cosa il modello dica. E' qui, e non sulla coda intera, che va pesata
+l'ampiezza confusa: vedi risoluzione.
+"""
+
 CORRELAZIONE_SINTETICA = 0.7
 """Il valore usato nella Fase 4, scelto per buon senso e dichiarato sintetico."""
 
@@ -281,6 +291,11 @@ def bordi_candidati(secondi: np.ndarray,
     - ``centrati``: la stessa spaziatura degli attuali, traslata sulla mediana della
       popolazione di stima invece che sullo zero dell'orario teorico. Verifica se il
       difetto degli attuali sia di sola posizione.
+    - ``misti``: meta' dei tagli nell'anticipo e meta' nel ritardo, per quantili
+      dentro ciascun lato. I percentili (25/55/85 sotto, 40/70/90 sopra) sono una
+      scelta dichiarata, non il risultato di una ricerca: la voce 64 riporta che il
+      confronto non dipende da loro entro la variabilita' misurata.
+    - ``decisione``: costruito dal problema e non dai dati, vedi il commento sotto.
     """
     finiti = secondi[np.isfinite(secondi)]
     if finiti.size == 0:
@@ -307,11 +322,21 @@ def bordi_candidati(secondi: np.ndarray,
         sotto = np.percentile(negativi, [25.0, 55.0, 85.0])
         sopra = np.percentile(positivi, [40.0, 70.0, 90.0])
         misti = tuple(float(round(v)) for v in (*sotto, 0.0, *sopra))
+    # Il quinto candidato non viene dai dati: viene dal **problema**. I misti
+    # tagliano il ritardo a 504 s, e sopra resta un bin solo con rappresentante di
+    # quasi milleseicento secondi: il modello non distingue dieci minuti da
+    # quaranta, che per un pianificatore con quindici minuti di margine sono la
+    # decisione opposta. Tre tagli sul ritardo presi dai margini misurati nella
+    # Fase 4 - cinque, quindici e trenta minuti -, due soli sull'anticipo, che non
+    # decide nulla. Sono numeri del problema, non quantili: nessuna scelta a occhio
+    # su una distribuzione da inseguire.
+    decisione = (-300.0, -60.0, 0.0, 120.0, 300.0, 900.0, 1800.0)
     return {
         "attuali": BORDI_OTTO,
         "ottili": ottili,
         "centrati": centrati,
         **({"misti": misti} if misti else {}),
+        "decisione": decisione,
     }
 
 
@@ -337,7 +362,9 @@ def massa_nei_bin_aperti(valori: np.ndarray, n_bin: int) -> float:
     return float(np.mean((valori == 0) | (valori == n_bin - 1)))
 
 
-def risoluzione(secondi: np.ndarray, valori: np.ndarray, n_bin: int) -> tuple[float, float]:
+def risoluzione(secondi: np.ndarray, valori: np.ndarray, n_bin: int,
+                 ristretto: tuple[float, float] | None = None
+                 ) -> tuple[float, float]:
     """Quanti secondi il modello confonde: dentro i bin aperti, e in media su tutti.
 
     E' la misura che decide, e le altre due non possono farlo. La perdita grezza
@@ -353,9 +380,21 @@ def risoluzione(secondi: np.ndarray, valori: np.ndarray, n_bin: int) -> tuple[fl
     modello dichiara di non distinguere nulla - e la stessa ampiezza mediata su
     tutti i bin, pesata per quanti vi cadono. Sono secondi, non bit, e si confrontano
     col margine di coincidenza invece che con un'altra discretizzazione.
+
+    ``ristretto`` a una coppia di estremi ricalcola le due cifre **solo sulle
+    osservazioni dentro quell'intervallo**. Serve perche' la media su tutto il
+    campione e' dominata dalla coda: un bordo che lascia in un bin solo i ritardi
+    fra dieci minuti e sedici ore risulta poco penalizzato se quelle ore sono rare,
+    ma sopra i tre minuti il modello non distingue piu' nulla - e li' vive la
+    decisione del pianificatore.
     """
     if secondi.size == 0:
         return float("nan"), float("nan")
+    if ristretto is not None:
+        sel = (secondi >= ristretto[0]) & (secondi <= ristretto[1])
+        secondi, valori = secondi[sel], valori[sel]
+        if secondi.size == 0:
+            return float("nan"), float("nan")
     ampiezze, pesi = {}, {}
     for b in range(n_bin):
         sel = valori == b
@@ -485,7 +524,8 @@ def _spearman(x: np.ndarray, y: np.ndarray) -> float:
     return float(spearmanr(x, y).statistic)
 
 
-def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray) -> dict[str, float]:
+def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray,
+                           bordi: tuple[float, ...] = BORDI_OTTO) -> dict[str, float]:
     """Le letture della dipendenza fra i ritardi in secondi, in un quadrato due per due.
 
     Una sola lettura non basta, e la ragione e' emersa dai dati: sul primo giro
@@ -501,6 +541,10 @@ def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray) -> dict[s
     ciascuno su tutto e ciascuno dentro l'intervallo che i bin risolvono, piu' la
     quota di coppie in cui i due ritardi sono **identici al secondo**, che distingue
     una dipendenza da una copia.
+
+    ``bordi`` sono quelli **scelti**, non BORDI_OTTO: "dentro i bordi" ha senso solo
+    relative alla discretizzazione del modello che si sta giudicando, e con i bordi
+    sbagliati la colonna di destra misurerebbe un intervallo che il modello non usa.
     """
     vuoto = dict.fromkeys(("pearson", "pearson_dentro", "spearman", "spearman_dentro",
                            "identiche", "quota_dentro"), float("nan"))
@@ -511,8 +555,8 @@ def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray) -> dict[s
     # L'intervallo risolto dai bin: oltre il primo e l'ultimo bordo la matrice non
     # distingue piu' nulla, quindi li' ogni correlazione misura cio' che il modello
     # per costruzione ignora.
-    dentro = ((x >= BORDI_OTTO[0]) & (x <= BORDI_OTTO[-1])
-              & (y >= BORDI_OTTO[0]) & (y <= BORDI_OTTO[-1]))
+    dentro = ((x >= bordi[0]) & (x <= bordi[-1])
+              & (y >= bordi[0]) & (y <= bordi[-1]))
     xd, yd = x[dentro], y[dentro]
     return {
         "pearson": _pearson(x, y), "pearson_dentro": _pearson(xd, yd),
@@ -567,7 +611,8 @@ def correlazione_matrice(modello, gradini: tuple[tuple[int, str], ...], c: Codif
 def confronto_sulla_correlazione(modello, gradini: tuple[tuple[int, str], ...],
                                  c: Codifica, dati: dict[str, np.ndarray],
                                  giornate: Sequence[int], rappresentanti: np.ndarray,
-                                 citta: str, popolazione: str) -> list[dict]:
+                                 citta: str, popolazione: str,
+                                 bordi: tuple[float, ...] = BORDI_OTTO) -> list[dict]:
     """La correlazione per citta' e per fascia oraria, con media e scarto sui giorni.
 
     Il confronto richiesto ha tre termini e non due: il valore empirico sui
@@ -587,24 +632,40 @@ def confronto_sulla_correlazione(modello, gradini: tuple[tuple[int, str], ...],
     for fascia in [None] + list(range(N_FASCE)):
         raccolta: dict[str, list[float]] = {k: [] for k in chiavi}
         implicite, coppie = [], 0
+        tutte: dict[str, list[float]] = {k: [] for k in chiavi}
         for g in giornate:
             m = (dati["giornata"] == g) & maschera_popolazione(dati, popolazione)
             if fascia is not None:
                 m = m & (dati["fascia"] == fascia)
             if int(m.sum()) < 100:
                 continue
-            letture = correlazioni_empiriche(dati, m)
+            letture = correlazioni_empiriche(dati, m, bordi)
             for k in chiavi:
                 raccolta[k].append(letture[k])
             implicite.append(correlazione_matrice(modello, gradini, c, dati, m,
                                                   rappresentanti))
             coppie += int(m.sum())
+            if popolazione != U:
+                # Riga di raffronto sulla popolazione "tutte" della stessa citta':
+                # le perdite fra Roma e Torino non sono a confronto se ciascuna sta
+                # su una domanda diversa (voce 59). Le colonne "raffronto_" danno la
+                # lettura omogenea, senza sostituire quella principale.
+                mt = (dati["giornata"] == g) & maschera_popolazione(dati, U)
+                if fascia is not None:
+                    mt = mt & (dati["fascia"] == fascia)
+                if int(mt.sum()) >= 100:
+                    letture_t = correlazioni_empiriche(dati, mt, bordi)
+                    for k in chiavi:
+                        tutte[k].append(letture_t[k])
         if not implicite:
             continue
         riga = {"citta": citta, "fascia": "tutte" if fascia is None else str(fascia),
                 "giornate": len(implicite), "coppie": coppie}
         for k in chiavi:
             riga[k], riga[f"deviazione_{k}"] = media_e_scarto(raccolta[k])
+            if tutte[k]:
+                riga[f"raffronto_tutte_{k}"], riga[f"raffronto_tutte_dev_{k}"] = \
+                    media_e_scarto(tutte[k])
         riga["correlazione_matrice"], riga["deviazione_matrice"] = media_e_scarto(implicite)
         riga["sintetica"] = CORRELAZIONE_SINTETICA
         riga["scarto_spearman_sintetica"] = riga["spearman"] - CORRELAZIONE_SINTETICA
@@ -641,6 +702,14 @@ class Citta:
     constatazioni_reali: bool
     massimo_feed_meno_programmato: float
     salti_di_giorno: list[tuple[str, int, int]]
+    quantificate_giorni: bool = True
+    """Se la divisione in addestramento/taratura/verifica e' quella progettata.
+
+    False quando le giornate sono troppe poche e taratura e verifica coincidono:
+    in quel caso anche il banco di prova dei bordi coincide con la verifica, e la
+    scelta dei bordi torna a toccare il test - una condizione da dichiarare, non da
+    silently subire.
+    """
     forza_due_dimensioni: bool = False
     """Tiene la scala a due dimensioni anche dove le constatazioni non esistono.
 
@@ -653,6 +722,25 @@ class Citta:
     def codifica(self, n_bin: int) -> Codifica:
         return Codifica(tipo_di_linea=self.tipo_di_linea, n_tipi=self.n_tipi,
                         n_bin=n_bin)
+
+    @property
+    def bordo_holdout(self) -> list[int]:
+        """Le giornate su cui la scelta dei bordi viene misurata, e mai stimata.
+
+        Le ultime due di addestramento. I bordi sono un iperparametro come alfa:
+        sceglierli sulla verifica renderebbe la stima finale dentro campione. Il
+        prezzo e' che il modello finale perde due giorni di dati, e chi sceglie sui
+        bordi lo paga in numeri - ma la scelta tocca una tabella sola, mentre la
+        verifica tocca tutti i risultati che seguono.
+
+        Con meno di nove giornate l'addestramento ha al massimo un giorno oltre il
+        banco di prova: la separazione collassa e il banco coincide con la verifica.
+        Lo si segnala qui e lo si stampa, perche' e' una condizione in cui i numeri
+        della scelta vanno letti dichiarandola, non una configurazione silenziosa.
+        """
+        if len(self.addestramento) >= 2:
+            return self.addestramento[-2:]
+        return self.verifica
 
     @property
     def scale(self) -> dict[str, tuple[tuple[int, str], ...]]:
@@ -766,6 +854,7 @@ def carica(citta: str, cartella: Path, cartella_gtfs: Path, quanti_giorni: int,
         addestramento=addestramento, taratura=taratura, verifica=verifica,
         constatazioni_reali=bool(reali), massimo_feed_meno_programmato=float(massimo),
         salti_di_giorno=grezzi_dati.salti_di_giorno,
+        quantificate_giorni=len(addestramento) >= 2 and bool(taratura),
     )
 
 
@@ -790,6 +879,21 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     non distingue fra tre minuti di anticipo e ventiquattro ore. E' il costo che
     nessuna delle due perdite vede, perche' concentrare massa in un bin aperto rende
     il valore piu' prevedibile e il modello meno utile insieme.
+
+    **La scelta dei bordi non tocca la verifica.** I bordi sono un iperparametro
+    esattamente come alfa, e alfa si tara sulla taratura: valutarli anche sulle
+    giornate di verifica renderebbe la selezione dentro campione e toglierebbe alla
+    stima finale il suo test fuori campione. Le ultime due giornate di addestramento
+    fanno da banco di prova dei bordi; la stima che le segue le usa come dati, come
+    fa con tutte le altre. In questa fase alfa e' tarato sulle stesse giornate della
+    valutazione: una lettura assoluta ottimistica per tutti i candidati in igual
+    modo, mentre il **confronto** fra loro resta equo - cosa da dichiarare, ed e'
+    dichiarata qui e nella voce 64.
+
+    **La soglia di indistinguibilita' viene dal candidato di riferimento**, non dal
+    massimo su chi e' in gara: ``attuali`` e' lo stato dell'arte precedente, la sua
+    variabilita' fra giornate e' una grandezza fissata prima di guardare gli altri
+    candidati, e aggiungere un candidato pessimo non puo' allargarla.
     """
     print()
     print("=" * 78)
@@ -798,8 +902,19 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     for nome, bordi in candidati.items():
         print(f"  {nome:<10}: " + ", ".join(f"{b:.0f}" for b in bordi))
     print()
+    print("  Le ultime due giornate di addestramento fanno da banco di prova e non")
+    print("  entrano nella stima che segue; la verifica non viene toccata dalla")
+    print("  scelta. In questa fase alfa e' tarato sulle stesse giornate della")
+    print("  valutazione: assoluto ottimistico per tutti, confronto equo.")
+    for c in citta:
+        if not c.quantificate_giorni:
+            print(f"  ATTENZIONE [{c.nome}]: poche giornate, il banco di prova coincide")
+            print("             con la verifica: la scelta dei bordi la tocca, e i suoi")
+            print("             numeri vanno letti dichiarando questa condizione.")
+    print()
     print(f"  {'bordi':<10} {'citta':<8} {'marginale':>10} {'perdita':>16} "
-          f"{'guadagno':>12} {'aperti':>8} {'ampiezza aperti':>16} {'media':>9}")
+          f"{'guadagno':>12} {'aperti':>8} {'ampiezza aperti':>16} {'media':>9} "
+          f"{'confusa 0-30min':>14}")
 
     righe: list[dict] = []
     for nome, bordi in candidati.items():
@@ -809,32 +924,43 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
             cod = c.codifica(n_bin)
             popolazione = popolazione_di_stima(c)
             scala = SCALA_PRINCIPALE if popolazione == C else SCALA_UNICA
+            gradini = c.scale[scala]
             in_addestramento = np.isin(dati["giornata"], c.addestramento)
-            in_stima = in_addestramento | np.isin(dati["giornata"], c.taratura)
+            # Il banco di prova dei bordi: le ultime due giornate di addestramento,
+            # che la stima successiva usera' come dati come tutte le altre. Con
+            # meno di due giornate di margine la separazione non esiste, e lo si
+            # dichiara invece di scegliere silenziosamente sulla verifica.
+            banco = c.bordo_holdout
+            se_banco = np.isin(dati["giornata"], banco)
+            in_stima = (in_addestramento & ~se_banco) | np.isin(dati["giornata"],
+                                                                c.taratura)
             m_taratura = np.isin(dati["giornata"], c.taratura) & maschera_popolazione(
                 dati, popolazione)
-            gradini = c.scale[scala]
-            esito = tara(costruisci_scala(scala, gradini, cod, dati, in_addestramento),
+            m_banco = se_banco & maschera_popolazione(dati, popolazione)
+            esito = tara(costruisci_scala(scala, gradini, cod, dati,
+                                          in_addestramento & ~se_banco),
                          celle_finali(gradini, cod, dati, m_taratura),
                          dati["valore"][m_taratura].astype(np.int64), n_bin, passate=2)
             modello = stima(costruisci_scala(scala, gradini, cod, dati, in_stima),
                             n_bin, list(esito.alfa))
-            perdite = perdite_per_giornata(modello, gradini, cod, dati, c.verifica,
+            perdite = perdite_per_giornata(modello, gradini, cod, dati, banco,
                                            popolazione)
-            m_verifica = np.isin(dati["giornata"], c.verifica) & maschera_popolazione(
-                dati, popolazione)
             marginale = entropia_marginale(dati["valore"][in_stima & maschera_popolazione(
-                dati, popolazione)], dati["valore"][m_verifica], n_bin)
+                dati, popolazione)], dati["valore"][m_banco], n_bin)
             perdita = float(np.mean(perdite)) if perdite else float("nan")
             scarto = (float(np.std(perdite, ddof=1)) if len(perdite) > 1 else 0.0)
-            aperti = massa_nei_bin_aperti(dati["valore"][m_verifica], n_bin)
+            aperti = massa_nei_bin_aperti(dati["valore"][m_banco], n_bin)
             ampiezza, media_ampiezza = risoluzione(
-                dati["secondi_valle"][m_verifica].astype(np.float64),
-                dati["valore"][m_verifica], n_bin)
+                dati["secondi_valle"][m_banco].astype(np.float64),
+                dati["valore"][m_banco], n_bin)
+            _, confusa_dec = risoluzione(
+                dati["secondi_valle"][m_banco].astype(np.float64),
+                dati["valore"][m_banco], n_bin, ristretto=RISTRETTO_DECISIONE)
             print(f"  {nome:<10} {c.nome:<8} {marginale:>10.4f} "
                   f"{perdita:>8.4f} +/-{scarto:<5.4f} "
                   f"{marginale - perdita:>8.4f} bit {aperti:>7.1%} "
-                  f"{ampiezza:>12,.0f} s {media_ampiezza:>7,.0f} s")
+                  f"{ampiezza:>12,.0f} s {media_ampiezza:>7,.0f} s "
+                  f"{confusa_dec:>11,.0f} s")
             righe.append({
                 "bordi": nome, "citta": c.nome,
                 "estremi": " ".join(f"{b:.0f}" for b in bordi),
@@ -843,6 +969,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
                 "massa_nei_bin_aperti": aperti,
                 "ampiezza_nei_bin_aperti": ampiezza,
                 "ampiezza_media_pesata": media_ampiezza,
+                "ampiezza_confusa_decisione": confusa_dec,
                 "giornate": len(perdite),
             })
 
@@ -862,15 +989,34 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     # guadagno per **escludere**, non per scegliere: i candidati che ne perdono meno
     # della variabilita' fra giornate sono indistinguibili, e fra loro decide quanti
     # secondi il modello confonde, che e' la grandezza che il pianificatore sente.
-    indistinguibile = float(tavola["deviazione_perdita"].max())
+    riferimento = tavola[tavola["bordi"] == "attuali"]
+    if riferimento.empty:
+        print("  ATTENZIONE: candidato di riferimento 'attuali' assente, la soglia di")
+        print("  indistinguibilita' ricade sul massimo fra i candidati in gara.")
+        soglie = {str(ri.citta): float(tavola["deviazione_perdita"].max())
+                  for ri in tavola[["citta"]].drop_duplicates().itertuples()}
+    else:
+        # La deviazione fra giornate del candidato di riferimento, per citta': i
+        # bordi sono gli stessi per entrambe, e ciascuna porta la sua variabilita'.
+        soglie = {str(ri.citta): float(ri.deviazione_perdita)
+                  for ri in riferimento[["citta", "deviazione_perdita"]].itertuples()}
     migliore = float(per_bordi.max())
-    ammessi = [str(k) for k, v in per_bordi.items() if v >= migliore - indistinguibile]
+    per_citta = {b: dict(zip(g["citta"], g["guadagno"]))
+                 for b, g in tavola.groupby("bordi")}
+    # Un candidato e' ammesso se il suo guadagno, in **ciascuna** citta', non dista
+    # dal migliore piu' della soglia di quella citta': i bordi valgono per entrambe,
+    # e una bocciatura anche su una sola esclude.
+    ammessi = [b for b in per_bordi.index
+               if all(per_citta[b][c] >= migliore - soglie[c] for c in soglie)]
+    print("  soglia di indistinguibilita' per citta' (deviazione fra giornate del "
+          "riferimento 'attuali'): "
+          + " | ".join(f"{c} {s:.4f}" for c, s in sorted(soglie.items())))
     ampiezza = (tavola[tavola["bordi"].isin(ammessi)]
-                .groupby("bordi")["ampiezza_media_pesata"].max())
+                .groupby("bordi")["ampiezza_confusa_decisione"].max())
     scelti = str(ampiezza.idxmin())
-    print(f"  indistinguibili sul guadagno (entro {indistinguibile:.4f} bit, la "
-          f"variabilita' fra giornate): {', '.join(sorted(ammessi))}")
-    print("  ampiezza media confusa, la peggiore fra le citta': "
+    print(f"  indistinguibili sul guadagno: {', '.join(sorted(ammessi))}")
+    print("  ampiezza confusa nei 0-30 min, la peggiore fra le citta' (e' la "
+          "grandezza che decide): "
           + " | ".join(f"{k} {v:,.0f} s" for k, v in ampiezza.items()))
     print(f"  SCELTA: {scelti}")
     print("  Si puo' imporre un insieme diverso con --bordi.")
@@ -899,6 +1045,14 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
     in_addestramento = np.isin(dati["giornata"], c.addestramento)
     m_taratura = np.isin(dati["giornata"], c.taratura) & maschera_popolazione(
         dati, popolazione)
+    # Righe di **raffronto**, non risultati: valutare la stima anche sulla
+    # popolazione "tutte" serve a rendere confrontabili le perdite delle due citta',
+    # che altrimenti non stanno nella stessa domanda - Roma stima sulle
+    # constatazioni, Torino su tutto quello che il feed pubblica (voce 59). La riga
+    # di Roma qui prodotta e' quella di raffronto; la principale resta quella sulla
+    # sua popolazione.
+    m_verifica_tutte = np.isin(dati["giornata"], c.verifica) & maschera_popolazione(
+        dati, U)
     rappresentanti = valori_rappresentativi(dati, n_bin)
     print(f"  [{citta}] ritardo medio per bin (s): "
           + ", ".join(f"{v:.0f}" for v in rappresentanti))
@@ -944,6 +1098,32 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
             dati["valore"][in_stima & maschera_popolazione(dati, popolazione)],
             dati["valore"][m_verifica], n_bin)
         media = float(np.mean(principale)) if principale else float("nan")
+        riga_raffronto: dict[str, float] = {}
+        if popolazione != U:
+            perdite_tutte = perdite_per_giornata(modello, gradini, cod, dati,
+                                                 c.verifica, U)
+            scarto_tutte, _ = calibrazione(modello, gradini, cod, dati,
+                                           m_verifica_tutte, n_bin)
+            rho_tutte = correlazione_matrice(modello, gradini, cod, dati,
+                                             m_verifica_tutte, rappresentanti)
+            marginale_tutte = entropia_marginale(
+                dati["valore"][in_stima & maschera_popolazione(dati, U)],
+                dati["valore"][m_verifica_tutte], n_bin)
+            media_tutte = (float(np.mean(perdite_tutte)) if perdite_tutte
+                           else float("nan"))
+            dev_tutte = (float(np.std(perdite_tutte, ddof=1))
+                         if len(perdite_tutte) > 1 else 0.0)
+            riga_raffronto = {
+                "raffronto_tutte_perdita": media_tutte,
+                "raffronto_tutte_deviazione": dev_tutte,
+                "raffronto_tutte_scarto_calibrazione": scarto_tutte,
+                "raffronto_tutte_correlazione_implicita": rho_tutte,
+                "raffronto_tutte_entropia_marginale": marginale_tutte,
+                "raffronto_tutte_guadagno": marginale_tutte - media_tutte,
+            }
+            print(f"      [raffronto] su tutte le coppie: {media_tutte:.4f} +/- "
+                  f"{dev_tutte:.4f} bit | scarto di calibrazione {scarto_tutte:.4f} | "
+                  f"correlazione implicita {rho_tutte:+.3f}")
         print(f"      scarto medio di calibrazione {scarto:.4f} | "
               f"correlazione implicita nella matrice {rho:+.3f} | "
               f"guadagno sul marginale {marginale - media:+.4f} bit")
@@ -952,7 +1132,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
             diagramma.to_csv(risultati / f"calibrazione_rete_{citta}.csv", index=False)
             correlazioni.extend(confronto_sulla_correlazione(
                 modello, gradini, cod, dati, c.verifica, rappresentanti, citta,
-                popolazione))
+                popolazione, bordi))
 
         righe.append({
             "citta": citta, "scala": nome, "bordi": etichetta, "bin": n_bin,
@@ -970,6 +1150,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
             "scarto_calibrazione": scarto, "correlazione_implicita": rho,
             "coppie_stima": int((in_stima & maschera_popolazione(dati,
                                                                  popolazione)).sum()),
+            **riga_raffronto,
         })
 
     if correlazioni:
@@ -1001,7 +1182,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--giorni", type=int, default=0)
     parser.add_argument("--bordi", default="misura",
                         help="'misura' li sceglie confrontando i candidati; "
-                             "'attuali', 'ottili' o 'centrati' ne impone uno")
+                             "'attuali', 'ottili', 'centrati', 'misti' o 'decisione' "
+                             "ne impone uno")
     parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG",
                         help="ignora le giornate successive, per confrontare due "
                              "esecuzioni sulla stessa finestra")
@@ -1041,13 +1223,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     # I candidati che dipendono dai dati si calcolano sulle giornate di
-    # addestramento di **tutte** le citta' insieme, perche' i bordi devono restare
-    # gli stessi: calcolarli citta' per citta' renderebbe le perdite non confrontabili.
-    di_stima = np.concatenate([
-        c.dati["secondi_valle"][np.isin(c.dati["giornata"], c.addestramento)
-                                & maschera_popolazione(
-                                    c.dati, popolazione_di_stima(c))]
-        for c in citta])
+    # addestramento **meno il banco di prova dei bordi**, e solo della prima citta'.
+    # Due ragioni, entrambe di separazione. Il banco non puo' entrare nei candidati
+    # che si scelgono sui dati: sarebbe dentro campione rispetto alla misura che li
+    # giudica. E usare una citta' sola per volta rende i candidati stabili al
+    # variare dell'altra: le perdite restano confrontabili perche' gli insiemi di
+    # bordi non si spostano con la popolazione dell'un o dell'altro campione.
+    prima = min(citta, key=lambda c: CITTA.index(c.nome) if c.nome in CITTA else 99)
+    di_stima = prima.dati["secondi_valle"][
+        np.isin(prima.dati["giornata"], prima.addestramento)
+        & ~np.isin(prima.dati["giornata"], prima.bordo_holdout)
+        & maschera_popolazione(prima.dati, popolazione_di_stima(prima))]
+    print(f"  candidati di bordi calcolati su {prima.nome}: "
+          f"{int(di_stima.size):,} osservazioni (banco escluso)")
     candidati = bordi_candidati(di_stima.astype(np.float64))
     if argomenti.bordi == "misura":
         scelti = confronta_bordi(citta, candidati, risultati)
