@@ -133,10 +133,19 @@ def ritardi_osservati(percorso: Path, giornata: str) -> dict[tuple[str, str], in
     dati = dati[dati["service_date"] == giornata]
     if dati.empty:
         return {}
+    # Un ritardo assente non e' uno zero: e' una riga di cui non si sa nulla, e
+    # tenerla convertendola dichiarerebbe puntuale cio' che non si e' visto. Si
+    # scarta, con la stessa regola per cui una tratta non osservata ferma la replica.
+    ritardo = pd.to_numeric(dati["ritardo_secondi"], errors="coerce")
+    noti = np.isfinite(ritardo.to_numpy(dtype="float64", na_value=np.nan))
+    dati = dati[noti]
+    if dati.empty:
+        return {}
     dati = dati.sort_values("timestamp_feed").drop_duplicates(
         subset=["trip_id", "stop_id"], keep="last")
     return {(str(t), str(s)): int(r) for t, s, r in
-            zip(dati["trip_id"], dati["stop_id"], dati["ritardo_secondi"])}
+            zip(dati["trip_id"], dati["stop_id"],
+                pd.to_numeric(dati["ritardo_secondi"]))}
 
 
 def archivio_per(citta: str, giornata: str) -> Path:
@@ -368,7 +377,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         # giornata e si valutano con tutti i modelli. Ricostruire il grafo per ogni
         # insieme di bordi costerebbe minuti a Roma senza cambiare una riga.
         for giornata in giornate:
-            ritardo_di = ritardi_osservati(cartella / f"{giornata}.parquet", giornata)
+            # Una giornata che si rompe non deve portarsi via le altre: il lavoro
+            # gia' fatto vale ore, e perderlo per un dato malformato in fondo alla
+            # griglia significherebbe rifare tutto per scoprire lo stesso guasto.
+            try:
+                ritardo_di = ritardi_osservati(cartella / f"{giornata}.parquet",
+                                               giornata)
+            except Exception as errore:                      # noqa: BLE001
+                print(f"      {giornata}: osservazioni non leggibili ({errore})")
+                continue
             if not ritardo_di:
                 print(f"      {giornata}: nessuna osservazione")
                 continue
@@ -376,8 +393,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             def ritardo(trip: str, stop: str, _tabella=ritardo_di) -> int | None:
                 return _tabella.get((str(trip), str(stop)))
 
-            istanze, _, esaminate, scartate = istanze_del_giorno(
-                nome_citta, giornata, ritardo, argomenti.coppie)
+            try:
+                istanze, _, esaminate, scartate = istanze_del_giorno(
+                    nome_citta, giornata, ritardo, argomenti.coppie)
+            except Exception as errore:                      # noqa: BLE001
+                print(f"      {giornata}: istanze non costruibili ({errore})")
+                continue
             if not istanze:
                 print(f"      {giornata}: nessuna coppia rigiocabile "
                       f"({esaminate} esaminate)")
