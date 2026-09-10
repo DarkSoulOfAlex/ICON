@@ -337,16 +337,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--coppie", type=int, default=30)
     parser.add_argument("--giorni", type=int, default=0)
     parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG")
+    parser.add_argument("--riprendi", action="store_true",
+                        help="riusa le righe gia' in results/backtest.csv e calcola "
+                             "solo le combinazioni mancanti")
     parser.add_argument("--radice", type=Path, default=RADICE)
     argomenti = parser.parse_args(argv)
 
     risultati = argomenti.radice / "results"
     risultati.mkdir(parents=True, exist_ok=True)
+    dettaglio = risultati / "backtest.csv"
     print("=" * 78)
     print("BACKTESTING: LE DUE STRATEGIE RIGIOCATE SUI RITARDI OSSERVATI")
     print("=" * 78)
 
+    # Una corsa completa dura decine di minuti, e perderla per un'interruzione
+    # significherebbe rifarla per intero: si scrive a ogni giornata conclusa, e con
+    # --riprendi si saltano le combinazioni gia' presenti nel CSV. Senza il flag il
+    # file viene rifatto da capo, cosi' una corsa nuova non eredita in silenzio
+    # righe prodotte con altri parametri.
+    fatte: set[tuple[str, str, str]] = set()
     tutte: list[dict] = []
+    if argomenti.riprendi and dettaglio.is_file():
+        gia = pd.read_csv(dettaglio)
+        tutte = gia.to_dict("records")
+        fatte = set(zip(gia["citta"], gia["bordi"], gia["giornata"]))
+        print(f"  ripresa: {len(tutte):,} righe gia' in {dettaglio.name}, "
+              f"{len(fatte)} combinazioni citta'/bordi/giornata da saltare")
+    elif dettaglio.is_file():
+        dettaglio.unlink()
     for nome_citta in argomenti.citta:
         cartella = argomenti.radice / "data" / "processed" / "osservazioni" / nome_citta
         if not cartella.is_dir():
@@ -377,6 +395,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         # giornata e si valutano con tutti i modelli. Ricostruire il grafo per ogni
         # insieme di bordi costerebbe minuti a Roma senza cambiare una riga.
         for giornata in giornate:
+            if all((nome_citta, e, giornata) in fatte for e in modelli):
+                print(f"      {giornata}: gia' fatta, saltata")
+                continue
             # Una giornata che si rompe non deve portarsi via le altre: il lavoro
             # gia' fatto vale ore, e perderlo per un dato malformato in fondo alla
             # griglia significherebbe rifare tutto per scoprire lo stesso guasto.
@@ -404,14 +425,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                       f"({esaminate} esaminate)")
                 continue
             quota = 1 - scartate / max(1, esaminate)
-            quante = 0
+            quante, nuove = 0, []
             for etichetta, (modello, _) in modelli.items():
+                if (nome_citta, etichetta, giornata) in fatte:
+                    continue
                 righe: list[Esito] = []
                 for indice, (o, d, candidati) in enumerate(istanze, 1):
                     righe.extend(valuta_coppia(nome_citta, giornata, etichetta, indice,
                                                o, d, candidati, modello, ritardo))
-                tutte.extend(vars(r) for r in righe)
+                nuove.extend(vars(r) for r in righe)
                 quante += len(righe)
+            tutte.extend(nuove)
+            if nuove:
+                pd.DataFrame(nuove).to_csv(dettaglio, mode="a", index=False,
+                                           header=not dettaglio.is_file())
             print(f"      {giornata}: {len(istanze)} coppie rigiocabili su "
                   f"{esaminate} esaminate ({quota:.0%}), {quante} righe", flush=True)
 
@@ -425,8 +452,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("\nnessuna istanza rigiocabile: nessun risultato scritto")
         return 1
 
-    dettaglio = risultati / "backtest.csv"
-    pd.DataFrame(tutte).to_csv(dettaglio, index=False)
     riepilogo = riepiloga(tutte)
     destinazione = risultati / "backtest_riepilogo.csv"
     riepilogo.to_csv(destinazione, index=False)
