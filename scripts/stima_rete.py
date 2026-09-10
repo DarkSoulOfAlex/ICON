@@ -612,7 +612,8 @@ def confronto_sulla_correlazione(modello, gradini: tuple[tuple[int, str], ...],
                                  c: Codifica, dati: dict[str, np.ndarray],
                                  giornate: Sequence[int], rappresentanti: np.ndarray,
                                  citta: str, popolazione: str,
-                                 bordi: tuple[float, ...] = BORDI_OTTO) -> list[dict]:
+                                 bordi: tuple[float, ...] = BORDI_OTTO,
+                                 finestra: str = "") -> list[dict]:
     """La correlazione per citta' e per fascia oraria, con media e scarto sui giorni.
 
     Il confronto richiesto ha tre termini e non due: il valore empirico sui
@@ -659,7 +660,8 @@ def confronto_sulla_correlazione(modello, gradini: tuple[tuple[int, str], ...],
                         tutte[k].append(letture_t[k])
         if not implicite:
             continue
-        riga = {"citta": citta, "fascia": "tutte" if fascia is None else str(fascia),
+        riga = {"citta": citta, "finestra": finestra,
+                "fascia": "tutte" if fascia is None else str(fascia),
                 "giornate": len(implicite), "coppie": coppie}
         for k in chiavi:
             riga[k], riga[f"deviazione_{k}"] = media_e_scarto(raccolta[k])
@@ -725,6 +727,17 @@ class Citta:
     una configurazione: e' uno strumento di confronto, e chi lo attiva sta
     chiedendo di misurare su una popolazione che porta un nome sbagliato.
     """
+
+    @property
+    def finestra(self) -> str:
+        """L'ultima giornata effettivamente usata: l'etichetta della finestra.
+
+        Va scritta in ogni CSV. Dedurla dalla data del commit funziona finche' non
+        arriva una giornata nuova, e poi smette di funzionare senza dirlo: un
+        risultato che non sa da quali giornate viene non e' riproducibile, e la
+        prova che lo sia diventa una coincidenza fortunata.
+        """
+        return self.giorni[-1] if self.giorni else ""
 
     def codifica(self, n_bin: int) -> Codifica:
         return Codifica(tipo_di_linea=self.tipo_di_linea, n_tipi=self.n_tipi,
@@ -970,7 +983,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
                   f"{ampiezza:>12,.0f} s {media_ampiezza:>7,.0f} s "
                   f"{confusa_dec:>11,.0f} s")
             righe.append({
-                "bordi": nome, "citta": c.nome,
+                "bordi": nome, "citta": c.nome, "finestra": c.finestra,
                 "estremi": " ".join(f"{b:.0f}" for b in bordi),
                 "entropia_marginale": marginale, "perdita": perdita,
                 "deviazione_perdita": scarto, "guadagno": marginale - perdita,
@@ -1140,10 +1153,11 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
             diagramma.to_csv(risultati / f"calibrazione_rete_{citta}.csv", index=False)
             correlazioni.extend(confronto_sulla_correlazione(
                 modello, gradini, cod, dati, c.verifica, rappresentanti, citta,
-                popolazione, bordi))
+                popolazione, bordi, c.finestra))
 
         righe.append({
             "citta": citta, "scala": nome, "bordi": etichetta, "bin": n_bin,
+            "finestra": c.finestra,
             "popolazione": popolazione, "gradini": len(gradini),
             "alfa": " ".join(f"{a:g}" for a in esito.alfa),
             "alfa_al_bordo": len(esito.al_bordo),

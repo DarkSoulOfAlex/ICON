@@ -2725,6 +2725,14 @@ riporta quindi la quota di istanze in cui le due divergono, e la differenza calc
 sulle sole divergenti: senza, un vantaggio inesistente e un vantaggio reale ma raro si
 leggono allo stesso modo.
 
+**I numeri pubblicabili sono solo quelli della corsa definitiva.** Durante lo
+sviluppo una corsa pilota - otto coppie, la sola Torino - aveva prodotto un 3,4% di
+viaggi incompleti e una divergenza del 35,9%: sono stati riportati, e sono falsi. I
+valori della corsa definitiva, in `results/backtest.csv`, sono **5,53%** di viaggi
+incompleti e una divergenza che va dal **7,5% al 35,0%** a seconda del margine, con
+media 24,0%. Il CSV del pilota non esiste piu', quindi i suoi numeri non sono
+verificabili da nessuno e non possono comparire da nessuna parte. Vedere la voce 70.
+
 **Un limite della selezione, misurato.** Solo una parte delle corse dell'orario compare
 nel tempo reale, quindi non ogni itinerario e' rigiocabile: si tengono le coppie con
 almeno due candidati interamente osservati, e sulla giornata di prova sono circa quattro
@@ -2737,3 +2745,50 @@ conosce l'esito - la coincidenza persa per anticipo, quella tenuta per un soffio
 persa per un secondo, il recupero riuscito, l'interruzione - e verifica che la replica li
 ritrovi. Il caso del mezzo in anticipo ha un test proprio, perche' e' il fenomeno su cui
 poggia l'intera domanda di ricerca.
+
+### 70. Un numero scritto a memoria non fallisce nessun test
+
+**Constatazione.** Nel resoconto della Fase 5 due numeri erano sbagliati: il
+**3,4%** di viaggi incompleti e il **35,9%** di divergenza fra le strategie. I
+valori giusti, letti dal CSV della corsa definitiva, sono **5,53%** e una
+divergenza che va dal **7,5% al 35,0%** a seconda del margine, con media 24,0%.
+I due numeri sbagliati venivano da una corsa pilota - otto coppie, la sola
+Torino, i soli bordi `ottili` - il cui CSV era stato cancellato prima della corsa
+vera. Erano corretti quando furono scritti, e sono diventati falsi quando la
+corsa che li sosteneva e' stata sostituita.
+
+**Perche' questo e' il difetto piu' importante fra quelli trovati**, e non per la
+sua gravita'. Nessun test poteva accorgersene: i numeri stavano in un messaggio,
+non in un file, e il file da cui venivano non esisteva piu'. La suite era verde,
+il CSV era pulito, la replica era deterministica, e il numero era sbagliato lo
+stesso. E' il modo di sbagliare tipico della fase che viene - il documento - dove
+si riportano centinaia di numeri e nessuno di essi e' eseguibile.
+
+**Decisione.** Tre regole, in ordine di forza.
+
+1. **Un numero si rilegge dal file ogni volta che lo si riscrive.** Non si cita a
+   memoria un risultato prodotto da una corsa precedente, nemmeno quando lo si e'
+   scritto poche ore prima: fra le due scritture puo' esserci stata una corsa
+   nuova, ed e' esattamente quello che era successo.
+2. **Un numero pubblicabile viene da un CSV in `results/`.** Le corse pilota, i
+   giri di prova e le esecuzioni parziali producono numeri veri ma non
+   pubblicabili, e i loro file non sopravvivono: quindi i loro numeri non possono
+   comparire da nessuna parte. La voce 69 riporta soltanto quelli della corsa
+   definitiva.
+3. **`scripts/verifica_numeri.py` setaccia il documento** e per ogni numero cerca
+   una cella nei CSV che vi corrisponda alla precisione con cui e' scritto. Non e'
+   un verificatore: i falsi positivi - anni, conteggi, numeri citati dalla
+   bibliografia - sono previsti e si guardano a occhio. Serve a rendere
+   impossibile la cosa opposta, cioe' che un numero senza origine passi
+   inosservato.
+
+**Alternative considerate.** Fidarsi della rilettura a mano: e' cio' che si e'
+fatto finora, e ha lasciato passare due numeri su un resoconto di venti righe.
+Vietare le corse pilota: si perderebbe il modo piu' economico di scoprire che una
+pipeline non funziona, e il problema non e' il pilota ma il fatto che i suoi
+numeri sopravvivano al suo file.
+
+**Come si potrebbe verificare.** `python scripts/verifica_numeri.py` sul documento:
+ogni riga `NON TROVATO` e' un numero da giustificare o da togliere. La prova che
+il setaccio funzioni e' che, rimettendo nel documento il 3,4% e il 35,9%, li
+segnali entrambi.

@@ -102,6 +102,10 @@ class Esito:
     citta: str
     giornata: str
     bordi: str
+    finestra: str
+    """Ultima giornata delle osservazioni usate: da dove viene questo numero."""
+    coppie_richieste: int
+    seme: int
     coppia: int
     origine: str
     destinazione: str
@@ -229,7 +233,7 @@ def istanze_del_giorno(citta: str, giornata: str, ritardo, quante: int):
 
 def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
                   origine: str, destinazione: str, candidati, modello,
-                  ritardo) -> list[Esito]:
+                  ritardo, provenienza: dict) -> list[Esito]:
     """Le due strategie sulla stessa coppia, per ogni margine, rigiocate."""
     righe: list[Esito] = []
     piu_rapido = min(c.orario_arrivo for c in candidati)
@@ -247,6 +251,9 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
             esito = replica(candidato.itinerario, ritardo)
             righe.append(Esito(
                 citta=citta, giornata=giornata, bordi=etichetta, coppia=indice,
+                finestra=provenienza["finestra"],
+                coppie_richieste=provenienza["coppie_richieste"],
+                seme=provenienza["seme"],
                 origine=origine, destinazione=destinazione, margine=margine,
                 strategia=nome,
                 probabilita_attesa=float(probabilita[candidati.index(candidato)]),
@@ -394,6 +401,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                    argomenti.giorni, argomenti.fino_a)
         if c is None:
             continue
+        # La provenienza viaggia con ogni riga: la finestra effettiva - l'ultima
+        # giornata usata, anche quando --fino-a non e' passato - piu' i parametri
+        # che determinano quali coppie si estraggono. Senza, il CSV non sa da dove
+        # viene, e la sua riproducibilita' dipende da chi se lo ricorda.
+        provenienza = {"finestra": c.giorni[-1] if c.giorni else "",
+                       "coppie_richieste": argomenti.coppie, "seme": SEME}
         giornate = [c.giorni[i] for i in c.verifica]
         print(f"  [{nome_citta}] replica su {len(giornate)} giornate di verifica: "
               f"{', '.join(giornate)}")
@@ -452,7 +465,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 righe: list[Esito] = []
                 for indice, (o, d, candidati) in enumerate(istanze, 1):
                     righe.extend(valuta_coppia(nome_citta, giornata, etichetta, indice,
-                                               o, d, candidati, modello, ritardo))
+                                               o, d, candidati, modello, ritardo,
+                                               provenienza))
                 nuove.extend(vars(r) for r in righe)
                 quante += len(righe)
             tutte.extend(nuove)

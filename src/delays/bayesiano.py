@@ -231,6 +231,21 @@ class ModelloBayesiano(ModelloRitardo):
                 f"({codifica.quante(4)}, {forma.n_bin})")
         if marginale_a_monte.size != forma.n_bin:
             raise ErroreBayesiano("la marginale a monte non ha un valore per bin")
+        # Il ripiego per una linea mai vista legge ``tabelle[0]`` come se fosse
+        # indicizzata per bin del ritardo a monte. E' vero solo se la scala parte
+        # dal livello di contesto piu' grossolano, che e' il solo bin: con una scala
+        # che parta piu' in basso quella riga non fallisce, restituisce una
+        # distribuzione plausibile e sbagliata. E' il genere di guasto che non si
+        # manifesta finche' un giorno non si manifesta - nel backtesting il ripiego
+        # non e' mai scattato, zero linee ignote su entrambe le citta' - quindi
+        # l'invariante lo dichiara il costruttore invece di restare nel docstring.
+        if modello.tabelle[0].shape != (forma.n_bin, forma.n_bin):
+            raise ErroreBayesiano(
+                f"il primo gradino della scala ha forma {modello.tabelle[0].shape} "
+                f"invece di ({forma.n_bin}, {forma.n_bin}): non e' indicizzato per "
+                f"bin del ritardo a monte, e il ripiego per le linee ignote "
+                f"restituirebbe una distribuzione sbagliata senza dirlo"
+            )
         self.modello = modello
         self.codifica = codifica
         self.forma = forma

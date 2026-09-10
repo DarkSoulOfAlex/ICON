@@ -229,3 +229,23 @@ def test_una_tabella_di_forma_sbagliata_viene_rifiutata():
 
 def test_un_campione_di_zero_elementi_non_e_un_errore():
     assert _uniforme().campiona(0, np.random.default_rng(1)).size == 0
+
+
+def test_una_scala_che_non_parte_dal_bin_viene_rifiutata():
+    """Il ripiego per le linee ignote legge tabelle[0] come indicizzata per bin.
+
+    Con una scala che parte dal livello fine quella lettura non fallisce: restituisce
+    una riga qualunque della tabella grande, che somma a uno ed e' plausibile. Era
+    cosi' fino alla verifica, e nessun test se ne accorgeva perche' nel backtesting
+    il ripiego non e' mai scattato - zero linee ignote su entrambe le citta'. Un
+    guasto che non si manifesta finche' un giorno non si manifesta.
+    """
+    codifica = Codifica(tipo_di_linea=np.zeros(3, dtype=np.int64), n_tipi=1, n_bin=N_BIN)
+    g = np.random.default_rng(2)
+    celle = g.integers(0, codifica.quante(4), size=5_000)
+    valori = g.integers(0, N_BIN, size=5_000)
+    solo_fine = stima([Livello("fine", celle, valori, codifica.quante(4))],
+                      N_BIN, alfa=1.0)
+    with pytest.raises(ErroreBayesiano, match="non e' indicizzato per bin"):
+        ModelloBayesiano(solo_fine, codifica, _forma(), {},
+                         np.full(N_BIN, 1.0 / N_BIN), "prova", "x")
