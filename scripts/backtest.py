@@ -1,448 +1,449 @@
-"""Backtesting: confronto tra strategie di pianificazione.
+"""Backtesting: la domanda di ricerca, misurata sui ritardi realmente osservati.
 
-Usa il modello finale gia' addestrato (tutte le giornate disponibili) per valutare
-due strategie su un insieme di istanze OD reali:
-  (a) arrivo minimo a orario teorico (baseline)
-  (b) massimo P(arrivo <= T) con il modello vero
+Confronta due modi di scegliere un itinerario, a parita' di coppia origine-
+destinazione e di scadenza:
 
-Griglia: {roma, torino} x {ottili, decisione} x {(a),(b)} x margini {0,5,10,15,20}.
+  (a) **piu' veloce**: l'arrivo minimo secondo l'orario teorico;
+  (b) **robusto**: il massimo di ``P(arrivo <= T)`` secondo il modello di Fase 3.
 
-Output:
-    results/backtest.csv       una riga per istanza
-    results/backtest_riepilogo.csv  medie e deviazioni
+Poi rigioca entrambe le scelte sui ritardi che quel giorno sono stati osservati
+davvero, e conta chi arriva entro T e chi perde coincidenze.
 
-Uso:
-    python scripts/backtest.py --fino-a 2026-08-25
+**Perche' rigiocare, e non confrontare le probabilita'.** Chiedere al modello
+quale itinerario creda piu' sicuro e credergli sulla parola non e' una verifica:
+il modello sarebbe giudice e imputato. La probabilita' che il modello attribuisce
+alla propria scelta e' per costruzione la piu' alta - e' quella che ha scelto - e
+misurarla non dice nulla su quanti viaggi riescano. Serve un arbitro esterno, e
+l'unico disponibile e' cio' che i mezzi hanno fatto.
+
+**Le giornate della replica sono quelle di verifica**, cioe' quelle che il modello
+non ha visto in nessuna fase: la stima usa addestramento e taratura, la scelta dei
+bordi usa il banco dentro l'addestramento (voce 64). Il modello arriva alla replica
+senza avere mai guardato quel giorno.
+
+**Che cosa si esclude, e va detto.** Solo una parte delle corse dell'orario compare
+nel tempo reale, quindi non ogni itinerario e' rigiocabile: si tengono le coppie
+con almeno due candidati interamente osservati. E' una selezione che favorisce le
+linee frequenti, ed e' riportata come quota invece di essere lasciata implicita.
+
+    python scripts/backtest.py
+    python scripts/backtest.py --citta torino --bordi ottili --coppie 30
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
-import time
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Sequence
 from zoneinfo import ZoneInfo
 
-RADICE = Path(__file__).resolve().parent.parent
-if str(RADICE) not in sys.path:
-    sys.path.insert(0, str(RADICE))
+RADICE = Path(__file__).resolve().parents[1]
+for _percorso in (RADICE, RADICE / "scripts"):
+    if str(_percorso) not in sys.path:
+        sys.path.insert(0, str(_percorso))
 
-import numpy as np
-import pandas as pd
+import numpy as np                                          # noqa: E402
+import pandas as pd                                         # noqa: E402
+import pyarrow.parquet as pq                                # noqa: E402
 
-from src.delays.rete import Modello
-from src.delays.markov import discretizza
-from src.graph.search import cerca_frontiera_pareto, cerca_primo_arrivo
-from src.graph.time_expanded import costruisci
-from src.gtfs.loader import carica_archivio
-from src.planner.robust import (
-    candidati_da_frontiera,
-    pianifica_robusto,
+from src.delays.bayesiano import Forma, ModelloBayesiano     # noqa: E402
+from src.delays.interfaccia import assicura_utilizzabile     # noqa: E402
+from src.eval.replica import replica, rigiocabile            # noqa: E402
+from src.graph.search import cerca_frontiera_pareto          # noqa: E402
+from src.graph.time_expanded import costruisci               # noqa: E402
+from src.gtfs.loader import carica_archivio                  # noqa: E402
+from src.planner.robust import candidati_da_frontiera, pianifica_robusto  # noqa: E402
+
+from ricerca_confronto import coppie_casuali                 # noqa: E402
+from stima_rete import (                                     # noqa: E402
+    Citta,
+    carica,
+    celle_finali,
+    costruisci_scala,
+    discretizza_coppie,
+    maschera_popolazione,
+    popolazione_di_stima,
+    valori_rappresentativi,
 )
+from src.delays.rete import stima, tara                      # noqa: E402
 
 FUSO = ZoneInfo("Europe/Rome")
-MARGINI = (0, 300, 600, 900, 1200)  # 0, 5, 10, 15, 20 minuti
-SEME = 20260910
 CITTA = ("roma", "torino")
+MARGINI = (0, 300, 600, 900, 1200, 1800)
+"""Secondi concessi oltre l'arrivo teorico piu' rapido: da zero a trenta minuti.
 
-# Bordi dei candidati
-BORDI_OTILI = (-554.0, -366.0, -250.0, -158.0, -80.0, 18.0, 213.0)
-BORDI_DECISIONE = (-300.0, -60.0, 0.0, 120.0, 300.0, 900.0, 1800.0)
-TUTTI_BORDI = {
-    "ottili": BORDI_OTILI,
-    "decisione": BORDI_DECISIONE,
+Sono gli stessi della griglia di Fase 4, perche' il confronto fra i risultati
+sintetici e quelli veri sia diretto invece che approssimativo.
+"""
+ORA_PARTENZA = 8
+ORIZZONTE = 120
+SEME = 20260910
+
+BORDI = {
+    "attuali": (-60.0, 0.0, 60.0, 120.0, 300.0, 600.0, 1200.0),
+    "ottili": (-554.0, -366.0, -250.0, -158.0, -80.0, 18.0, 213.0),
+    "decisione": (-300.0, -60.0, 0.0, 120.0, 300.0, 900.0, 1800.0),
 }
+"""Gli insiemi di bordi da mettere alla prova, con gli estremi di `scelta_bordi.csv`.
+
+Sono trascritti e non ricalcolati di proposito: la Fase 3 li ha scelti su una
+finestra dichiarata, e il backtesting deve usare quelli, non quelli che i dati di
+oggi produrrebbero. Se cambiassero si vedrebbe dal confronto con quel CSV.
+"""
 
 
-# =============================================================================
-# Costruzione modello con scala di risalita (richiamata da stima_rete.py)
-# =============================================================================
+@dataclass(frozen=True)
+class Esito:
+    """Una riga: una coppia, un margine, una strategia, un giorno."""
 
-
-def costruisci_modello_da_dati(
-    citta: str,
-    bordi: tuple[float, ...],
-    giorni_osservazioni: list[str],
-    popolazione: str = "constatazioni",
-) -> tuple[Modello | None, dict]:
-    """Costruisce il modello usando la stessa logica di stima_rete.py.
-
-    Restituisce (modello, info_dict) dove info_dict contiene metadati utili.
-    """
-    from src.delays.rete import Livello, stima
-
-    # Carica e unisci i dati
-    tutte = []
-    for giorno in giorni_osservazioni:
-        percorso = RADICE / "data" / "processed" / "osservazioni" / citta / f"{giorno}.parquet"
-        if not percorso.exists():
-            continue
-        df = pd.read_parquet(percorso)
-        if df.empty:
-            continue
-        df = df.sort_values(["trip_id", "stop_sequence"])
-        parti = []
-        for trip, gruppo in df.groupby("trip_id"):
-            if len(gruppo) < 2:
-                continue
-            g = gruppo.sort_values("stop_sequence").reset_index(drop=True)
-            parti.append(pd.DataFrame({
-                "linea": g["route_id"].values[:-1],
-                "secondi_monte": g["ritardo_secondi"].values[:-1].astype(np.float64),
-                "secondi_valle": g["ritardo_secondi"].values[1:].astype(np.float64),
-            }))
-        if parti:
-            tutte.append(pd.concat(parti, ignore_index=True))
-
-    if not tutte:
-        return None, {}
-
-    dati = pd.concat(tutte, ignore_index=True)
-    if dati.empty:
-        return None, {}
-
-    n_bin = len(bordi) + 1
-    n_linee = len(dati["linea"].unique())
-    n_tipi = min(n_linee, 20)
-
-    # Codifica: bin per ritardo a monte
-    monti = discretizza(dati["secondi_monte"].to_numpy(), bordi)
-    valli = discretizza(dati["secondi_valle"].to_numpy(), bordi)
-
-    # Codifica linea
-    linee_cod, _ = pd.factorize(dati["linea"])
-
-    # Costruisci i livelli della scala
-    # Livello 0: bin (padre=None, priore uniforme)
-    # Usiamo una scala semplice: solo il livello bin.
-    # Per il backtesting, un priore uniforme (alfa=1.0) e' sufficiente.
-
-    livelli = [
-        Livello("bin", monti, valli.astype(np.int64), n_bin),
-    ]
-
-    # Stima diretta con alfa=1.0 (priore uniforme, nessun taratura)
-    # Questo e' equivalente a una stima empirica senza regolarizzazione.
-    modello = stima(livelli, n_bin, [1.0])
-
-    info = {
-        "n_osservazioni": len(dati),
-        "n_giorni": len(giorni_osservazioni),
-        "popolazione": popolazione,
-        "n_bin": n_bin,
-        "n_linee": n_linee,
-        "alfa": [1.0],
-    }
-    return modello, info
-
-
-# =============================================================================
-# Estrazione istanze OD
-# =============================================================================
-
-
-def estrai_istanze_od(citta: str, n_istanze: int = 60) -> list[dict]:
-    """Estrae coppie origine-destinazione dalle osservazioni reali."""
-    percorso_osservazioni = RADICE / "data" / "processed" / "osservazioni" / citta
-    if not percorso_osservazioni.is_dir():
-        return []
-
-    # Legge tutti i parquet e raggruppa per route_id
-    od_raggruppati: dict[str, list[int]] = {}
-    for p in sorted(percorso_osservazioni.glob("*.parquet")):
-        df = pd.read_parquet(p)
-        if df.empty:
-            continue
-        for route, gruppo in df.groupby("route_id"):
-            if len(gruppo) < 5:
-                continue
-            seq_min = int(gruppo["stop_sequence"].min())
-            seq_max = int(gruppo["stop_sequence"].max())
-            if seq_max - seq_min < 5:
-                continue
-            med_p = gruppo["orario_programmato"].median()
-            if pd.isna(med_p):
-                continue
-            key = f"{route}_{seq_min}_{seq_max}"
-            if key not in od_raggruppati:
-                od_raggruppati[key] = []
-            od_raggruppati[key].append(int(med_p))
-
-    if not od_raggruppati:
-        return []
-
-    # Campiona
-    righe = []
-    for key, partenze in od_raggruppati.items():
-        media_p = int(np.median(partenze))
-        righe.append({
-            "citta": citta,
-            "seq_inizio": int(key.split("_")[1]),
-            "seq_fine": int(key.split("_")[2]),
-            "partenza": media_p,
-            "coppie_osservate": len(partenze),
-        })
-
-    if len(righe) <= n_istanze:
-        return righe
-
-    rng = np.random.default_rng(SEME)
-    indici = rng.choice(len(righe), size=n_istanze, replace=False)
-    return [righe[i] for i in indici]
-
-
-# =============================================================================
-# Risultati
-# =============================================================================
-
-
-@dataclass
-class RisultatoIstanza:
-    """Un risultato di backtesting per una singola istanza."""
     citta: str
     giornata: str
-    seq_inizio: int
-    seq_fine: int
-    partenza: int
-    strategia: str
-    margine: int
     bordi: str
-    probabilita: float | None = None
-    arrivo_programmato: int | None = None
-    cambi: int | None = None
-    ritardo_vs_T: float | None = None
-    tempo_secondi: float = 0.0
+    coppia: int
+    origine: str
+    destinazione: str
+    margine: int
+    strategia: str
+    probabilita_attesa: float
+    arrivo_programmato: int
+    cambi: int
+    arrivo_reale: int | None
+    entro_scadenza: bool
+    completato: bool
+    coincidenze_perse: int
+    recuperi: int
+    partenza_persa: bool
+    candidati: int
 
 
-# =============================================================================
-# Esecuzione backtest
-# =============================================================================
+def ritardi_osservati(percorso: Path, giornata: str) -> dict[tuple[str, str], int]:
+    """Il ritardo dell'ultima revisione di ogni passaggio, per (corsa, fermata).
+
+    Si tiene l'ultima revisione, come nella stima: e' quella che il viaggiatore
+    avrebbe visto piu' vicino al fatto, ed e' l'unica scelta che rende la replica
+    confrontabile col modello, addestrato sulle stesse righe.
+    """
+    tabella = pq.read_table(percorso, columns=["service_date", "trip_id", "stop_id",
+                                               "ritardo_secondi", "timestamp_feed"])
+    dati = tabella.to_pandas()
+    del tabella
+    dati = dati[dati["service_date"] == giornata]
+    if dati.empty:
+        return {}
+    dati = dati.sort_values("timestamp_feed").drop_duplicates(
+        subset=["trip_id", "stop_id"], keep="last")
+    return {(str(t), str(s)): int(r) for t, s, r in
+            zip(dati["trip_id"], dati["stop_id"], dati["ritardo_secondi"])}
 
 
-def esegui_backtest(
-    citta: str,
-    bordi_nome: str,
-    bordi: tuple[float, ...],
-    giorni: list[str],
-    n_istanze: int = 60,
-) -> list[RisultatoIstanza]:
-    """Esegue il backtest con il modello addestrato su tutte le giornate."""
-    risultati: list[RisultatoIstanza] = []
-    cartella_gtfs = RADICE / "data" / "raw" / "gtfs" / citta
+def archivio_per(citta: str, giornata: str) -> Path:
+    """L'archivio GTFS in vigore quel giorno: il piu' recente non successivo.
 
-    # Costruisci modello
-    modello, info = costruisci_modello_da_dati(citta, bordi, giorni, "constatazioni")
-    if modello is None:
-        print(f"    [WARNING] modello non costruito per {citta}")
-        return risultati
-
-    # Estrai istanze OD
-    istanze = estrai_istanze_od(citta, n_istanze)
-    if not istanze:
-        return risultati
-
-    # Carica archivio GTFS
-    archivi = sorted(cartella_gtfs.glob("*.zip"))
-    if not archivi:
-        return risultati
-    archivio = carica_archivio(archivi[-1], con_stop_times=True)
-
-    # Usa l'ultima giornata come giornata di "viaggio"
-    ultimo_giorno = giorni[-1]
-    try:
-        giorno_date = date.fromisoformat(ultimo_giorno)
-        inizio = int(datetime(2026, 8, 25, 6, 0, tzinfo=FUSO).timestamp())
-        grafo = costruisci(archivio, citta, giorno_date, inizio, 180)
-    except Exception as e:
-        print(f"    [WARNING] grafo non costruito per {ultimo_giorno}: {e}")
-        return risultati
-
-    # Per ogni istanza e margine
-    for ist in istanze:
-        for margine in MARGINI:
-            scadenza = ist["partenza"] + margine
-
-            # Cerca frontiera Pareto
-            try:
-                esito_pareto = cerca_frontiera_pareto(
-                    grafo, ist["seq_inizio"], ist["seq_fine"],
-                    ist["partenza"], 120.0, True
-                )
-            except Exception:
-                continue
-
-            if not esito_pareto.cammini:
-                continue
-
-            # Strategia (a): piu_veloce (baseline)
-            t0 = time.time()
-            try:
-                primo = cerca_primo_arrivo(
-                    grafo, ist["seq_inizio"], ist["seq_fine"],
-                    ist["partenza"], 120.0, True
-                )
-            except Exception:
-                continue
-
-            if primo and primo.cammini:
-                arrivo = primo.cammini[0].arrivo
-                ritardo_vs_T = (arrivo - scadenza) if arrivo and scadenza else 0.0
-                risultati.append(RisultatoIstanza(
-                    citta=citta, giornata=ultimo_giorno,
-                    seq_inizio=ist["seq_inizio"], seq_fine=ist["seq_fine"],
-                    partenza=ist["partenza"], strategia="piu_veloce",
-                    margine=margine, bordi=bordi_nome,
-                    probabilita=1.0, arrivo_programmato=arrivo,
-                    cambi=0, ritardo_vs_T=ritardo_vs_T,
-                    tempo_secondi=time.time() - t0
-                ))
-
-            # Strategia (b): robusto
-            t0 = time.time()
-            candidati = candidati_da_frontiera(grafo, esito_pareto, ist["partenza"])
-            if not candidati:
-                continue
-
-            try:
-                scelta = pianifica_robusto(candidati, modello, scadenza)
-            except Exception:
-                continue
-
-            itinerario = scelta.itinerario
-            prob = scelta.probabilita
-            arrivo = itinerario.arrivo_programmato()
-            cambi = len(itinerario.tappe) - 1
-            ritardo_vs_T = (arrivo - scadenza) if arrivo and scadenza else 0.0
-
-            risultati.append(RisultatoIstanza(
-                citta=citta, giornata=ultimo_giorno,
-                seq_inizio=ist["seq_inizio"], seq_fine=ist["seq_fine"],
-                partenza=ist["partenza"], strategia="robusto",
-                margine=margine, bordi=bordi_nome,
-                probabilita=prob, arrivo_programmato=arrivo,
-                cambi=cambi, ritardo_vs_T=ritardo_vs_T,
-                tempo_secondi=time.time() - t0
-            ))
-
-    return risultati
+    Prendere sempre l'ultimo disponibile userebbe un orario pubblicato dopo il
+    giorno che si rigioca, cioe' farebbe conoscere al pianificatore un servizio che
+    quel giorno non era ancora annunciato.
+    """
+    archivi = sorted((RADICE / "data" / "raw" / "gtfs" / citta).glob("*.zip"))
+    validi = [a for a in archivi if a.stem.split("_")[0] <= giornata]
+    if not validi:
+        raise SystemExit(f"nessun archivio GTFS per {citta} valido al {giornata}")
+    return validi[-1]
 
 
-# =============================================================================
-# Output
-# =============================================================================
+def costruisci_modello(c: Citta, bordi: tuple[float, ...],
+                       etichetta: str) -> tuple[ModelloBayesiano, dict]:
+    """La stessa scala della Fase 3, tarata sulle stesse giornate.
+
+    Non una versione semplificata: un modello piu' povero renderebbe il confronto
+    fra le strategie una misura di quel modello, non della struttura scelta.
+    """
+    n_bin = len(bordi) + 1
+    dati = discretizza_coppie(c.dati, bordi)
+    codifica = c.codifica(n_bin)
+    popolazione = popolazione_di_stima(c)
+    scala = "constatazioni sole" if popolazione == "constatazioni" else "popolazione unica"
+    gradini = c.scale[scala]
+
+    in_addestramento = np.isin(dati["giornata"], c.addestramento)
+    in_taratura = np.isin(dati["giornata"], c.taratura)
+    in_stima = in_addestramento | in_taratura
+    m_taratura = in_taratura & maschera_popolazione(dati, popolazione)
+
+    esito = tara(costruisci_scala(scala, gradini, codifica, dati, in_addestramento),
+                 celle_finali(gradini, codifica, dati, m_taratura),
+                 dati["valore"][m_taratura].astype(np.int64), n_bin, passate=2)
+    modello = stima(costruisci_scala(scala, gradini, codifica, dati, in_stima),
+                    n_bin, list(esito.alfa))
+
+    m_stima = in_stima & maschera_popolazione(dati, popolazione)
+    marginale = np.bincount(dati["monte"][m_stima].astype(np.int64), minlength=n_bin)
+    forma = Forma(bordi=bordi, medie=valori_rappresentativi(dati, n_bin))
+    ponte = ModelloBayesiano(modello, codifica, forma, c.indice_linea,
+                             marginale.astype(np.float64) + 1.0, c.nome, etichetta)
+    assicura_utilizzabile(ponte)
+    return ponte, {
+        "scala": scala, "popolazione": popolazione,
+        "alfa": " ".join(f"{a:g}" for a in esito.alfa),
+        "coppie_di_stima": int(m_stima.sum()),
+        "giornate_di_stima": len(c.addestramento) + len(c.taratura),
+    }
 
 
-def scrivi_output(risultati: list[RisultatoIstanza], output_dir: Path) -> None:
-    """Scrive i CSV di output."""
-    if not risultati:
-        print("  Nessun risultato prodotto.")
-        return
-
-    df = pd.DataFrame([{
-        "citta": r.citta, "giornata": r.giornata,
-        "seq_inizio": r.seq_inizio, "seq_fine": r.seq_fine,
-        "partenza": r.partenza, "strategia": r.strategia,
-        "margine": r.margine, "bordi": r.bordi,
-        "probabilita": r.probabilita,
-        "arrivo_programmato": r.arrivo_programmato,
-        "cambi": r.cambi,
-        "ritardo_vs_T": r.ritardo_vs_T,
-        "tempo_secondi": r.tempo_secondi,
-    } for r in risultati])
-
-    df.to_csv(output_dir / "backtest.csv", index=False)
-
-    # Riepilogo
-    riepilogo = df.groupby(["citta", "strategia", "bordi"]).agg({
-        "probabilita": ["mean", "std", "count"],
-        "ritardo_vs_T": ["mean", "std", "median"],
-        "tempo_secondi": "mean",
-    }).reset_index()
-    riepilogo.columns = ["citta", "strategia", "bordi",
-                         "prob_mean", "prob_std", "n_istanze",
-                         "ritardo_mean", "ritardo_std", "ritardo_mediana",
-                         "tempo_medio"]
-    riepilogo.to_csv(output_dir / "backtest_riepilogo.csv", index=False)
-
-    print(f"  scritto {output_dir / 'backtest.csv'} ({len(df)} righe)")
-    print(f"  scritto {output_dir / 'backtest_riepilogo.csv'} ({len(riepilogo)} righe)")
+def istanze_del_giorno(citta: str, giornata: str, ritardo, quante: int):
+    """Coppie OD con almeno due candidati interamente osservati quel giorno."""
+    archivio = carica_archivio(archivio_per(citta, giornata), con_stop_times=True)
+    g = date.fromisoformat(giornata)
+    inizio = int(datetime(g.year, g.month, g.day, ORA_PARTENZA, 0,
+                          tzinfo=FUSO).timestamp())
+    grafo = costruisci(archivio, citta, g, inizio, ORIZZONTE)
+    trovate, esaminate, scartate = [], 0, 0
+    for origine, destinazione in coppie_casuali(grafo, quante * 8, SEME):
+        esito = cerca_frontiera_pareto(grafo, origine, destinazione, inizio)
+        if len(esito.frontiera) < 2:
+            continue
+        candidati = candidati_da_frontiera(grafo, esito, inizio)
+        if len(candidati) < 2:
+            continue
+        esaminate += 1
+        rigiocabili = [c for c in candidati if rigiocabile(c.itinerario, ritardo)]
+        if len(rigiocabili) < 2:
+            scartate += 1
+            continue
+        trovate.append((origine, destinazione, rigiocabili))
+        if len(trovate) >= quante:
+            break
+    return trovate, inizio, esaminate, scartate
 
 
-# =============================================================================
-# Main
-# =============================================================================
+def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
+                  origine: str, destinazione: str, candidati, modello,
+                  ritardo) -> list[Esito]:
+    """Le due strategie sulla stessa coppia, per ogni margine, rigiocate."""
+    righe: list[Esito] = []
+    piu_rapido = min(c.orario_arrivo for c in candidati)
+    for margine in MARGINI:
+        scadenza = piu_rapido + margine
+        veloce = min(candidati, key=lambda c: (c.orario_arrivo, c.cambi))
+        try:
+            scelta = pianifica_robusto(candidati, modello, scadenza)
+        except Exception as errore:                          # noqa: BLE001
+            print(f"      coppia {indice} margine {margine}: non valutabile ({errore})")
+            continue
+        robusto = scelta.candidato
+        probabilita = dict(zip(range(len(candidati)), scelta.probabilita_per_candidato))
+        for nome, candidato in (("piu_veloce", veloce), ("robusto", robusto)):
+            esito = replica(candidato.itinerario, ritardo)
+            righe.append(Esito(
+                citta=citta, giornata=giornata, bordi=etichetta, coppia=indice,
+                origine=origine, destinazione=destinazione, margine=margine,
+                strategia=nome,
+                probabilita_attesa=float(probabilita[candidati.index(candidato)]),
+                arrivo_programmato=candidato.orario_arrivo, cambi=candidato.cambi,
+                arrivo_reale=esito.arrivo_reale, entro_scadenza=esito.entro(scadenza),
+                completato=esito.completato,
+                coincidenze_perse=esito.coincidenze_perse,
+                recuperi=esito.recuperi_riusciti,
+                partenza_persa=esito.partenza_persa, candidati=len(candidati)))
+    return righe
+
+
+def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
+    """Marca le istanze in cui le due strategie scelgono itinerari diversi.
+
+    Serve perche' dove scelgono lo stesso itinerario la differenza fra loro e' zero
+    **per costruzione**, e mediare su quelle diluisce l'effetto verso lo zero per
+    quanto il modello sia bravo. La quota di divergenza va riportata accanto alla
+    differenza, altrimenti un vantaggio inesistente e un vantaggio reale ma raro si
+    leggono allo stesso modo.
+    """
+    chiave = ["citta", "bordi", "giornata", "coppia", "margine"]
+    scelte = (tabella.pivot_table(index=chiave, columns="strategia",
+                                  values="arrivo_programmato", aggfunc="first")
+              .reset_index())
+    if not {"piu_veloce", "robusto"} <= set(scelte.columns):
+        tabella["divergono"] = False
+        return tabella
+    scelte["divergono"] = scelte["piu_veloce"] != scelte["robusto"]
+    return tabella.merge(scelte[chiave + ["divergono"]], on=chiave, how="left")
+
+
+def riepiloga(righe: list[dict]) -> pd.DataFrame:
+    """Media e deviazione **sulle giornate**, non sulle istanze.
+
+    Le istanze di uno stesso giorno condividono il traffico di quel giorno e non
+    sono indipendenti: una deviazione calcolata su di esse sarebbe piu' stretta del
+    vero e farebbe sembrare significative differenze che non lo sono.
+    """
+    tabella = segna_divergenze(pd.DataFrame(righe))
+    if tabella.empty:
+        return tabella
+    chiave = ["citta", "bordi", "strategia", "margine"]
+
+    def scarto(v):
+        return float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
+
+    per_giorno = (tabella.groupby(chiave + ["giornata"])
+                  .agg(quota_entro=("entro_scadenza", "mean"),
+                       quota_completati=("completato", "mean"),
+                       coincidenze_perse=("coincidenze_perse", "mean"),
+                       probabilita_attesa=("probabilita_attesa", "mean"),
+                       cambi=("cambi", "mean"),
+                       quota_divergenti=("divergono", "mean"),
+                       istanze=("entro_scadenza", "size"))
+                  .reset_index())
+    riepilogo = (per_giorno.groupby(chiave)
+                 .agg(giornate=("giornata", "nunique"),
+                      istanze=("istanze", "sum"),
+                      quota_entro=("quota_entro", "mean"),
+                      deviazione_entro=("quota_entro", scarto),
+                      quota_completati=("quota_completati", "mean"),
+                      coincidenze_perse=("coincidenze_perse", "mean"),
+                      probabilita_attesa=("probabilita_attesa", "mean"),
+                      cambi=("cambi", "mean"),
+                      quota_divergenti=("quota_divergenti", "mean"))
+                 .reset_index())
+
+    solo_diverse = tabella[tabella["divergono"]]
+    if not solo_diverse.empty:
+        per_giorno_diverse = (solo_diverse.groupby(chiave + ["giornata"])
+                              .agg(quota=("entro_scadenza", "mean"),
+                                   istanze=("entro_scadenza", "size"))
+                              .reset_index())
+        aggiunta = (per_giorno_diverse.groupby(chiave)
+                    .agg(quota_entro_divergenti=("quota", "mean"),
+                         deviazione_divergenti=("quota", scarto),
+                         istanze_divergenti=("istanze", "sum"))
+                    .reset_index())
+        riepilogo = riepilogo.merge(aggiunta, on=chiave, how="left")
+    return riepilogo
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--citta", nargs="*", default=list(CITTA))
+    parser.add_argument("--bordi", nargs="*", default=["ottili", "decisione"])
+    parser.add_argument("--coppie", type=int, default=30)
+    parser.add_argument("--giorni", type=int, default=0)
     parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG")
-    parser.add_argument("--n-istanze", type=int, default=60)
-    parser.add_argument("--radice", type=Path, default=None)
-    parser.add_argument("--bordi", nargs="*", default=["ottili", "decisione"],
-                        help="insiemi di bordi da testare")
+    parser.add_argument("--radice", type=Path, default=RADICE)
     argomenti = parser.parse_args(argv)
 
-    radice = argomenti.radice or RADICE
-    risultati_path = radice / "results"
-    risultati_path.mkdir(parents=True, exist_ok=True)
-
+    risultati = argomenti.radice / "results"
+    risultati.mkdir(parents=True, exist_ok=True)
     print("=" * 78)
-    print("BACKTESTING")
+    print("BACKTESTING: LE DUE STRATEGIE RIGIOCATE SUI RITARDI OSSERVATI")
     print("=" * 78)
 
-    # Recupera giornate
-    giorni_roma = sorted(p.stem for p in
-                         (radice / "data" / "processed" / "osservazioni" / "roma").glob("*.parquet"))
-    giorni_torino = sorted(p.stem for p in
-                           (radice / "data" / "processed" / "osservazioni" / "torino").glob("*.parquet"))
+    tutte: list[dict] = []
+    for nome_citta in argomenti.citta:
+        cartella = argomenti.radice / "data" / "processed" / "osservazioni" / nome_citta
+        if not cartella.is_dir():
+            print(f"  [{nome_citta}] cartella assente: {cartella}")
+            continue
+        c = carica(nome_citta, cartella, argomenti.radice / "data" / "raw" / "gtfs",
+                   argomenti.giorni, argomenti.fino_a)
+        if c is None:
+            continue
+        giornate = [c.giorni[i] for i in c.verifica]
+        print(f"  [{nome_citta}] replica su {len(giornate)} giornate di verifica: "
+              f"{', '.join(giornate)}")
 
-    if argomenti.fino_a:
-        giorni_roma = [g for g in giorni_roma if g <= argomenti.fino_a]
-        giorni_torino = [g for g in giorni_torino if g <= argomenti.fino_a]
-
-    print(f"  Giornate Roma: {len(giorni_roma)} ({giorni_roma[0]} .. {giorni_roma[-1]})")
-    print(f"  Giornate Torino: {len(giorni_torino)} ({giorni_torino[0]} .. {giorni_torino[-1]})")
-    print(f"  Bordi: {argomenti.bordi}")
-    print(f"  Istanze per citta': {argomenti.n_istanze}")
-
-    # Verifica bordi
-    for b in argomenti.bordi:
-        if b not in TUTTI_BORDI:
-            print(f"  ATTENZIONE: bordo '{b}' non riconosciuto, uso attuali")
-
-    # Esegui griglia
-    tutti_risultati: list[RisultatoIstanza] = []
-    t_inizio = time.time()
-
-    for citta in argomenti.citta:
-        giorni = giorni_roma if citta == "roma" else giorni_torino
-        if len(giorni) < 5:
-            print(f"  [{citta}] solo {len(giorni)} giornate, insufficienti")
+        modelli = {}
+        for etichetta in argomenti.bordi:
+            if etichetta not in BORDI:
+                print(f"  bordi '{etichetta}' sconosciuti: {sorted(BORDI)}")
+                continue
+            modelli[etichetta] = costruisci_modello(c, BORDI[etichetta], etichetta)
+            _, info = modelli[etichetta]
+            print(f"    [{nome_citta}/{etichetta}] scala '{info['scala']}' su "
+                  f"{info['popolazione']}, {info['coppie_di_stima']:,} coppie in "
+                  f"{info['giornate_di_stima']} giornate | alfa {info['alfa']}")
+        if not modelli:
             continue
 
-        for nome_bordi in argomenti.bordi:
-            bordi = TUTTI_BORDI.get(nome_bordi, BORDI_OTILI)
-            print(f"\n  [{citta}] bordi {nome_bordi}...")
-            res = esegui_backtest(citta, nome_bordi, bordi, giorni, argomenti.n_istanze)
-            tutti_risultati.extend(res)
-            print(f"    {len(res)} risultati")
+        # Le istanze non dipendono dai bordi: si costruiscono una volta per
+        # giornata e si valutano con tutti i modelli. Ricostruire il grafo per ogni
+        # insieme di bordi costerebbe minuti a Roma senza cambiare una riga.
+        for giornata in giornate:
+            ritardo_di = ritardi_osservati(cartella / f"{giornata}.parquet", giornata)
+            if not ritardo_di:
+                print(f"      {giornata}: nessuna osservazione")
+                continue
 
-    t_totale = time.time() - t_inizio
+            def ritardo(trip: str, stop: str, _tabella=ritardo_di) -> int | None:
+                return _tabella.get((str(trip), str(stop)))
 
-    # Output
-    scrivi_output(tutti_risultati, risultati_path)
+            istanze, _, esaminate, scartate = istanze_del_giorno(
+                nome_citta, giornata, ritardo, argomenti.coppie)
+            if not istanze:
+                print(f"      {giornata}: nessuna coppia rigiocabile "
+                      f"({esaminate} esaminate)")
+                continue
+            quota = 1 - scartate / max(1, esaminate)
+            quante = 0
+            for etichetta, (modello, _) in modelli.items():
+                righe: list[Esito] = []
+                for indice, (o, d, candidati) in enumerate(istanze, 1):
+                    righe.extend(valuta_coppia(nome_citta, giornata, etichetta, indice,
+                                               o, d, candidati, modello, ritardo))
+                tutte.extend(vars(r) for r in righe)
+                quante += len(righe)
+            print(f"      {giornata}: {len(istanze)} coppie rigiocabili su "
+                  f"{esaminate} esaminate ({quota:.0%}), {quante} righe", flush=True)
 
-    if tutti_risultati:
-        print(f"\n  Tempo totale: {t_totale:.1f}s")
-        print(f"  Istanze totali: {len(tutti_risultati)}")
-        print(f"  Giornate coperte: {len(set(r.giornata for r in tutti_risultati))}")
-    else:
-        print("\n  Nessun risultato prodotto - verifica giornate e bordi.")
+        for etichetta, (modello, _) in modelli.items():
+            d = modello.diagnostica()
+            print(f"    [{nome_citta}/{etichetta}] ripieghi: {d['linee_ignote']} linee "
+                  f"ignote, {d['tratte_senza_ritardo_a_monte']:,} tratte senza ritardo "
+                  f"a monte su {d['tratte_servite']:,}")
 
+    if not tutte:
+        print("\nnessuna istanza rigiocabile: nessun risultato scritto")
+        return 1
+
+    dettaglio = risultati / "backtest.csv"
+    pd.DataFrame(tutte).to_csv(dettaglio, index=False)
+    riepilogo = riepiloga(tutte)
+    destinazione = risultati / "backtest_riepilogo.csv"
+    riepilogo.to_csv(destinazione, index=False)
+    print(f"\nscritto {dettaglio} ({len(tutte)} righe)")
+    print(f"scritto {destinazione} ({len(riepilogo)} righe)")
+
+    print()
+    print("  QUOTA DI VIAGGI ARRIVATI ENTRO LA SCADENZA")
+    intestazione = ("citta", "bordi", "margine", "piu_veloce", "robusto", "diff",
+                    "divergono", "diff dove divergono")
+    print(f"  {intestazione[0]:<8} {intestazione[1]:<10} {intestazione[2]:>8} "
+          f"{intestazione[3]:>18} {intestazione[4]:>18} {intestazione[5]:>7} "
+          f"{intestazione[6]:>10} {intestazione[7]:>22}")
+    for (citta, bordi, margine), gruppo in riepilogo.groupby(["citta", "bordi",
+                                                              "margine"]):
+        per_strategia = gruppo.set_index("strategia")
+        if not {"piu_veloce", "robusto"} <= set(per_strategia.index):
+            continue
+        a = per_strategia.loc["piu_veloce"]
+        b = per_strategia.loc["robusto"]
+        divergenti = ""
+        if "quota_entro_divergenti" in gruppo.columns:
+            da = a.get("quota_entro_divergenti")
+            db = b.get("quota_entro_divergenti")
+            if pd.notna(da) and pd.notna(db):
+                quante = int(b.get("istanze_divergenti", 0))
+                divergenti = f"{db - da:+.1%} su {quante}"
+        print(f"  {citta:<8} {bordi:<10} {margine:>8} "
+              f"{a.quota_entro:>9.1%} +/-{a.deviazione_entro:<6.1%} "
+              f"{b.quota_entro:>9.1%} +/-{b.deviazione_entro:<6.1%} "
+              f"{b.quota_entro - a.quota_entro:>+7.1%} "
+              f"{b.quota_divergenti:>10.1%} {divergenti:>22}")
+    print()
+    print("La differenza e' la risposta alla domanda di ricerca, e va letta accanto")
+    print("alla deviazione fra giornate: se e' piu' piccola, il vantaggio non c'e'.")
+    print("Dove le due strategie scelgono lo stesso itinerario la differenza e' zero")
+    print("per costruzione: l'ultima colonna toglie quelle istanze, ed e' la misura")
+    print("piu' netta di quanto il modello sposti l'esito quando sposta la scelta.")
     return 0
 
 

@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
 
@@ -702,6 +702,13 @@ class Citta:
     constatazioni_reali: bool
     massimo_feed_meno_programmato: float
     salti_di_giorno: list[tuple[str, int, int]]
+    indice_linea: dict[str, int] = field(default_factory=dict)
+    """Da ``route_id`` all'indice usato dalla codifica.
+
+    Serve al backtesting, che deve interrogare il modello partendo da un itinerario
+    e non da una riga di parquet: senza questa corrispondenza il ponte verso il
+    pianificatore non saprebbe quale cella guardare.
+    """
     quantificate_giorni: bool = True
     """Se la divisione in addestramento/taratura/verifica e' quella progettata.
 
@@ -854,6 +861,7 @@ def carica(citta: str, cartella: Path, cartella_gtfs: Path, quanti_giorni: int,
         addestramento=addestramento, taratura=taratura, verifica=verifica,
         constatazioni_reali=bool(reali), massimo_feed_meno_programmato=float(massimo),
         salti_di_giorno=grezzi_dati.salti_di_giorno,
+        indice_linea=dict(grezzi_dati.indice_linea),
         quantificate_giorni=len(addestramento) >= 2 and bool(taratura),
     )
 

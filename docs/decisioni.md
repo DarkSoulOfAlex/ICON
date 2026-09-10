@@ -2604,3 +2604,136 @@ un giorno in piu' a meta': la finestra comune e' `min` delle ultime giornate.
 devono produrne di diversi (e la differenza va attribuita alla finestra, non al
 metodo). `scripts/etichetta_finestra.py` si confronta a mano con `ls
 data/processed/osservazioni/*`.
+
+### 67. `Tratta` riceve `sequenza_a_monte`: un'interfaccia congelata e riaperta
+
+**Decisione.** Il contratto `Tratta`, fissato in Fase 2 e da allora intoccato,
+acquista un campo: `sequenza_a_monte: int | None = None`, la posizione lungo la
+corsa dell'ultima fermata gia' servita. Va **in coda e con valore predefinito**,
+esattamente come vi era entrato `ritardo_a_monte`, cosi' ogni chiamata esistente
+continua a valere senza modifiche.
+
+**Perche' si riapre qualcosa che era stato chiuso.** La Fase 2 aveva congelato
+l'interfaccia proprio per non doverla inseguire, e il ragionamento e' registrato nel
+docstring di `src/delays/interfaccia.py`. La Fase 5 chiede pero' una cosa che nel
+congelare non era stata prevista: nel backtesting il modello viene interrogato **a
+meta' viaggio**, quando il viaggiatore e' gia' a bordo, e in quel momento si sa non
+solo *quanto* fosse il ritardo all'ultima fermata osservata ma anche *dove* quella
+fermata stesse lungo la corsa. Le due informazioni non sono la stessa: un ritardo di
+tre minuti alla seconda fermata e uno alla ventesima dicono cose diverse, perche' nel
+primo caso restano diciotto fermate per accumularne o recuperarne, nel secondo nessuna.
+
+**Alternative considerate.** Ricavare la posizione da `stop_sequence`, che nella
+`Tratta` c'e' gia': dice pero' dove si arriva, non da dove si e' osservato, e le due
+coincidono solo se il ritardo a monte viene dalla fermata immediatamente precedente -
+vero nel modello attuale, non necessariamente nel prossimo. Codificare le due cose in
+un campo solo: costringerebbe chi chiama a conoscerne la codifica, che e' il contrario
+di un'interfaccia.
+
+**Motivo per cui si annota invece di farlo e basta.** Una modifica retrocompatibile non
+rompe nulla, ed e' proprio per questo che va scritta: non lasciando traccia nei test ne'
+negli errori, fra sei mesi il campo sembrerebbe esserci sempre stato, e la ragione per
+cui l'interfaccia era stata congelata sembrerebbe non essere mai esistita. Il campo
+**non e' ancora usato** dal modello stimato, che condiziona su linea, fascia, tipo di
+giorno e bin del ritardo a monte: sta li' perche' la Fase 5 possa passarlo senza dover
+riaprire di nuovo il contratto.
+
+**Come si potrebbe verificare.** I test in `tests/test_planner.py` costruiscono `Tratta`
+senza il campo nuovo e devono continuare a passare: se un giorno diventasse
+obbligatorio, fallirebbero tutti insieme e la retrocompatibilita' si scoprirebbe rotta
+prima di essere pubblicata.
+
+---
+
+### 68. Il modello appreso incontra il pianificatore: che cosa si assume dentro un bin
+
+**Decisione.** `src/delays/bayesiano.py` traduce la tabella di Fase 3 nel contratto
+fissato in Fase 2. Dentro ciascun bin si assume la distribuzione di **massima
+entropia** compatibile con cio' che si e' misurato: uniforme nei bin limitati, dove si
+conosce solo l'intervallo; esponenziale nei due bin aperti verso l'infinito, dove
+all'intervallo si aggiunge il ritardo medio misurato dentro quel bin.
+
+**Alternative considerate.** Concentrare la massa di ogni bin nel suo valore medio: la
+ripartizione diventerebbe una scala a gradini e `P(arrivo <= T)` salterebbe di colpo al
+variare di T di un secondo - non un difetto di precisione ma un artefatto, che il
+pianificatore prenderebbe per un fatto e su cui sceglierebbe. Assegnare ai bin aperti
+un'ampiezza convenzionale, per esempio il doppio dell'ultimo bordo: inventerebbe il
+parametro che pesa di piu', dato che i bin aperti raccolgono fra un quinto e due terzi
+della massa a seconda dei bordi (voce 64).
+
+**Motivo.** L'assunzione dentro il bin non e' un dettaglio implementativo: e' l'unico
+punto in cui il progetto aggiunge informazione che i dati non contengono, e per questo
+va scelta col criterio che ne aggiunge il meno possibile. La massima entropia e'
+esattamente quel criterio, e ha il pregio di non lasciare parametri liberi: gli estremi
+vengono dai bordi tarati, le medie dalle stesse giornate su cui si stima.
+
+**Che cosa succede quando manca il contesto.** Alla prima fermata di un itinerario il
+ritardo a monte non esiste ancora: non si sceglie un bin arbitrario, si
+**marginalizza** sulla distribuzione dei bin a monte misurata sulle giornate di stima,
+che e' cio' che una rete bayesiana fa su una variabile non osservata. Una linea mai
+vista nelle giornate di stima ripiega sul livello piu' grossolano della scala di
+risalita - il caso per cui la scala esiste - e i ripieghi si contano e si riportano
+invece di restare invisibili.
+
+**Come si potrebbe verificare.** `tests/test_bayesiano.py` controlla le proprieta' che
+una distribuzione deve avere in quanto tale: ripartizione monotona fra zero e uno,
+quantile che la inverte, campione che la riproduce. Le due assunzioni hanno ciascuna il
+proprio test: l'uniforme si vede dalla ripartizione lineare a tratti dentro un bin
+limitato, l'esponenziale dal fatto che la media della coda sia quella misurata e non
+un'altra.
+
+---
+
+### 69. Il backtesting rigioca, non chiede al modello di giudicare se stesso
+
+**Decisione.** Il confronto fra le due strategie - arrivo minimo teorico contro massimo
+`P(arrivo <= T)` - non si fa confrontando le probabilita' che il modello attribuisce,
+ma **rigiocando entrambe le scelte sui ritardi che quel giorno sono stati osservati** e
+contando chi arriva entro la scadenza.
+
+**Alternative considerate.** Confrontare la probabilita' attesa delle due scelte, che e'
+cio' che `scripts/pianificazione_robusta.py` misura in Fase 4. E' una misura legittima
+di quanto la frontiera sia varia, ma non risponde alla domanda di ricerca: la
+probabilita' che il modello attribuisce alla propria scelta e' per costruzione la piu'
+alta - e' quella che ha scelto - e misurarla non dice quanti viaggi riescano davvero.
+Il modello sarebbe insieme giudice e imputato.
+
+**Motivo, e la cosa che solo la replica vede.** Rigiocare sugli orari reali fa emergere
+un fenomeno che l'orario teorico dichiara sempre riuscito: **il mezzo in anticipo fa
+perdere la coincidenza esattamente come quello in ritardo**. Se la corsa successiva
+parte novanta secondi prima del previsto e il viaggiatore arriva puntuale, la
+coincidenza e' persa, e nessun confronto fatto sull'orario programmato puo'
+accorgersene.
+
+**Tre scelte di misura, da dichiarare.**
+
+1. **I recuperi contano come coincidenze perse, non come fallimenti.** Ogni tappa porta
+   con se' le corse successive della stessa linea: se la pianificata sfugge si prende la
+   seguente e si arriva piu' tardi. Trattare la coincidenza persa come fallimento del
+   viaggio sopravvaluterebbe la differenza fra le strategie, perche' in una rete urbana
+   una linea ripassa.
+2. **Un viaggio interrotto non e' arrivato entro la scadenza.** Escluderlo dal conto, o
+   contarlo riuscito, premierebbe la strategia che si caccia piu' spesso nei guai.
+3. **Una tratta non osservata ferma la replica**, e non viene sostituita con l'orario
+   teorico: sarebbe dichiarare puntuale cio' che non si e' visto, e proprio nei casi in
+   cui il dato manca.
+
+**Il numero senza il quale il risultato non si legge.** Dove le due strategie scelgono
+lo stesso itinerario la differenza fra loro e' zero **per costruzione**, e mediare su
+quelle istanze diluisce l'effetto verso lo zero per quanto il modello sia bravo. Si
+riporta quindi la quota di istanze in cui le due divergono, e la differenza calcolata
+sulle sole divergenti: senza, un vantaggio inesistente e un vantaggio reale ma raro si
+leggono allo stesso modo.
+
+**Un limite della selezione, misurato.** Solo una parte delle corse dell'orario compare
+nel tempo reale, quindi non ogni itinerario e' rigiocabile: si tengono le coppie con
+almeno due candidati interamente osservati, e sulla giornata di prova sono circa quattro
+su dieci dei candidati - il 38,4% su Roma e il 36,5% su Torino, misurati sul 9
+settembre. E' una selezione che favorisce le linee frequenti, e la quota si riporta
+accanto ai risultati invece di restare implicita.
+
+**Come si potrebbe verificare.** `tests/test_replica.py` costruisce itinerari di cui si
+conosce l'esito - la coincidenza persa per anticipo, quella tenuta per un soffio, quella
+persa per un secondo, il recupero riuscito, l'interruzione - e verifica che la replica li
+ritrovi. Il caso del mezzo in anticipo ha un test proprio, perche' e' il fenomeno su cui
+poggia l'intera domanda di ricerca.
