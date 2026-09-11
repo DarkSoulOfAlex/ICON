@@ -97,6 +97,17 @@ espone agli altri un'interfaccia stretta ed e' collaudato e misurato per conto
 proprio prima di essere composto; le quattro sezioni che seguono sono percio'
 leggibili anche separatamente.
 
+**Dove sono stati misurati i numeri di questo documento.** Tutte le misure sul
+grafo statico - la base di conoscenza, la costruzione del grafo, la ricerca, il
+soddisfacimento di vincoli - sono calcolate sull'archivio GTFS in vigore il **26
+agosto 2026**, e ogni file in `results/` ne porta la colonna `archivio`. I tempi di
+esecuzione vengono tutti dalla stessa macchina, **Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7**, e i CSV
+che li riportano ne portano la colonna `macchina`: un tempo senza l'hardware su cui
+e' stato preso non e' confrontabile con nessun altro, ed e' il motivo per cui le
+due colonne esistono invece di essere sottintese. Le misure sui dati raccolti sul
+campo seguono invece una finestra temporale, dichiarata nella colonna `finestra` e
+discussa dove serve.
+
 # Elenco argomenti di interesse
 
 Gli argomenti trattati sono quattro, tratti da sezioni diverse del programma e qui
