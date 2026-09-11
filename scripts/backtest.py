@@ -266,6 +266,41 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
     return righe
 
 
+QUOTA_MINIMA_DI_COPPIE = 0.5
+"""Frazione delle coppie richieste sotto la quale una giornata non entra nella media.
+
+La media fra giornate le pesa tutte uguali, ed e' la scelta giusta: le istanze di
+uno stesso giorno condividono il traffico di quel giorno e non sono indipendenti.
+Ne segue pero' che una giornata con sette coppie conta quanto una con trenta, e
+sette coppie sono un campione che il caso muove a piacere.
+
+La soglia e' fissata a meta' delle coppie richieste ed e' stata scelta **prima** di
+guardare quale risultato producesse: e' l'unico modo di non sceglierla per l'esito.
+Sui dati raccolti esclude una sola giornata, Roma 2026-09-07, che il consolidamento
+aveva prodotto parziale.
+"""
+
+
+def scarta_giornate_magre(tabella: pd.DataFrame,
+                          quota: float = QUOTA_MINIMA_DI_COPPIE) -> pd.DataFrame:
+    """Toglie le giornate con troppe poche coppie perche' la loro media valga."""
+    if tabella.empty or "coppie_richieste" not in tabella.columns:
+        return tabella
+    conteggio = (tabella.groupby(["citta", "giornata"])
+                 .agg(coppie=("coppia", "nunique"),
+                      richieste=("coppie_richieste", "first"))
+                 .reset_index())
+    magre = conteggio[conteggio.coppie < quota * conteggio.richieste]
+    if magre.empty:
+        return tabella
+    for _, r in magre.iterrows():
+        print(f"  giornata esclusa: {r.citta} {r.giornata} ha {int(r.coppie)} coppie "
+              f"su {int(r.richieste)} richieste, sotto la meta'")
+    escluse = set(zip(magre.citta, magre.giornata))
+    tenute = [t not in escluse for t in zip(tabella.citta, tabella.giornata)]
+    return tabella[tenute]
+
+
 def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
     """Marca le istanze in cui le due strategie scelgono itinerari diversi.
 
@@ -278,6 +313,7 @@ def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
     # Una riga ripetuta non cambia le medie ma gonfia i conteggi, e soprattutto e'
     # il sintomo di due esecuzioni che hanno scritto sullo stesso file: si toglie e
     # si dice, invece di assorbirla in silenzio.
+    tabella = scarta_giornate_magre(tabella)
     identificativo = ["citta", "bordi", "giornata", "coppia", "margine", "strategia"]
     ripetute = int(tabella.duplicated(subset=identificativo).sum())
     if ripetute:

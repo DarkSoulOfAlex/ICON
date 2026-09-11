@@ -2514,6 +2514,46 @@ con metodologia o dati diversi e vanno scartati dal documento:
 - `Pearson +0,885`: correlazione precedente alla correzione della popolazione torinese
   (voce 63).
 
+**CHIUSURA: la Fase 5 ha risposto, e i due insiemi sono indistinguibili.** Questa
+voce rimetteva al backtesting la scelta fra `ottili` e `decisione`. Il backtesting
+ha risposto **no, non cambia i risultati**, e la ragione per cui sembrava
+cambiarli e' essa stessa misurata.
+
+Sul primo giro i due insiemi parevano distinguersi: a quindici minuti di margine
+`decisione` dava +11,1 punti di viaggi arrivati entro la scadenza e `ottili`
++7,5. La differenza veniva **per intero da una giornata**: Roma 2026-09-07, che il
+consolidamento aveva prodotto parziale, contribuiva sette coppie invece di trenta
+e pesava nella media fra giornate quanto le altre. Escludendola con la regola
+dichiarata al punto seguente, i due insiemi danno **+10,0 punti entrambi**, e le
+deviazioni si stringono da +/-3,5 e +/-10,4 a +/-1,9 per tutti e due.
+
+| margine | `decisione` | `ottili` |
+| ---: | ---: | ---: |
+| 10 min | +4,4 | +3,3 |
+| **15 min** | **+10,0** | **+10,0** |
+| 20 min | +13,3 | +14,4 |
+| 30 min | +10,0 | +10,0 |
+
+Restano differenze di uno o due punti a venti minuti, dentro le deviazioni. **La
+scelta dei bordi non e' un punto di decisione del progetto**: si adottano gli
+`ottili`, che vincevano sul guadagno, e si dichiara che `decisione` avrebbe dato
+gli stessi risultati. Il lavoro di misura che ha portato qui non e' sprecato: ha
+stabilito che i bordi vecchi erano sbagliati - due terzi della massa romana in un
+bin aperto - e che fra i candidati ragionevoli la scelta e' indifferente. Sono due
+conclusioni diverse, e solo la prima richiedeva una decisione.
+
+**La regola sulle giornate magre, fissata prima di guardarne l'esito.** Una
+giornata che contribuisca **meno della meta' delle coppie richieste** non entra
+nelle medie. La media fra giornate le pesa tutte uguali, ed e' la scelta giusta -
+le istanze di uno stesso giorno condividono il traffico di quel giorno e non sono
+indipendenti - ma ne segue che sette coppie contano quanto trenta, e sette coppie
+sono un campione che il caso muove a piacere. La soglia e' a meta' perche' e' il
+valore che separa "giornata incompleta" da "giornata con qualche buco" senza
+doversi chiedere quale risultato produca, ed e' stata scelta prima di calcolarlo.
+Sui dati raccolti esclude una sola giornata, dichiarata accanto ai risultati
+romani, e il codice la stampa a ogni esecuzione
+(`scripts/backtest.py`, `QUOTA_MINIMA_DI_COPPIE`).
+
 ---
 
 ### 65. Su Torino il dato non e' un ritardo osservato, ed e' un solo dato
@@ -2792,3 +2832,76 @@ numeri sopravvivano al suo file.
 ogni riga `NON TROVATO` e' un numero da giustificare o da togliere. La prova che
 il setaccio funzioni e' che, rimettendo nel documento il 3,4% e il 35,9%, li
 segnali entrambi.
+
+### 71. La provenienza si dichiara sotto la tabella, non si cerca dopo
+
+**Decisione.** Ogni tabella di risultati del documento porta sotto di se' una riga
+che dice da quale CSV viene e con quale aggregazione. Per esempio:
+
+> *Fonte: `results/ricerca_astar.csv`, medie sulle sole coppie risolte (43 su 50 a
+> Roma, 39 su 50 a Torino).*
+
+**Perche' questa e non un verificatore migliore.** La voce 70 aveva messo un
+setaccio a guardia dei numeri del documento. Misurandone il potere si e' scoperto
+che non puo' averne: il **60,8%** delle percentuali inventate a un decimale trova
+comunque una corrispondenza fra le celle dei riepiloghi, e col dettaglio incluso si
+arriva al 99,5%. Non e' un difetto dell'implementazione ma un limite di
+informazione - una percentuale a un decimale ha mille valori possibili e il corpus
+ne contiene migliaia - e nessun raffinamento lo toglie. Ne segue che i numeri che
+il setaccio dichiara "trovati" non sono verificati, e che inseguire quelli non
+trovati costa molto e conclude poco.
+
+La riga di fonte fa tre cose che il setaccio non puo' fare. **Rende il numero
+rifacibile** da chiunque abbia il repository, perche' dice il file e l'operazione.
+**Obbliga chi scrive a riaprire il file** invece di citare a memoria, che e'
+esattamente il difetto della voce 70: il 3,4% era vero quando fu scritto ed e'
+diventato falso quando la corsa che lo sosteneva e' stata sostituita. E
+**trasforma il controllo da indovinello in verifica**, perche' il lettore non deve
+cercare il numero: gli viene detto dove sta.
+
+**Alternative considerate.** Un verificatore piu' fine, che ricostruisca gli
+aggregati: e' stato provato, porta i falsi positivi da 112 a 67 su 920 numeri e
+lascia il tasso di falso dove sta. Esportare ogni numero del documento da un
+programma, in stile *literate programming*: risolverebbe il problema alla radice ma
+riscriverebbe il documento in un formato che il modello di consegna non prevede.
+
+**Il setaccio resta, con un ruolo piu' modesto.** Serve sui numeri **in prosa**,
+che nessuna riga di fonte copre, e a segnalare quelli che nessun CSV sostiene -
+che e' come si sono scoperti i numeri della rete ASP a piena scala, esistenti solo
+nel log di una esecuzione. Il programma dichiara il proprio tasso di falso a ogni
+esecuzione, perche' chi lo legge sappia quanto vale un "trovato".
+
+**Come si potrebbe verificare.** Prendere una tabella a caso del documento, leggere
+la sua riga di fonte, ed eseguire cio' che dice. Se il numero non viene fuori, o la
+riga e' sbagliata o il numero lo e'.
+
+---
+
+### 72. Le cifre del CSV nelle tabelle, il numero arrotondato in prosa
+
+**Decisione.** Nelle tabelle i risultati si riportano **con le cifre che hanno nel
+CSV**: `0,4664`, non `46,6%`. In prosa si scrive il numero arrotondato e si rimanda
+alla tabella: *"circa il 47%"*. Le due forme non si scambiano.
+
+**Motivo, misurato.** Un numero a quattro decimali cercato fra le celle dei
+riepiloghi ha un tasso di falsa corrispondenza del **14,5%**; la stessa grandezza
+scritta come percentuale a un decimale arriva al **60,8%**, e un intero a cinque
+cifre allo **0,0%**. Le cifre non sono un vezzo tipografico: sono l'unica cosa che
+rende un numero verificabile. Scritto "46,6%" non lo e' da nessuno, nemmeno da chi
+lo ha prodotto.
+
+La prosa ha il problema opposto: quattro decimali in mezzo a una frase non si
+leggono, e una pagina di cifre non si discute. Per questo l'arrotondamento in prosa
+non e' una concessione ma la scelta giusta **purche' la tabella accanto porti il
+valore pieno**, e purche' il testo rimandi alla tabella invece di fingere di essere
+esso stesso la fonte.
+
+**Alternative considerate.** Cifre piene ovunque: rende il testo illeggibile e non
+aggiunge verificabilita', perche' la tabella c'e' gia'. Percentuali ovunque, anche
+in tabella: e' la pratica corrente in molti lavori, e rende il documento
+inverificabile senza che nulla lo segnali - il caso peggiore.
+
+**Come si potrebbe verificare.** `scripts/verifica_numeri.py` stampa il tasso di
+falso per ciascuna forma a ogni esecuzione: se un giorno le tabelle fossero scritte
+in percentuale, il tasso sulle percentuali smetterebbe di essere una curiosita' e
+diventerebbe la misura di quanto il documento sia controllabile.

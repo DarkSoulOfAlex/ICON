@@ -377,10 +377,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     print()
     print(f"  trovati {trovati} | NON TROVATI {len(mancanti)} su {len(occorrenze)}")
     print()
-    print("I falsi positivi sono previsti: anni, numeri di capitolo, conteggi e")
-    print("grandezze citate dalla bibliografia non stanno in nessun CSV e non devono.")
-    print("Cio' che va guardato uno per uno e' un numero presentato come RISULTATO")
-    print("che compare qui: e' quello il modo di sbagliare che nessun test intercetta.")
+    print("A COSA SERVE, e a cosa no. La difesa principale del documento non e' questo")
+    print("programma ma la riga di fonte sotto ogni tabella, che dice da quale CSV e con")
+    print("quale aggregazione il numero viene (voce 71): quella rende il numero rifacibile")
+    print("e obbliga chi scrive a riaprire il file invece di citare a memoria.")
+    print()
+    print("Qui si pescano i numeri in PROSA, che nessuna riga di fonte copre, e quelli che")
+    print("NESSUN CSV sostiene - e' cosi' che si sono scoperti i numeri della rete ASP a")
+    print("piena scala, esistenti solo nel log di una esecuzione. I falsi positivi sono")
+    print("previsti: anni, numeri di pagina, conteggi. Un \"trovato\" non e' una verifica,")
+    print("e il tasso di falso qui sopra dice di quanto.")
     return 0
 
 
