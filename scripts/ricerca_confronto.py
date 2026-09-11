@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import archivio_in_vigore, carica_archivio  # noqa: E402
 from src.graph.search import cerca_frontiera_pareto, cerca_primo_arrivo  # noqa: E402
 from src.graph.time_expanded import costruisci, velocita_massima  # noqa: E402
@@ -417,8 +418,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     ricerca_df = pd.DataFrame(righe_ricerca)
     marca_archivio(pd.DataFrame(righe_velocita), RADICE).to_csv(
         RISULTATI / "velocita_archi.csv", index=False)
-    marca_archivio(grafo_df, RADICE).to_csv(RISULTATI / "grafo_finestra.csv", index=False)
-    marca_archivio(ricerca_df, RADICE).to_csv(RISULTATI / "ricerca_astar.csv", index=False)
+    marca_macchina(marca_archivio(grafo_df, RADICE)).to_csv(
+        RISULTATI / "grafo_finestra.csv", index=False)
+    marca_macchina(marca_archivio(ricerca_df, RADICE)).to_csv(
+        RISULTATI / "ricerca_astar.csv", index=False)
     disegna(ricerca_df, grafo_df, RISULTATI / "ricerca_astar.png")
 
     print("\n=== Sintesi (media +/- dev.std) ===")

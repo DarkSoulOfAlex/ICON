@@ -2905,3 +2905,93 @@ inverificabile senza che nulla lo segnali - il caso peggiore.
 falso per ciascuna forma a ogni esecuzione: se un giorno le tabelle fossero scritte
 in percentuale, il tasso sulle percentuali smetterebbe di essere una curiosita' e
 diventerebbe la misura di quanto il documento sia controllabile.
+
+### 73. L'archivio dell'orario e' un parametro, non un dettaglio dell'esecuzione
+
+**Decisione.** Gli script che misurano sul grafo statico ricevono `--archivio` e
+scrivono la colonna `archivio` nel CSV. La funzione che sceglie l'archivio sta in
+un posto solo, `src.gtfs.loader.archivio_in_vigore`. Tutte le misure statiche del
+progetto sono rifatte sull'archivio del **26 agosto**, sulla stessa macchina.
+
+**Il difetto.** Quattro script - `ricerca_confronto`, `pianificazione_robusta`,
+`csp_greedy`, `complessita_kb` - avevano quattro copie identiche di una funzione
+che prendeva sempre l'**ultimo archivio disponibile**. L'orario cambia ogni giorno:
+ne seguiva che ogni fase aveva misurato sulla rete in vigore il giorno in cui era
+stata eseguita, e che nessun CSV lo registrava. Dal 27 agosto Roma ha 8.300
+fermate invece di 8.301, quindi il documento avrebbe potuto dire 8.301 in un
+capitolo e usarne 8.300 nel successivo senza che nulla lo segnalasse. E' lo stesso
+difetto della finestra delle Fasi 3 e 5, su un altro parametro: un valore lasciato
+implicito perche' "tanto e' sempre l'ultimo".
+
+**Che cosa e' cambiato rigenerando: niente.** Il confronto riga per riga con le
+versioni precedenti:
+
+| CSV | righe | differenze sui conteggi |
+| --- | ---: | ---: |
+| `complessita_kb` | 78 | 0 |
+| `ricerca_astar` | 500 | 0 |
+| `grafo_finestra` | 30 | 0 |
+| `velocita_archi` | 2 | 0 |
+| `robusto_griglia_T` | 1.920 | 0 |
+| `conv_vs_montecarlo` | 1.088 | 0 |
+
+Restano diversi i soli tempi di esecuzione, e di poco. Il rischio era reale e non
+si e' materializzato: tutte le fasi stavano gia' sullo stesso archivio.
+
+**La scoperta che rende la voce onesta.** Prima di rigenerare, l'archivio di
+ciascun CSV era stato **dedotto dalla data del commit**, ed era una deduzione
+sbagliata: `robusto_griglia_T`, committato il 27 agosto, stava gia' sull'archivio
+del 26. Il metodo giusto e' stato un altro: contare le fermate fisiche in ogni
+archivio e vedere quale desse 8.301 - lo danno il 25 e il 26, dal 27 sono 8.300.
+Dedurre la provenienza di un numero da quando e' stato committato **sembra**
+rigoroso, e qui avrebbe fatto rigenerare un file per correggere un difetto che non
+aveva.
+
+**Lo stesso meccanismo su un altro parametro: i 500 m/s.** Rifacendo l'esperimento
+sulla chiave di stato (voce 70, numeri senza file) il programma usava una velocita'
+massima di 500 m/s, scelta perche' sembrava un limite superiore neutro. Dava
+1.512.712 stati contro i 1.464.312 del documento: un esperimento diverso invece di
+una verifica. Con la velocita' **misurata** da `velocita_archi.csv`, 139,12 m/s, i
+numeri coincidono esattamente. Un parametro scelto per comodita' basta a rendere
+irriproducibile un numero che era giusto, e il fatto che sembri neutro non lo rende
+tale.
+
+**Un'eccezione voluta.** `backtest.py` non riceve `--archivio`: usa
+`archivio_per(citta, giornata)`, cioe' l'archivio in vigore nella giornata che
+rigioca. Li' fissarlo sarebbe l'errore opposto - farebbe conoscere al pianificatore
+un orario pubblicato dopo il giorno che sta simulando.
+
+**Come si potrebbe verificare.** Ogni CSV statico porta la colonna `archivio`: se
+due tabelle del documento venissero da orari diversi, si vedrebbe leggendo i
+file. E `python scripts/materializza_transfers.py --archivio 2026-08-27`
+restituisce 8.300 fermate invece di 8.301, che e' la dimostrazione che il
+parametro conta.
+
+---
+
+### 74. Committare prima di mutare
+
+**Decisione.** Prima di eseguire una mutazione per collaudare un test, il lavoro in
+corso va committato.
+
+**Motivo.** La ricetta usata per verificare che un test copra cio' che dichiara e'
+questa: si altera il codice, si esegue la suite, si conta quanti test diventano
+rossi, e si ripristina con `git checkout -- <file>`. L'ultimo passo **cancella
+tutto cio' che nel file non e' ancora committato**, non solo la mutazione. E'
+successo due volte nella stessa giornata: la prima ha portato via l'invariante
+appena aggiunto a `ModelloBayesiano`, la seconda l'intero `--senza-scrittura` del
+consolidamento.
+
+**Perche' non se ne accorge subito.** In entrambi i casi la suite e' tornata verde
+o quasi, perche' cio' che era stato cancellato era **l'aggiunta**, non una rottura:
+il codice tornava a uno stato funzionante e precedente. Il primo caso e' emerso
+solo perche' un test scritto contestualmente e' rimasto e ha cominciato a fallire;
+senza quel test la modifica sarebbe sparita in silenzio.
+
+**Alternative considerate.** Ripristinare con una copia del file invece che con
+`git checkout`: funziona, ma aggiunge un passo da ricordare proprio quando si sta
+pensando ad altro. Mutare su una copia del repository: costa piu' di quanto valga
+per una mutazione di una riga.
+
+**Come si potrebbe verificare.** `git status` prima di ogni mutazione: se elenca
+file modificati, il ripristino ne portera' via le modifiche.

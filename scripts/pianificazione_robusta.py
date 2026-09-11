@@ -40,6 +40,7 @@ import pandas as pd  # noqa: E402
 from src.delays.interfaccia import ModelloSintetico, assicura_utilizzabile  # noqa: E402
 from src.graph.search import cerca_frontiera_pareto  # noqa: E402
 from src.graph.time_expanded import costruisci  # noqa: E402
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import archivio_in_vigore, carica_archivio  # noqa: E402
 from src.planner.baselines import STRATEGIE  # noqa: E402
 from src.planner.robust import (  # noqa: E402
@@ -335,7 +336,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     dati_metodi = pd.DataFrame(metodi)
     marca_archivio(dati_griglia, RADICE).to_csv(
         RISULTATI / "robusto_griglia_T.csv", index=False)
-    marca_archivio(dati_metodi, RADICE).to_csv(
+    marca_macchina(marca_archivio(dati_metodi, RADICE)).to_csv(
         RISULTATI / "conv_vs_montecarlo.csv", index=False)
     disegna_griglia(dati_griglia, RISULTATI / "robusto_griglia_T.png")
     disegna_metodi(dati_metodi, RISULTATI / "conv_vs_montecarlo.png")

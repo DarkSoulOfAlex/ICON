@@ -41,6 +41,7 @@ import pandas as pd                                          # noqa: E402
 
 from src.graph.search import cerca_primo_arrivo               # noqa: E402
 from src.graph.time_expanded import costruisci                # noqa: E402
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import carica_archivio                   # noqa: E402
 
 FUSO = ZoneInfo("Europe/Rome")
@@ -134,7 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     risultati = argomenti.radice / "results"
     risultati.mkdir(parents=True, exist_ok=True)
     destinazione_csv = risultati / "chiave_di_stato.csv"
-    pd.DataFrame(righe).to_csv(destinazione_csv, index=False)
+    marca_macchina(pd.DataFrame(righe)).to_csv(destinazione_csv, index=False)
     print(f"\nscritto {destinazione_csv} ({len(righe)} righe)")
 
     if len(righe) == 2 and all(r["trovato"] for r in righe):

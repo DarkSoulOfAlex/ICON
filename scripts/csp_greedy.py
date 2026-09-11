@@ -53,6 +53,7 @@ from src.csp.modello import Candidato, Istanza, Tappa, limiti_inferiori  # noqa:
 from src.csp.risolutori import risolvi_completo, risolvi_greedy  # noqa: E402
 from src.graph.search import cerca_frontiera_pareto  # noqa: E402
 from src.graph.time_expanded import costruisci  # noqa: E402
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import archivio_in_vigore, carica_archivio  # noqa: E402
 
 CITTA = ("roma", "torino")
@@ -393,7 +394,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     dati = pd.DataFrame(misura(tutte))
     destinazione = RISULTATI / "csp_greedy.csv"
-    marca_archivio(dati, RADICE).to_csv(destinazione, index=False)
+    marca_macchina(marca_archivio(dati, RADICE)).to_csv(destinazione, index=False)
     print(f"\nscritto {destinazione} ({len(dati)} righe)")
     riassumi(dati)
     return 0

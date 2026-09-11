@@ -30,6 +30,7 @@ if str(RADICE) not in sys.path:
 
 import pandas as pd  # noqa: E402
 
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import carica_archivio, fermate_fisiche  # noqa: E402
 from src.kb.engine import ErroreKB, esegui, genera_fatti  # noqa: E402
 
@@ -130,7 +131,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if righe:
         RISULTATI.mkdir(parents=True, exist_ok=True)
         destinazione = RISULTATI / "kb_rete_intera.csv"
-        pd.DataFrame(righe).to_csv(destinazione, index=False)
+        marca_macchina(pd.DataFrame(righe)).to_csv(destinazione, index=False)
         print()
         print(f"scritto {destinazione} ({len(righe)} righe)")
     return 0

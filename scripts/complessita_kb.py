@@ -42,6 +42,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from src.eval.ambiente import marca_macchina  # noqa: E402
 from src.gtfs.loader import archivio_in_vigore, carica_archivio, fermate_fisiche  # noqa: E402
 from src.kb.engine import (  # noqa: E402
     esegui,
@@ -318,7 +319,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     dati = pd.DataFrame([asdict(m) for m in misure])
     CARTELLA_RISULTATI.mkdir(parents=True, exist_ok=True)
     percorso_csv = CARTELLA_RISULTATI / "complessita_kb.csv"
-    marca_archivio(dati, RADICE).to_csv(percorso_csv, index=False)
+    marca_macchina(marca_archivio(dati, RADICE)).to_csv(percorso_csv, index=False)
 
     sintesi = riassumi(dati)
     disegna(sintesi, CARTELLA_RISULTATI / "complessita_kb.png")
