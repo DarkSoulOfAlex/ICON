@@ -42,7 +42,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from src.gtfs.loader import carica_archivio, fermate_fisiche  # noqa: E402
+from src.gtfs.loader import archivio_in_vigore, carica_archivio, fermate_fisiche  # noqa: E402
 from src.kb.engine import (  # noqa: E402
     esegui,
     fermata_centrale,
@@ -82,15 +82,31 @@ class Misura:
     trasbordi: int
 
 
-def archivio_piu_recente(citta: str) -> Path:
-    cartella = RADICE / "data" / "raw" / "gtfs" / citta
-    archivi = sorted(cartella.glob("*.zip"))
-    if not archivi:
-        raise SystemExit(
-            f"Nessun archivio GTFS per '{citta}' in {cartella}. "
-            "La raccolta deve averne scaricato almeno uno."
-        )
-    return archivi[-1]
+ARCHIVIO: list[str | None] = [None]
+"""L'archivio GTFS da usare, fissato da --archivio.
+
+In una lista per poterlo impostare da ``main`` senza dichiararlo globale in ogni
+funzione che lo legge. Lasciato a ``None`` si prende il piu' recente, che e' il
+comportamento storico e la ragione per cui ogni fase del progetto ha misurato su
+una rete leggermente diversa: vedere ``src.gtfs.loader.archivio_in_vigore``.
+"""
+
+
+def marca_archivio(tavola: "pd.DataFrame", radice: "Path") -> "pd.DataFrame":
+    """Aggiunge la colonna ``archivio``: quale orario ha prodotto questi numeri.
+
+    Senza, un CSV non sa su quale rete e' stato calcolato, e due capitoli del
+    documento possono confrontare numeri presi da orari diversi senza che nulla lo
+    segnali - dal 27 agosto Roma ha 8.300 fermate invece di 8.301. E' lo stesso
+    difetto della finestra delle Fasi 3 e 5, su un altro parametro.
+    """
+    if tavola.empty or "citta" not in tavola.columns:
+        return tavola
+    nomi = {c: archivio_in_vigore(c, radice, ARCHIVIO[0]).name
+            for c in tavola["citta"].unique()}
+    tavola = tavola.copy()
+    tavola.insert(1, "archivio", tavola["citta"].map(nomi))
+    return tavola
 
 
 def misura_citta(
@@ -98,7 +114,7 @@ def misura_citta(
 ) -> tuple[list[Misura], list[str]]:
     """Esegue la griglia di misure per una citta'. Restituisce anche le note."""
     note: list[str] = []
-    percorso = archivio_piu_recente(citta)
+    percorso = archivio_in_vigore(citta, RADICE, ARCHIVIO[0])
     print(f"\n=== {citta} ({percorso.name}) ===")
     archivio = carica_archivio(percorso, con_stop_times=True)
     fermate = fermate_fisiche(archivio.stops)
@@ -284,7 +300,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--dimensioni", default=",".join(str(d) for d in DIMENSIONI_PREDEFINITE)
     )
     analizzatore.add_argument("--ripetizioni", type=int, default=RIPETIZIONI_PREDEFINITE)
+    analizzatore.add_argument("--archivio", default=None, metavar="AAAA-MM-GG",
+                              help="usa l'archivio GTFS in vigore a questa data")
     argomenti = analizzatore.parse_args(argv)
+    ARCHIVIO[0] = argomenti.archivio
 
     dimensioni = tuple(int(d) for d in argomenti.dimensioni.split(","))
     citta = tuple(c.strip() for c in argomenti.citta.split(","))
@@ -299,7 +318,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     dati = pd.DataFrame([asdict(m) for m in misure])
     CARTELLA_RISULTATI.mkdir(parents=True, exist_ok=True)
     percorso_csv = CARTELLA_RISULTATI / "complessita_kb.csv"
-    dati.to_csv(percorso_csv, index=False)
+    marca_archivio(dati, RADICE).to_csv(percorso_csv, index=False)
 
     sintesi = riassumi(dati)
     disegna(sintesi, CARTELLA_RISULTATI / "complessita_kb.png")

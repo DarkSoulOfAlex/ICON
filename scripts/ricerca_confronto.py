@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from src.gtfs.loader import carica_archivio  # noqa: E402
+from src.gtfs.loader import archivio_in_vigore, carica_archivio  # noqa: E402
 from src.graph.search import cerca_frontiera_pareto, cerca_primo_arrivo  # noqa: E402
 from src.graph.time_expanded import costruisci, velocita_massima  # noqa: E402
 
@@ -47,12 +47,33 @@ COLORI = {"roma": "#1f77b4", "torino": "#ff7f0e"}
 MARCATORI = {"roma": "o", "torino": "s"}
 RISULTATI = RADICE / "results"
 
+ARCHIVIO: list[str | None] = [None]
+"""L'archivio GTFS da usare, fissato da --archivio. In una lista per poterlo
+impostare da ``main`` senza dichiararlo globale in ogni funzione che lo legge.
 
-def archivio_piu_recente(citta: str) -> Path:
-    archivi = sorted((RADICE / "data" / "raw" / "gtfs" / citta).glob("*.zip"))
-    if not archivi:
-        raise SystemExit(f"Nessun archivio GTFS per '{citta}'.")
-    return archivi[-1]
+Lasciato a ``None`` si prende il piu' recente, che e' il comportamento storico e
+la ragione per cui ogni fase del progetto ha misurato su una rete leggermente
+diversa: vedere ``src.gtfs.loader.archivio_in_vigore``.
+"""
+
+
+def marca_archivio(tavola: "pd.DataFrame", radice: "Path") -> "pd.DataFrame":
+    """Aggiunge la colonna ``archivio``: quale orario ha prodotto questi numeri.
+
+    Senza, un CSV non sa su quale rete e' stato calcolato, e due capitoli del
+    documento possono confrontare numeri presi da orari diversi senza che nulla lo
+    segnali - dal 27 agosto Roma ha 8.300 fermate invece di 8.301. E' lo stesso
+    difetto della finestra delle Fasi 3 e 5, su un altro parametro.
+    """
+    if tavola.empty or "citta" not in tavola.columns:
+        return tavola
+    nomi = {c: archivio_in_vigore(c, radice, ARCHIVIO[0]).name
+            for c in tavola["citta"].unique()}
+    tavola = tavola.copy()
+    tavola.insert(1, "archivio", tavola["citta"].map(nomi))
+    return tavola
+
+
 
 
 def giorno_dell_archivio(percorso: Path) -> date:
@@ -352,7 +373,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     analizzatore = argparse.ArgumentParser(description=__doc__)
     analizzatore.add_argument("--citta", default="roma,torino")
     analizzatore.add_argument("--coppie", type=int, default=COPPIE)
+    analizzatore.add_argument("--archivio", default=None, metavar="AAAA-MM-GG",
+                        help="usa l'archivio GTFS in vigore a questa data invece del piu' recente")
     argomenti = analizzatore.parse_args(argv)
+    ARCHIVIO[0] = argomenti.archivio
 
     RISULTATI.mkdir(parents=True, exist_ok=True)
     righe_grafo: list[dict] = []
@@ -360,7 +384,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     righe_velocita: list[dict] = []
 
     for citta in (c.strip() for c in argomenti.citta.split(",")):
-        percorso = archivio_piu_recente(citta)
+        percorso = archivio_in_vigore(citta, RADICE, ARCHIVIO[0])
         giorno = giorno_dell_archivio(percorso)
         print(f"\n=== {citta} ({percorso.name}, servizio del {giorno}) ===", flush=True)
         archivio = carica_archivio(percorso, con_stop_times=True)
@@ -391,9 +415,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     grafo_df = pd.DataFrame(righe_grafo)
     ricerca_df = pd.DataFrame(righe_ricerca)
-    pd.DataFrame(righe_velocita).to_csv(RISULTATI / "velocita_archi.csv", index=False)
-    grafo_df.to_csv(RISULTATI / "grafo_finestra.csv", index=False)
-    ricerca_df.to_csv(RISULTATI / "ricerca_astar.csv", index=False)
+    marca_archivio(pd.DataFrame(righe_velocita), RADICE).to_csv(
+        RISULTATI / "velocita_archi.csv", index=False)
+    marca_archivio(grafo_df, RADICE).to_csv(RISULTATI / "grafo_finestra.csv", index=False)
+    marca_archivio(ricerca_df, RADICE).to_csv(RISULTATI / "ricerca_astar.csv", index=False)
     disegna(ricerca_df, grafo_df, RISULTATI / "ricerca_astar.png")
 
     print("\n=== Sintesi (media +/- dev.std) ===")

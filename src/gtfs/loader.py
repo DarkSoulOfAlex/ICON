@@ -258,6 +258,31 @@ def _completa(tabella: pd.DataFrame, predefinite: Mapping[str, object]) -> pd.Da
     return tabella
 
 
+def archivio_in_vigore(citta: str, radice: Path, fino_a: str | None = None) -> Path:
+    """L'archivio GTFS in vigore a una data, o il piu' recente se non la si fissa.
+
+    Esisteva in quattro copie identiche, una per script, e ciascuna prendeva sempre
+    l'ultimo disponibile. L'orario cambia ogni giorno: ne seguiva che ogni fase del
+    progetto misurava su una rete leggermente diversa, a seconda del giorno in cui
+    l'avevano eseguita, e che nessun CSV lo registrava. Dal 27 agosto Roma ha 8.300
+    fermate invece di 8.301, quindi il documento avrebbe confrontato fra capitoli
+    numeri calcolati su reti diverse senza dirlo.
+
+    E' lo stesso difetto della finestra delle Fasi 3 e 5, su un altro parametro:
+    un valore lasciato implicito perche' "tanto e' sempre l'ultimo". Sta qui, in un
+    posto solo, perche' le copie non possano piu' divergere.
+    """
+    archivi = sorted((radice / "data" / "raw" / "gtfs" / citta).glob("*.zip"))
+    if fino_a:
+        archivi = [a for a in archivi if a.stem.split("_")[0] <= fino_a]
+    if not archivi:
+        raise ErroreGTFS(
+            f"Nessun archivio GTFS per '{citta}'"
+            + (f" valido al {fino_a}." if fino_a else ".")
+        )
+    return archivi[-1]
+
+
 def carica_archivio(
     percorso: Path | str,
     con_stop_times: bool = False,

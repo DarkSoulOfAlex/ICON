@@ -40,7 +40,7 @@ import pandas as pd  # noqa: E402
 from src.delays.interfaccia import ModelloSintetico, assicura_utilizzabile  # noqa: E402
 from src.graph.search import cerca_frontiera_pareto  # noqa: E402
 from src.graph.time_expanded import costruisci  # noqa: E402
-from src.gtfs.loader import carica_archivio  # noqa: E402
+from src.gtfs.loader import archivio_in_vigore, carica_archivio  # noqa: E402
 from src.planner.baselines import STRATEGIE  # noqa: E402
 from src.planner.robust import (  # noqa: E402
     candidati_da_frontiera,
@@ -59,16 +59,37 @@ COLORI = {"roma": "#1f77b4", "torino": "#ff7f0e"}
 MARCATORI = {"roma": "o", "torino": "s"}
 RISULTATI = RADICE / "results"
 
+ARCHIVIO: list[str | None] = [None]
+"""L'archivio GTFS da usare, fissato da --archivio. In una lista per poterlo
+impostare da ``main`` senza dichiararlo globale in ogni funzione che lo legge.
 
-def archivio_piu_recente(citta: str) -> Path:
-    archivi = sorted((RADICE / "data" / "raw" / "gtfs" / citta).glob("*.zip"))
-    if not archivi:
-        raise SystemExit(f"Nessun archivio GTFS per '{citta}'.")
-    return archivi[-1]
+Lasciato a ``None`` si prende il piu' recente, che e' il comportamento storico e
+la ragione per cui ogni fase del progetto ha misurato su una rete leggermente
+diversa: vedere ``src.gtfs.loader.archivio_in_vigore``.
+"""
+
+
+def marca_archivio(tavola: "pd.DataFrame", radice: "Path") -> "pd.DataFrame":
+    """Aggiunge la colonna ``archivio``: quale orario ha prodotto questi numeri.
+
+    Senza, un CSV non sa su quale rete e' stato calcolato, e due capitoli del
+    documento possono confrontare numeri presi da orari diversi senza che nulla lo
+    segnali - dal 27 agosto Roma ha 8.300 fermate invece di 8.301. E' lo stesso
+    difetto della finestra delle Fasi 3 e 5, su un altro parametro.
+    """
+    if tavola.empty or "citta" not in tavola.columns:
+        return tavola
+    nomi = {c: archivio_in_vigore(c, radice, ARCHIVIO[0]).name
+            for c in tavola["citta"].unique()}
+    tavola = tavola.copy()
+    tavola.insert(1, "archivio", tavola["citta"].map(nomi))
+    return tavola
+
+
 
 
 def prepara(citta: str):
-    percorso = archivio_piu_recente(citta)
+    percorso = archivio_in_vigore(citta, RADICE, ARCHIVIO[0])
     giorno = date.fromisoformat(percorso.stem.split("_")[0])
     archivio = carica_archivio(percorso, con_stop_times=True)
     inizio = int(
@@ -290,7 +311,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--sintetico-ammesso", action="store_true",
         help="riconosce che i risultati saranno prodotti con ritardi inventati",
     )
+    analizzatore.add_argument("--archivio", default=None, metavar="AAAA-MM-GG",
+                        help="usa l'archivio GTFS in vigore a questa data invece del piu' recente")
     argomenti = analizzatore.parse_args(argv)
+    ARCHIVIO[0] = argomenti.archivio
 
     modello = ModelloSintetico(correlazione=argomenti.correlazione)
     assicura_utilizzabile(modello, argomenti.sintetico_ammesso)
@@ -309,8 +333,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     dati_griglia = pd.DataFrame(griglia)
     dati_metodi = pd.DataFrame(metodi)
-    dati_griglia.to_csv(RISULTATI / "robusto_griglia_T.csv", index=False)
-    dati_metodi.to_csv(RISULTATI / "conv_vs_montecarlo.csv", index=False)
+    marca_archivio(dati_griglia, RADICE).to_csv(
+        RISULTATI / "robusto_griglia_T.csv", index=False)
+    marca_archivio(dati_metodi, RADICE).to_csv(
+        RISULTATI / "conv_vs_montecarlo.csv", index=False)
     disegna_griglia(dati_griglia, RISULTATI / "robusto_griglia_T.png")
     disegna_metodi(dati_metodi, RISULTATI / "conv_vs_montecarlo.png")
 
