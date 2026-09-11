@@ -1887,12 +1887,16 @@ casuali senza che nulla lo segnali.
 | Righe con ritardo oltre l'ora (28 agosto) | 100.856 | 27 |
 | Revisioni dell'orario in quindici giorni | 15 su 15 | 5 su 15 |
 | Payload corrotti in undici giorni | 94 | 0 |
-| Osservazioni conservate per passaggio | 17,0 | 7,0 |
+| Osservazioni conservate per passaggio, a cadenza pari | 20,3 | 7,1 |
 | Fin dove nel passato arriva il feed | 70.229 s | **4 s** |
 
 La quinta riga e' arrivata dopo le altre, con la rigenerazione completa, e le
-conferma dall'interno: 172,4 milioni di righe per 10,1 milioni di passaggi su
-Roma, 18,5 milioni per 2,7 su Torino. Chi emette previsioni con quindici minuti
+conferma dall'interno. Va pero' letta **a cadenza pari**, perche' quel numero
+dipende da quanto spesso si interroga almeno quanto da chi pubblica (voce 76):
+sulle sole giornate a cadenza piena sono 20,3 osservazioni per passaggio su Roma
+e 7,1 su Torino, un divario di 2,87 volte. La versione precedente, 17,0 contro
+7,0, mescolava le giornate romane a cadenza ridotta e **sottostimava** la
+differenza. Chi emette previsioni con quindici minuti
 di anticipo ha il tempo di correggersi molte volte prima del passaggio; chi le
 emette con due non ce l'ha. Non e' una misura indipendente dalle altre ma la loro
 conseguenza aritmetica, ed e' per questo che vale: se fosse risultata uguale nelle
@@ -3037,6 +3041,77 @@ rieseguisse senza `--fino-a`, ed e' un'altra ragione per cui quella colonna esis
 (voce 73). Roma non ne e' mai stata affetta: la mediana dei suoi dump sta fra
 431.149 e 881.271 byte in tutte e diciassette le giornate.
 
+**La causa, diagnosticata l'11 settembre.** Non e' nostra e non e' un endpoint
+spostato. Interrogando a mano i due feed di GTT:
+
+- `trip_update.aspx` risponde **HTTP 200** con un protobuf **valido**, header
+  `gtfs_realtime_version 2.0`, timestamp aggiornato **al secondo**, e **zero
+  entita'**;
+- `vehicle_position.aspx`, allo stesso istante, risponde con **354 entita'**, cioe'
+  354 veicoli tracciati e in circolazione;
+- il GTFS statico si scarica regolarmente, 22,7 MB.
+
+Il produttore quindi pubblica attivamente, sa che ora e', e **ha smesso di produrre
+previsioni di orario** pur continuando a sapere dove sono i mezzi. E' un guasto nel
+loro sottosistema di predizione, non nella rete, non nel nostro collector, non
+nell'URL. Un 404 travestito o un endpoint spostato avrebbero avuto un'altra firma,
+ed e' per distinguerli che la diagnosi guarda codice, tipo e **contenuto** invece
+che solo la riuscita della richiesta.
+
+**Il residuo del 9 settembre non e' un'ombra.** Quella giornata aveva 250 dump
+vuoti su 1.433, e la domanda era se il silenzio fosse cominciato prima di
+mezzanotte, il che avrebbe reso cieche le ultime ore di una giornata che sta
+**dentro** la finestra di stima e fra quelle di verifica del backtest. La
+distribuzione oraria dice di no: i 250 vuoti stanno tutti fra le 00:00 e le 05:59,
+quando il servizio torinese non circola, e dalle 06:00 alle 23:59 i vuoti sono
+**zero**. Il silenzio comincia esattamente alla mezzanotte del 10.
+
 **Come si potrebbe verificare.** `./deploy/stato.sh` sulla VM lo dice a ogni
 esecuzione. La prova che il controllo funzioni e' che, appena installato, ha
 segnalato che il silenzio era **ancora in corso** - cosa che nessuno sapeva.
+
+### 76. Le osservazioni per passaggio misurano noi, non il produttore
+
+**Constatazione.** Il numero di valori distinti che conserviamo per ciascun
+passaggio dipende fortemente da **quanto spesso interroghiamo**: correlazione di
+Pearson **+0,847 (p < 0,0001)** su Roma e **+0,530 (p = 0,042)** su Torino, fra i
+dump raccolti in una giornata e i valori per passaggio di quella giornata. Non e'
+una cautela metodologica, e' un fatto sul dato: quella grandezza descrive il nostro
+campionamento almeno quanto il comportamento di chi pubblica.
+
+Il motivo, ovvio a posteriori, e' che ogni interrogazione e' un'occasione di vedere
+una previsione cambiata. Chi interroga ogni minuto ne coglie piu' di chi interroga
+ogni mezz'ora, **a parita' di produttore**.
+
+**Che cosa invece non dipende dalla cadenza.** La quota di righe che la deduplica
+conserva - il rapporto fra righe scritte e `stop_time_update` letti - non mostra
+correlazione significativa con la densita': +0,376 (p = 0,151) su Roma, +0,490
+(p = 0,064) su Torino. E' un rapporto fra due grandezze che crescono insieme, e
+questo lo rende confrontabile fra citta' interrogate diversamente.
+
+**La conseguenza sul confronto fra le due citta'.** La voce 59 elenca le
+osservazioni per passaggio fra le misure su cui i due produttori differiscono. Il
+confronto resta valido, ma andava rifatto a cadenza pari, perche' Roma aveva avuto
+una fase iniziale a cadenza ridotta - 1.244 dump al giorno in media contro i 1.394
+di Torino - che **abbassava** il suo numero. Rifatto sulle sole giornate a cadenza
+piena, il divario non si riduce: **si allarga**, da 2,43 a 2,87 volte.
+
+| | tutte le giornate piene | solo cadenza piena (>= 1.400 dump) |
+| --- | ---: | ---: |
+| Roma | 17,96 (16 giornate) | **20,28** (9 giornate) |
+| Torino | 7,03 (15 giornate) | **7,07** (14 giornate) |
+| divario | 2,55x | **2,87x** |
+
+Torino non si muove perche' era gia' a cadenza piena quasi ovunque; Roma sale
+perche' le sue giornate lente pesavano verso il basso. La conclusione della voce
+59 - due filosofie di pubblicazione diverse - ne esce rafforzata, e con un numero
+che ora misura loro invece di noi.
+
+**Decisione.** Le osservazioni per passaggio si riportano **solo su giornate a
+cadenza piena**, dichiarando la soglia, e accanto alla misura si dichiara la
+dipendenza dalla cadenza. La quota conservata si puo' riportare su tutte le
+giornate piene.
+
+**Come si potrebbe verificare.** `results/consolidamento.csv` porta `dump_letti`
+accanto a ogni misura: la correlazione si ricalcola in una riga. Se un giorno la
+cadenza cambiasse, si vedrebbe da quella colonna invece di restare dentro la media.
