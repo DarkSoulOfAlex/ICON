@@ -2001,7 +2001,8 @@ milioni di righe - ma e' la stessa giornata in cui il feed romano pubblica molto
 piu' passato del solito, con il novantanovesimo percentile di
 `timestamp_feed - orario_programmato` a 36.526 secondi contro i circa duemila di
 tutte le altre. La coincidenza e' annotata e ripresa nell'argomento seguente; la
-regola che esclude la giornata non dipende comunque dalla causa. Escludendola con una regola fissata
+regola che esclude la giornata non dipende comunque dalla causa. Escludendola con
+una regola fissata
 prima di guardarne l'esito - una giornata che contribuisca meno della meta' delle
 coppie richieste non entra nelle medie - i due insiemi coincidono a quindici e a
 trenta minuti di margine, e le deviazioni si stringono da +/-3,5 e +/-10,4 a +/-1,9
