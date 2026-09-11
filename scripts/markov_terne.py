@@ -284,7 +284,7 @@ def analizza(citta: str, grezze: Grezze, generatore: np.random.Generator) -> lis
 
     righe += costo_beneficio(citta, r2, r1, r0, giorno, popolazioni)
     righe += costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazioni)
-    valori_ripetuti(citta, r2, r1, r0, popolazioni)
+    righe += valori_ripetuti(citta, r2, r1, r0, popolazioni)
     confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0)
     return righe
 
@@ -402,13 +402,20 @@ def costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazion
             "scarto_riferimento": float("nan"), "eccesso": c.guadagno,
             "mutua_semplice": c.perdita_senza, "quota": c.guadagno_relativo,
             "compatibile_con_zero": int(c.guadagno <= 0),
+            # Le osservazioni per cella sono la CAUSA del capovolgimento di segno
+            # fra i due regimi, e finora esistevano solo nel log di questa
+            # esecuzione: un numero citato nel documento e non rifacibile da
+            # nessuno e' esattamente il difetto della voce 70.
+            "celle_senza": c.celle_senza, "celle_con": c.celle_con,
+            "osservazioni_per_cella_con": c.terne_addestramento / c.celle_con,
+            "osservazioni_per_cella_senza": c.terne_addestramento / c.celle_senza,
         })
     print("      Se qui il guadagno sparisce, l'arco non si aggiunge: il modello vero")
     print("      non ha i dati per sostenerlo, per quanta informazione ci sia.")
     return righe
 
 
-def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> None:
+def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> list[dict]:
     """Il ritardo si ripete identico fra fermate consecutive?
 
     Mette alla prova la spiegazione che invertirebbe la lettura del capovolgimento
@@ -426,6 +433,7 @@ def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> None:
     """
     print()
     print("    --- Il ritardo si ripete identico fra fermate consecutive? ---")
+    righe = []
     for nome, maschera in popolazioni:
         if int(maschera.sum()) < 1_000:
             print(f"      {nome:<20} base insufficiente")
@@ -435,8 +443,16 @@ def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> None:
         tre = float(np.mean((r2[maschera] == r1[maschera]) & (r1[maschera] == r0[maschera])))
         print(f"      {nome:<20} identico alla precedente: {uno:>6.2%} | "
               f"due volte di fila: {tre:>6.2%}")
+        righe.append({
+            "citta": citta, "popolazione": nome,
+            "granularita": "valori ripetuti (sui secondi)",
+            "terne": int(maschera.sum()),
+            "quota_identiche": uno, "quota_identiche_a_monte": due,
+            "quota_identiche_due_volte": tre,
+        })
     print("      Una quota alta sulle gia' passate, e bassa sulle previsioni,")
     print("      spiegherebbe il capovolgimento come propagazione e non come traffico.")
+    return righe
 
 
 def confronta_ampiezze(citta, ampiezza, previsioni, passate, r2, r1, r0) -> None:
@@ -489,6 +505,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--citta", nargs="*", default=list(CITTA))
     parser.add_argument("--giorni", type=int, default=0,
                         help="quanti giorni usare (0 = tutti)")
+    parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG",
+                        help="ignora le giornate successive: la raccolta continua "
+                             "mentre si scrive, e senza questo ogni riesecuzione "
+                             "cadrebbe su una finestra diversa")
     parser.add_argument("--seme", type=int, default=20260908)
     parser.add_argument("--radice", type=Path, default=RADICE)
     argomenti = parser.parse_args(argv)
@@ -505,17 +525,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     for citta in argomenti.citta:
         cartella = argomenti.radice / "data" / "processed" / "osservazioni" / citta
         giorni = sorted(cartella.glob("*.parquet"))
+        if argomenti.fino_a:
+            giorni = [g for g in giorni if g.stem <= argomenti.fino_a]
         if argomenti.giorni:
             giorni = giorni[-argomenti.giorni:]
         if not giorni:
             print(f"  [{citta}] nessun parquet in {cartella}")
             continue
+        finestra = giorni[-1].stem
+        print(f"  [{citta}] finestra {giorni[0].stem} - {finestra} "
+              f"({len(giorni)} giornate)")
         grezze = Grezze.vuote()
         for indice, percorso in enumerate(giorni):
             terne_di_un_giorno(percorso, grezze, indice)
             print(f"  [{citta}] {percorso.stem}: {grezze.passaggi:,} passaggi cumulati",
                   flush=True)
-        tutte.extend(analizza(citta, grezze, generatore))
+        for riga in analizza(citta, grezze, generatore):
+            riga["finestra"] = finestra
+            riga["giornate"] = len(giorni)
+            tutte.append(riga)
         del grezze
 
     if tutte:
