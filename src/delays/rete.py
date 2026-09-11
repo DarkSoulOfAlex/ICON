@@ -341,3 +341,64 @@ def tara(
             corrente[i] = migliore
             traccia.append((conteggi.nomi[i], migliore, perdita))
     return Taratura(tuple(corrente), perdita, tuple(traccia), tuple(candidati))
+
+
+@dataclass(frozen=True)
+class Trasparenza:
+    """Quanto la tabella di un gradino si discosti da quella del suo genitore.
+
+    Serve a leggere un ``alfa`` finito **al bordo superiore** della griglia. Per
+    ``alfa`` che cresce la stima di una cella tende alla stima del genitore -
+    ``(conteggi + alfa*atteso) / (osservazioni + alfa) -> atteso`` - quindi un
+    gradino che sceglie il massimo disponibile sta chiedendo di somigliare al
+    genitore quanto la griglia gli concede. Non c'e' bisogno di allargare la
+    griglia per capire che cosa significhi: basta misurare **quanto dista gia'**.
+
+    Se dista zero entro il numerico, il gradino e' trasparente e non serve. Se
+    dista ancora, la griglia e' troppo stretta e va detto, perche' allora la scala
+    sta lavorando su meno gradini per troncamento e non per esito.
+    """
+
+    nome: str
+    alfa: float
+    scarto_massimo: float
+    """Massima differenza assoluta fra una probabilita' e quella del genitore."""
+    divergenza_media: float
+    """KL(gradino || genitore) in bit, mediata sulle celle col peso delle loro
+    osservazioni: dice quanto il gradino sposti cio' che il modello afferma sul
+    traffico reale, e non su celle che nessuno visita."""
+    celle: int
+    celle_osservate: int
+    """Le celle vuote coincidono col genitore per costruzione, quindi contarle
+    insieme alle altre diluirebbe la misura verso zero a prescindere."""
+
+
+def trasparenza(modello: Modello, conteggi: Conteggi) -> tuple[Trasparenza, ...]:
+    """Per ogni gradino oltre il primo, quanto disti dal proprio genitore."""
+    if len(modello.tabelle) != len(conteggi.matrici):
+        raise ErroreRete("il modello e i conteggi non hanno lo stesso numero di gradini")
+    esiti: list[Trasparenza] = []
+    for i in range(1, len(modello.tabelle)):
+        padre = conteggi.padri[i]
+        if padre is None:
+            raise ErroreRete(f"il gradino {i} non dichiara la mappa dei genitori")
+        figlia = modello.tabelle[i]
+        genitrice = modello.tabelle[i - 1][padre]
+        osservazioni = conteggi.matrici[i].sum(axis=1)
+        visitate = osservazioni > 0
+        scarto = float(np.max(np.abs(figlia - genitrice))) if figlia.size else 0.0
+        if visitate.any():
+            # Il logaritmo e' al sicuro: ogni cella ha probabilita' positive su
+            # tutti i bin, perche' il priore e' positivo ovunque per costruzione.
+            kl = np.sum(figlia[visitate] * np.log2(figlia[visitate] / genitrice[visitate]),
+                        axis=1)
+            peso = osservazioni[visitate]
+            divergenza = float(np.sum(kl * peso) / np.sum(peso))
+        else:
+            divergenza = 0.0
+        esiti.append(Trasparenza(
+            nome=modello.nomi[i], alfa=modello.alfa[i],
+            scarto_massimo=scarto, divergenza_media=divergenza,
+            celle=int(figlia.shape[0]), celle_osservate=int(visitate.sum()),
+        ))
+    return tuple(esiti)

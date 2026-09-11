@@ -67,7 +67,7 @@ from src.delays.contesto import (  # noqa: E402
     ultima_revisione,
 )
 from src.delays.markov import BORDI_OTTO, BORDI_QUATTRO, discretizza  # noqa: E402
-from src.delays.rete import Livello, stima, tara  # noqa: E402
+from src.delays.rete import Livello, componi, conta, stima, tara, trasparenza  # noqa: E402
 from src.gtfs.indice_statico import carica_indice, versione_valida  # noqa: E402
 from src.gtfs.loader import carica_archivio  # noqa: E402
 
@@ -1045,7 +1045,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
 
 
 def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
-           etichetta: str) -> tuple[list[dict], list[dict]]:
+           etichetta: str) -> tuple[list[dict], list[dict], list[dict]]:
     """La stima vera e propria, con i bordi ormai scelti."""
     citta, n_bin = c.nome, len(bordi) + 1
     dati = discretizza_coppie(c.dati, bordi)
@@ -1086,6 +1086,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
 
     righe: list[dict] = []
     correlazioni: list[dict] = []
+    trasparenze: list[dict] = []
     scale = c.scale
     for nome, gradini in scale.items():
         print()
@@ -1103,8 +1104,11 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
         if esito.al_bordo:
             print(f"      ATTENZIONE: {len(esito.al_bordo)} gradini con alfa a un "
                   f"estremo della griglia ({', '.join(esito.al_bordo)})")
-        modello = stima(costruisci_scala(nome, gradini, cod, dati, in_stima), n_bin,
-                        list(esito.alfa))
+        # conta e componi separati invece di stima(): i conteggi servono anche a
+        # misurare quanto ciascun gradino disti dal proprio genitore, e ricontarli
+        # per quella sola misura costerebbe una passata sul campione per nulla.
+        conteggi = conta(costruisci_scala(nome, gradini, cod, dati, in_stima), n_bin)
+        modello = componi(conteggi, list(esito.alfa))
         principale = perdite_per_giornata(modello, gradini, cod, dati, c.verifica,
                                           popolazione)
         print("      " + _stampa_perdite(f"su {popolazione:<14}", principale))
@@ -1154,6 +1158,23 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
             correlazioni.extend(confronto_sulla_correlazione(
                 modello, gradini, cod, dati, c.verifica, rappresentanti, citta,
                 popolazione, bordi, c.finestra))
+            # Un alfa al bordo superiore non si legge allargando la griglia: si
+            # legge misurando quanto il gradino disti gia' dal genitore, perche'
+            # per alfa che cresce la stima tende a quella del genitore.
+            print("      distanza di ciascun gradino dal proprio genitore:")
+            for g in trasparenza(modello, conteggi):
+                trasparenze.append({
+                    "citta": citta, "finestra": c.finestra, "scala": nome,
+                    "gradino": g.nome, "alfa": g.alfa,
+                    "al_bordo": int(g.alfa in (min(esito.candidati),
+                                               max(esito.candidati))),
+                    "scarto_massimo": g.scarto_massimo,
+                    "divergenza_media_bit": g.divergenza_media,
+                    "celle": g.celle, "celle_osservate": g.celle_osservate,
+                })
+                print(f"        {g.nome:<24} alfa {g.alfa:>9g} | scarto massimo "
+                      f"{g.scarto_massimo:.2e} | divergenza {g.divergenza_media:.2e} bit "
+                      f"| celle osservate {g.celle_osservate:,}/{g.celle:,}")
 
         righe.append({
             "citta": citta, "scala": nome, "bordi": etichetta, "bin": n_bin,
@@ -1195,7 +1216,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
         print("      Le due colonne di sinistra e le due di destra differiscono per")
         print("      l'intervallo, le righe di ciascuna coppia per la statistica: cosi'")
         print("      la differenza si attribuisce all'una o all'altra e non a entrambe.")
-    return righe, correlazioni
+    return righe, correlazioni, trasparenze
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1274,10 +1295,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     tutte: list[dict] = []
     correlazioni: list[dict] = []
+    trasparenze: list[dict] = []
     for c in citta:
-        righe, rho = valuta(c, bordi, risultati, scelti)
+        righe, rho, trasp = valuta(c, bordi, risultati, scelti)
         tutte.extend(righe)
         correlazioni.extend(rho)
+        trasparenze.extend(trasp)
 
     if tutte:
         destinazione = risultati / "stima_rete.csv"
@@ -1287,6 +1310,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         destinazione = risultati / "correlazione_rete.csv"
         pd.DataFrame(correlazioni).to_csv(destinazione, index=False)
         print(f"scritto {destinazione} ({len(correlazioni)} righe)")
+    if trasparenze:
+        destinazione = risultati / "trasparenza_gradini.csv"
+        pd.DataFrame(trasparenze).to_csv(destinazione, index=False)
+        print(f"scritto {destinazione} ({len(trasparenze)} righe)")
     print()
     print("Dove il feed pubblica le fermate passate decide la perdita sulle")
     print("constatazioni; dove non le pubblica esiste una popolazione sola, e")

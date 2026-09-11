@@ -30,6 +30,7 @@ from src.delays.rete import (
     mappa_annidata,
     stima,
     tara,
+    trasparenza,
 )
 
 N_VALORI = 8
@@ -371,3 +372,50 @@ def test_la_perdita_su_un_campione_vuoto_viene_detta():
     vuoto = np.array([], dtype=np.int64)
     with pytest.raises(ErroreRete, match="vuoto"):
         modello.perdita(vuoto, vuoto)
+
+
+def _scala_a_due_gradini(seme: int = 7):
+    """Un gradino grossolano e uno fine annidato dentro, con dati veri in entrambi."""
+    g = np.random.default_rng(seme)
+    celle_fini = g.integers(0, FINI, 40_000)
+    valori = g.integers(0, N_VALORI, 40_000)
+    padre = np.arange(FINI) // PER_GRUPPO
+    return [
+        Livello("grossolano", padre[celle_fini], valori, GRUPPI),
+        Livello("fine", celle_fini, valori, FINI, padre=padre),
+    ]
+
+
+def test_un_gradino_ad_alfa_enorme_e_indistinguibile_dal_genitore():
+    """La misura che sostituisce l'ipotesi: al bordo superiore non serve allargare.
+
+    Per alfa che cresce la stima tende a quella del genitore, quindi un gradino ad
+    alfa massimo o e' gia' trasparente o vorrebbe esserlo di piu': in entrambi i
+    casi la domanda si risponde misurando la distanza, non ampliando la griglia.
+    """
+    livelli = _scala_a_due_gradini()
+    conteggi = conta(livelli, N_VALORI)
+    esito = trasparenza(componi(conteggi, [1.0, 1e12]), conteggi)[0]
+    assert esito.nome == "fine"
+    assert esito.scarto_massimo < 1e-6, (
+        "con una concentrazione enorme il gradino deve coincidere col genitore"
+    )
+    assert esito.divergenza_media < 1e-9
+
+
+def test_un_gradino_ad_alfa_piccolo_si_discosta_dal_genitore():
+    """Controllo speculare: senza, la misura direbbe sempre 'trasparente'."""
+    livelli = _scala_a_due_gradini()
+    conteggi = conta(livelli, N_VALORI)
+    esito = trasparenza(componi(conteggi, [1.0, 0.5]), conteggi)[0]
+    assert esito.scarto_massimo > 1e-3
+    assert esito.divergenza_media > 1e-3
+
+
+def test_le_celle_mai_osservate_non_diluiscono_la_misura():
+    """Una cella vuota coincide col genitore per costruzione, e va contata a parte."""
+    livelli = _scala_a_due_gradini()
+    conteggi = conta(livelli, N_VALORI)
+    esito = trasparenza(componi(conteggi, [1.0, 50.0]), conteggi)[0]
+    assert esito.celle == FINI
+    assert 0 < esito.celle_osservate <= FINI
