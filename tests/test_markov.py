@@ -20,8 +20,11 @@ import pytest
 from src.delays.markov import (
     BORDI_OTTO,
     BORDI_QUATTRO,
+    SEME_CATENA,
     ErroreMarkov,
     Terne,
+    catena_con_dipendenza_vera,
+    catena_markoviana,
     discretizza,
     estrai_terne,
     informazione_mutua,
@@ -207,13 +210,15 @@ def test_le_due_granularita_danno_numeri_di_bin_diversi() -> None:
     assert len(BORDI_QUATTRO) + 1 == 4
 
 
-def _catena_continua(n: int, seme: int = 23):
-    """Catena markoviana ESATTA nel continuo: R0 dipende da R-1 e da nient'altro."""
-    g = np.random.default_rng(seme)
-    grezzo2 = g.normal(0, 300, n)
-    grezzo1 = grezzo2 + g.normal(0, 200, n)
-    grezzo0 = grezzo1 + g.normal(0, 200, n)
-    return grezzo2, grezzo1, grezzo0
+def _catena_continua(n: int, seme: int = SEME_CATENA):
+    """La catena del modulo, non una sua copia.
+
+    Il numero che questi test fissano finisce nel documento, e lo produce lo script
+    che scrive il CSV: se il test costruisse una catena propria, le due potrebbero
+    divergere senza che nulla lo segnalasse, ed e' esattamente cio' che il test
+    dovrebbe impedire.
+    """
+    return catena_markoviana(n, seme)
 
 
 def test_discretizzare_una_catena_markoviana_crea_dipendenza_apparente() -> None:
@@ -256,12 +261,7 @@ def test_l_artefatto_della_discretizzazione_si_dissolve_al_raffinarsi_dei_bin() 
 
 def test_una_dipendenza_vera_non_si_dissolve() -> None:
     """Controllo speculare: senza, un criterio che dice sempre "si dissolve" passerebbe."""
-    g = np.random.default_rng(37)
-    n = 200_000
-    grezzo2 = g.normal(0, 300, n)
-    grezzo1 = grezzo2 + g.normal(0, 200, n)
-    # R0 dipende direttamente anche da R-2: dipendenza vera, non artefatto
-    grezzo0 = 0.5 * grezzo1 + 0.5 * grezzo2 + g.normal(0, 100, n)
+    grezzo2, grezzo1, grezzo0 = catena_con_dipendenza_vera(200_000)
     scala = scala_per_granularita(grezzo2, grezzo1, grezzo0,
                                   generatore=np.random.default_rng(41))
     quote = [e.quota_sul_primo_antenato for _, e in scala]

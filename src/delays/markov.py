@@ -550,3 +550,48 @@ def quota_valori_ripetuti(precedente: np.ndarray, corrente: np.ndarray) -> float
     if precedente.size == 0:
         raise ErroreMarkov("campione vuoto")
     return float(np.mean(precedente == corrente))
+
+
+SEME_CATENA = 23
+"""Il seme delle catene costruite, fissato perche' i numeri siano riproducibili.
+
+Le catene qui sotto producono numeri che finiscono nel documento: senza un seme
+dichiarato sarebbero irriproducibili come qualunque misura senza file, e il punto
+di metodo che sostengono - l'artefatto della discretizzazione si riconosce dal
+verso della scala - poggerebbe su cifre che nessuno puo' rifare.
+"""
+
+
+def catena_markoviana(n: int, seme: int = SEME_CATENA) -> tuple[np.ndarray, ...]:
+    """Una catena markoviana **esatta nel continuo**: R0 dipende da R-1 e da altro nulla.
+
+    E' il banco su cui si e' scoperto che discretizzare rompe la markovianita': il
+    bin di R-1 non porta tutta l'informazione del valore che rappresenta, e R-2 ne
+    conserva un residuo. Qui la risposta giusta e' nota per costruzione, ed e'
+    l'unico modo di sapere se un criterio sappia distinguere i casi che deve
+    distinguere: sui dati veri la risposta non si conosce, e un eccesso di un
+    centesimo di bit sembrerebbe un risultato.
+
+    Le deviazioni sono in secondi e dell'ordine dei ritardi reali, cosi' che la
+    discretizzazione con i bordi del progetto sia altrettanto grossolana che sui
+    dati veri.
+    """
+    g = np.random.default_rng(seme)
+    grezzo2 = g.normal(0, 300, n)
+    grezzo1 = grezzo2 + g.normal(0, 200, n)
+    grezzo0 = grezzo1 + g.normal(0, 200, n)
+    return grezzo2, grezzo1, grezzo0
+
+
+def catena_con_dipendenza_vera(n: int, seme: int = 37) -> tuple[np.ndarray, ...]:
+    """Il controllo speculare: R0 dipende **anche** da R-2, quindi la dipendenza esiste.
+
+    Senza di essa un criterio che dicesse sempre "si dissolve" passerebbe il primo
+    banco e sarebbe inutile. La coppia delle due catene e' cio' che rende il
+    criterio della scala una misura invece di una speranza.
+    """
+    g = np.random.default_rng(seme)
+    grezzo2 = g.normal(0, 300, n)
+    grezzo1 = grezzo2 + g.normal(0, 200, n)
+    grezzo0 = 0.5 * grezzo1 + 0.5 * grezzo2 + g.normal(0, 100, n)
+    return grezzo2, grezzo1, grezzo0
