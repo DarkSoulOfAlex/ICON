@@ -2092,7 +2092,7 @@ terna**, ed e' implementato in `scripts/markov_terne.py`.
 
 **Che cosa ne consegue per la decisione, e il punto di metodo aggiornato.** "Non
 si dissolve" **non implica "aggiungi l'arco"**: implica "misura quanto vale". La
-dipendenza c'e' ma e' piccola, fra l'1,3% e il 4,8% di quanto il primo antenato
+dipendenza c'e' ma e' piccola, fra l'1,3% e il 5,6% di quanto il primo antenato
 gia' spiega, e un arco in piu' moltiplica per otto le celle da stimare. La
 domanda che decide la struttura non e' se la dipendenza esista - la risposta e'
 si' - ma se **sopravviva fuori campione** al costo della propria stima, e si
@@ -2113,28 +2113,41 @@ stata presa confrontando la perdita logaritmica fuori campione con e senza
 l'arco. La misura e' stata fatta due volte, e i due risultati si contraddicono
 solo in apparenza.
 
-| | senza contesto | dentro il modello con contesto |
-| --- | ---: | ---: |
-| Roma, tutte | +4,59% | **-6,14%** |
-| Roma, solo previsioni | +4,10% | **-7,50%** |
-| Roma, solo gia' passate | +7,67% | **-5,46%** |
-| Torino, tutte | +3,76% | **-4,04%** |
-| Torino, solo previsioni | +2,37% | **-6,35%** |
-| Torino, solo gia' passate | +4,29% | **-8,58%** |
+| | senza contesto | dentro il modello con contesto | oss. per cella con l'arco |
+| --- | ---: | ---: | ---: |
+| Roma, tutte | +3,64% | **-2,89%** | 2,15 |
+| Roma, solo previsioni | +3,79% | **-7,49%** | 0,81 |
+| Roma, solo gia' passate | +5,02% | **-10,04%** | 0,20 |
+| Torino, tutte | +3,47% | **-0,35%** | 2,26 |
+| Torino, solo previsioni | +2,37% | **-2,63%** | 0,99 |
+| Torino, solo gia' passate | +4,48% | **-1,82%** | 0,36 |
+
+*Numeri della corsa del 12 settembre 2026 sulle sedici giornate della finestra
+dichiarata (25 agosto - 9 settembre), da `results/markov_terne.csv`. La prima
+stesura di questa voce riportava una corsa su quattordici giornate, i cui numeri
+- da +2,37% a +7,67% senza contesto e da -4,04% a -8,58% con contesto - vanno
+scartati: erano giusti sulla loro finestra, e la finestra non era dichiarata.*
 
 La prima colonna confronta `P(R0|R-1)` con `P(R0|R-1,R-2)`: sessantaquattro celle
-contro cinquecentododici, su un milione e settecentomila terne di verifica.
-Entrambi i modelli sono stimati in abbondanza, e l'arco guadagna fra il 2 e l'8%.
-La seconda colonna rifa' lo stesso confronto **dentro il modello vero**, dove il
-ritardo e' condizionato anche a linea, fascia oraria e tipo di giorno: li' le
-celle passano da 403 mila a 3,2 milioni, e l'arco **peggiora fra il 4 e il 9%** su
-tutte e sei le combinazioni.
+contro cinquecentododici, su 2,07 milioni di terne di verifica per Roma e 648 mila
+per Torino. Entrambi i modelli sono stimati in abbondanza, e l'arco guadagna fra il
+2 e il 5%. La seconda colonna rifa' lo stesso confronto **dentro il modello vero**,
+dove il ritardo e' condizionato anche a linea, fascia oraria e tipo di giorno: li'
+le celle passano da 466 mila a 3,7 milioni, e l'arco **peggiora su tutte e sei le
+combinazioni**.
 
-La causa e' nei conteggi: con l'arco le osservazioni per cella in addestramento
-scendono a **1,80 su Roma**, a 0,69 sulle sole previsioni e a **0,16** sulle sole
-constatazioni. La maggior parte delle celle non riceve nemmeno un dato, e una
-tabella stimata su celle vuote e' peggiore di una tabella piu' grossolana stimata
-su celle piene.
+La causa e' nella terza colonna: con l'arco le osservazioni per cella in
+addestramento stanno fra 2,26 e 0,20, quindi la maggior parte delle celle non riceve
+nemmeno un dato, e una tabella stimata su celle vuote e' peggiore di una tabella
+piu' grossolana stimata su celle piene.
+
+**Un caso che indebolisce la conclusione, e va detto.** Su Torino e sull'insieme di
+tutte le coppie l'arco peggiora dello **0,35%**, cioe' quasi nulla: li' non paga ma
+nemmeno costa, e se fosse stato l'unico caso disponibile la decisione sarebbe rimasta
+aperta. Con quattordici giornate quella cella valeva -4,04% e l'intervallo faceva
+sembrare la conclusione piu' solida di quanto sia. Regge perche' il segno e' lo stesso
+su tutte e sei le combinazioni e perche' la causa e' misurata; non perche' il margine
+sia ampio ovunque.
 
 **I due numeri non si contraddicono: rispondono a domande diverse.** "Il secondo
 antenato porta informazione?" e' una domanda **sui dati**, e la risposta e' si',
@@ -2144,7 +2157,7 @@ peggiora del 6%, e per giunta sulla base di una misura corretta.
 
 **Decisione: l'arco non si aggiunge, e l'assunzione markoviana si tiene come
 approssimazione dichiarata.** La dipendenza esiste, e' misurata, e vale fra l'1,3%
-e il 4,8% di cio' che il primo antenato spiega. Non la si rappresenta perche' il
+e il 5,6% di cio' che il primo antenato spiega. Non la si rappresenta perche' il
 modello non ha i dati per sostenerla. E' una posizione **piu' forte** di quella di
 partenza, non piu' debole: la Fase 4 assumeva la markovianita' senza averla
 verificata, mentre ora si sa che cosa si sta trascurando e quanto vale.
@@ -2182,8 +2195,12 @@ perche' due ritardi diversi che cadono nello stesso bin non sono una ripetizione
 
 | | previsioni | gia' passate |
 | --- | ---: | ---: |
-| Roma | **23,07%** | 4,66% |
-| Torino | 1,27% | 1,30% |
+| Roma | **22,70%** | 4,45% |
+| Torino | 1,26% | 1,30% |
+
+*Fonte: `results/markov_terne.csv`, righe `valori ripetuti (sui secondi)`, colonna
+`quota_identiche`, sedici giornate fino al 9 settembre 2026. La prima stesura
+riportava 23,07% e 4,66% su quattordici giornate.*
 
 **L'ipotesi che questo doveva mettere alla prova, ed e' stata esclusa.** Le
 constatazioni risultavano molto piu' prevedibili delle previsioni: su Torino la
@@ -2301,22 +2318,37 @@ programmato piu' ritardo - con l'istante in cui il produttore ha pubblicato. La
 deduzione presuppone che il produttore pubblichi **anche** le fermate gia' passate.
 Nessuno lo aveva verificato.
 
-Non e' vero su Torino. Su tutte e quattordici le giornate, il massimo di
-`timestamp_feed - orario_programmato` vale **fra 0 e 4 secondi**: il feed torinese
-toglie la fermata dal `trip_updates` appena il mezzo vi transita, e nel dato non
-esiste alcun passaggio avvenuto da osservare. Su Roma lo stesso massimo sta fra
-**10.020 e 69.656 secondi**, e il novantanovesimo percentile intorno ai **2.000**:
-il feed romano continua a pubblicare le fermate passate per una mezz'ora buona.
+Non e' vero su Torino. Su tutte e **sedici** le giornate della finestra dichiarata,
+il massimo di `timestamp_feed - orario_programmato` vale **fra 0 e 4 secondi**: il
+feed torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita, e nel
+dato non esiste alcun passaggio avvenuto da osservare. Su Roma lo stesso massimo sta
+fra **10.020 e 70.229 secondi**, e il novantanovesimo percentile fra **1.629 e
+3.121** in quattordici giornate su sedici: il feed romano continua a pubblicare le
+fermate passate per una mezz'ora buona.
 
 **Che cosa contiene allora il gradino "constatazioni" su Torino.** Le righe che
-superano il criterio, dal 4,1% all'8,2% a seconda del giorno, sono quelle il cui
+superano il criterio, dal 3,9% all'8,2% a seconda del giorno, sono quelle il cui
 orario atteso e' talmente in anticipo da precedere l'istante di pubblicazione. La
 prova del nove e' netta: **lo 0,00% di esse ha ritardo positivo, tutti i giorni**, e
 il ritardo massimo fra loro e' di **1 secondo**. Non sono passaggi avvenuti: sono
 previsioni selezionate per essere molto in anticipo, cioe' una selezione
 sistematica e non casuale, che restituisce per costruzione la coda negativa della
 distribuzione. Su Roma la stessa quota vale fra il **21,5% e il 35,4%**, e il
-massimo arriva a **59.486 secondi**: li' il criterio seleziona davvero dei fatti.
+massimo arriva a **66.324 secondi**: li' il criterio seleziona davvero dei fatti.
+
+*Fonte: `results/diagnosi_constatazioni.csv`, finestra `2026-09-09`. La prima stesura
+di questa voce riportava 69.656 come massimo di feed meno programmato e 59.486 come
+ritardo massimo fra le constatazioni romane: il primo era il massimo su quattordici
+giornate invece che su sedici, il secondo era il valore dell'ultima giornata e non il
+massimo fra le giornate.*
+
+**Due giornate romane fuori riga, da guardare altrove.** Il 31 agosto e il 7
+settembre il novantanovesimo percentile romano sale a **31.720 e 36.526 secondi**
+contro i circa duemila di tutte le altre, e la quota di righe che superano il
+criterio passa dal 2,5% abituale al **17,4% e al 26,2%**. Non tocca questa voce, il
+cui verdetto riguarda Torino, ma e' un comportamento del feed romano che nessuna
+spiegazione copre, e il 7 settembre e' la stessa giornata che il backtesting della
+Fase 5 esclude perche' magra. Va ripreso li'.
 
 **Che cosa questo invalida.** Ogni numero torinese che porti il nome
 "constatazioni" descrive quella coda negativa e non la realta' dei ritardi: la
