@@ -1790,12 +1790,24 @@ coglie piu' di chi interroga
 ogni mezz'ora, a parita' di produttore. Quella grandezza si riporta percio' **solo
 sulle giornate a cadenza piena**, cioe' con almeno 1.400 dump, ed e' riportata cosi'
 nella tabella qui sopra: circa venti valori per passaggio su Roma e circa sette su
-Torino. La quota di righe che la deduplica conserva non mostra invece dipendenza
-significativa dalla cadenza (+0,376, p = 0,151 su Roma; +0,490, p = 0,064 su
-Torino), perche' e' un rapporto fra due grandezze che crescono insieme, ed e'
-quindi confrontabile fra citta' interrogate diversamente. Le quattro correlazioni
-si ricalcolano dalla colonna `dump_letti` di `results/consolidamento.csv` accanto
-alle due grandezze, una giornata per riga.
+Torino. La quota di righe che la deduplica conserva si comporta diversamente, e la
+differenza va detta con la debolezza che ha: sulle giornate piene la sua dipendenza
+dalla cadenza **non e' distinguibile da zero** (+0,376, p = 0,151 su sedici giornate
+romane; +0,490, p = 0,064 su quindici torinesi), ma la stima puntuale resta positiva
+in entrambe le citta', e un campione di quindici punti non ha la potenza per
+escludere una dipendenza debole. E' un'affermazione di assenza, non una prova di
+assenza. Va aggiunto che l'esclusione della giornata parziale la sostiene per
+intero: **includendo il 25 agosto la correlazione diventa significativa** in
+entrambe le citta' (+0,656, p = 0,004 su Roma; +0,725, p = 0,001 su Torino).
+Quella giornata e' esclusa perche' quarantasette dump su millequattrocento non sono
+una giornata di raccolta ma i cinquanta minuti in cui il collector e' stato acceso,
+ed e' la stessa esclusione applicata a ogni altra grandezza di questa tabella; resta
+che un risultato il quale si rovescia togliendo un punto va riportato per quello che
+e'. La ragione teorica per cui la quota dovrebbe dipendere meno dalla cadenza tiene
+comunque: e' un rapporto fra due grandezze che crescono insieme, mentre i valori per
+passaggio sono un conteggio che cresce da solo. Le sei correlazioni si ricalcolano
+dalla colonna `dump_letti` di `results/consolidamento.csv` accanto alle due
+grandezze, una giornata per riga.
 
 **Che cosa il modello prende dalla base di conoscenza, e che cosa no.** Prende
 l'**orario programmato**, senza il quale il ritardo non esisterebbe come grandezza,
@@ -1874,20 +1886,45 @@ struttura e' il verso con cui l'eccesso di informazione varia al raffinarsi dei 
 sulla catena markoviana costruita l'eccesso si dissolve (dal 3,6% con due bin allo
 0,1% con venti), mentre su una catena in cui la dipendenza esiste davvero non si
 dissolve. Sui dati veri non si dissolve, ma cala in modo regolare, e vale fra l'1,3%
-e il 4,8% di cio' che il primo antenato gia' spiega. "Non si dissolve" non implica
+e il 5,6% di cio' che il primo antenato gia' spiega. "Non si dissolve" non implica
 pero' "aggiungi l'arco": implica "misura quanto vale". La misura e' stata fatta due
-volte, con esiti di segno opposto. Confrontando `P(R0|R-1)` con `P(R0|R-1,R-2)`
-**senza contesto** - sessantaquattro celle contro cinquecentododici, su un milione e
-settecentomila terne - l'arco guadagna fra il **+2,37%** e il **+7,67%**. Rifacendo
-lo stesso confronto **dentro il modello vero**, dove il ritardo e' condizionato anche
-a linea, fascia e tipo di giorno e le celle passano da 403 mila a 3,2 milioni,
-l'arco **peggiora fra il -4,04% e il -8,58%** su tutte e sei le combinazioni di
-citta' e popolazione. La causa sta nei conteggi: con l'arco le osservazioni per cella
-in addestramento scendono a **1,80 su Roma**, a 0,69 sulle sole previsioni e a
-**0,16** sulle sole constatazioni, e una tabella stimata su celle vuote e' peggiore
-di una tabella piu' grossolana stimata su celle piene. Le due misure rispondono a
-domande diverse - "il secondo antenato porta informazione?" e' una domanda sui dati,
-"l'arco migliora il modello?" e' una domanda sul modello - e la seconda decide.
+volte, con esiti di segno opposto.
+
+| | senza contesto | dentro il modello con contesto | osservazioni per cella con l'arco |
+| --- | ---: | ---: | ---: |
+| Roma, tutte | +0,0364 | **-0,0289** | 2,15 |
+| Roma, solo previsioni | +0,0379 | **-0,0749** | 0,81 |
+| Roma, solo gia' passate | +0,0502 | **-0,1004** | 0,20 |
+| Torino, tutte | +0,0347 | **-0,0035** | 2,26 |
+| Torino, solo previsioni | +0,0237 | **-0,0263** | 0,99 |
+| Torino, solo gia' passate | +0,0448 | **-0,0182** | 0,36 |
+
+*Fonte: `results/markov_terne.csv`, righe `costo-beneficio otto bin` e
+`costo-beneficio con contesto`, colonna `quota` (guadagno relativo della perdita
+fuori campione) e `osservazioni_per_cella_con`, finestra `2026-09-09`, sedici
+giornate; separazione per giornata, ultimi tre giorni in verifica.*
+
+La prima colonna confronta `P(R0|R-1)` con `P(R0|R-1,R-2)` **senza contesto** -
+sessantaquattro celle contro cinquecentododici, su oltre due milioni di terne di
+verifica per Roma e seicentomila per Torino: entrambi i modelli sono stimati in
+abbondanza, e l'arco guadagna fra il 2% e il 5%. La seconda rifa' lo stesso confronto
+**dentro il modello vero**, dove il ritardo e' condizionato anche a linea, fascia e
+tipo di giorno e le celle passano da 466 mila a 3,7 milioni: li' l'arco **peggiora su
+tutte e sei le combinazioni**, ma di quanto varia molto, da un decimo di punto
+percentuale su Torino a dieci punti sulle constatazioni romane. La causa sta nella
+terza colonna: con l'arco le osservazioni per cella in addestramento scendono sotto le
+tre, e sulle popolazioni piu' piccole sotto l'unita', cioe' la maggior parte delle
+celle non riceve nemmeno un dato, e una tabella stimata su celle vuote e' peggiore di
+una tabella piu' grossolana stimata su celle piene. Le due misure rispondono a domande
+diverse - "il secondo antenato porta informazione?" e' una domanda sui dati, "l'arco
+migliora il modello?" e' una domanda sul modello - e la seconda decide.
+
+Va detto che il caso torinese su tutte le coppie, **-0,0035**, e' quasi un pareggio:
+li' l'arco non paga ma nemmeno costa, e se fosse stato l'unico caso disponibile la
+decisione sarebbe rimasta aperta. Regge perche' il segno e' lo stesso su tutte e sei
+le combinazioni e perche' la causa - le osservazioni per cella - e' misurata e non
+congetturata; ma e' piu' debole di quanto un intervallo che partisse dal quattro per
+cento avrebbe lasciato credere.
 L'arco non si aggiunge e **l'assunzione markoviana si tiene come approssimazione
 dichiarata**: e' una posizione piu' forte di quella di partenza, perche' la Fase 4
 la assumeva senza averla verificata mentre ora si sa che cosa si trascura e quanto
@@ -1925,15 +1962,28 @@ migliore piu' della deviazione fra giornate del riferimento di quella citta' (0,
 bit su Roma, 0,0167 su Torino, misurata e non fissata); fra gli ammessi vince quello
 che confonde meno secondi.
 
-Su questa corsa la regola ha ammesso un solo candidato, gli **ottili**, e la scelta
-e' caduta su di loro **senza che i secondi decidessero nulla** - il secondo
-classificato, i `misti`, resta indietro di 0,066 bit su Roma e 0,097 su Torino,
-oltre le due soglie. E' un esito onesto della regola, non una sua conferma: con dati
-diversi potrebbe pronunciare un vincitore diverso, e va riletta a ogni riacquisto dei
-dati. Va anche dichiarato che la scelta non e' neutra rispetto al criterio, perche'
-normalizzando la perdita per l'entropia marginale propria di ciascun candidato gli
-ottili sono **ultimi ex aequo** su Roma, e il candidato `decisione` confonde **2,4
-volte meno secondi** (293 s contro 701). I bordi precedenti, ereditati dalla Fase 3 e
+**Su questa finestra la regola si e' ridotta al criterio che doveva evitare, e va
+detto per intero.** L'esclusione ha ammesso **un solo candidato**, gli `ottili`, che
+sono esattamente quelli che il guadagno preferiva; i secondi non hanno quindi deciso
+nulla, e il candidato adottato e' il **peggiore** proprio sulla grandezza che era
+stata dichiarata decisiva - 701 s di ampiezza confusa su Roma contro i 293 del
+candidato `decisione`, cioe' **2,4 volte piu' secondi**. Se si normalizza la perdita
+per l'entropia marginale propria di ciascun candidato, gli ottili sono per giunta
+**ultimi ex aequo** su Roma. Il secondo classificato sul guadagno, i `misti`, resta
+indietro di 0,066 bit su Roma e 0,097 su Torino, oltre entrambe le soglie: e' quello
+il passaggio che ha svuotato la regola, perche' bastava che uno solo degli altri
+rientrasse in gara perche' i secondi lo scavalcassero sugli ottili.
+
+Non se ne conclude che la regola fosse sbagliata, ma nemmeno che abbia funzionato.
+L'ampiezza confusa **resta il criterio dichiarato** per le prossime esecuzioni, e ha
+un pregio che il guadagno non ha: si confronta con un margine di coincidenza invece
+che con un'altra discretizzazione. Va pero' registrato che **su questi dati non e'
+stata la regola a chiudere la questione, ma il backtesting**, che ha mostrato i due
+insiemi indistinguibili sui risultati - ed e' la ragione per cui il paragrafo
+seguente esiste. Una regola che ammette un candidato solo non e' una regola che ha
+scelto: e' una soglia che ha scartato tutti gli altri, e il fatto che il superstite
+coincida col vincitore del criterio che si voleva evitare andava scritto qui e non
+lasciato dedurre. I bordi precedenti, ereditati dalla Fase 3 e
 scelti su una popolazione diversa, erano invece sbagliati in modo non opinabile: con
 essi il **62,3%** delle osservazioni romane e il **45,7%** delle torinesi finiva in
 uno dei due bin aperti, dove il modello dichiara di non distinguere nulla.
@@ -1956,8 +2006,11 @@ scelta e' indifferente, che sono due conclusioni diverse, e solo la prima richie
 una decisione.
 
 **Le constatazioni vengono prima nella scala, e non e' una ponderazione.** Su Roma il
-**23,07%** delle transizioni fra previsioni consecutive e' l'identita' al secondo,
-contro il **4,66%** fra constatazioni: sono copie, valori che il produttore non ha
+**22,70%** delle transizioni fra previsioni consecutive e' l'identita' al secondo,
+contro il **4,45%** fra constatazioni, mentre su Torino il fenomeno non esiste affatto
+(1,26% e 1,30%, *fonte: `results/markov_terne.csv`, righe `valori ripetuti (sui
+secondi)`, colonna `quota_identiche`, finestra `2026-09-09`*): sono copie, valori che
+il produttore non ha
 ricalcolato, non informazione indipendente. Pesarle come le constatazioni
 spingerebbe la matrice di transizione verso la diagonale, e il modello ne uscirebbe
 convinto che il ritardo cambi meno di quanto cambi - proprio l'errore che un
@@ -1976,13 +2029,16 @@ ripetersi sono le previsioni, cinque volte piu' delle constatazioni.
 **Su Torino le constatazioni non esistono, e la scala perde una dimensione.** La
 deduzione con cui il progetto riconosce un passaggio avvenuto presuppone che il
 produttore pubblichi anche le fermate gia' servite, e nessuno lo aveva verificato.
-Su tutte e quattordici le giornate allora disponibili, il massimo di
+Su tutte e sedici le giornate della finestra, il massimo di
 `timestamp_feed - orario_programmato` su Torino vale **fra 0 e 4 secondi**: il feed
 torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita. Su Roma lo
-stesso massimo sta fra **10.020 e 69.656 secondi**. Le righe torinesi che superavano
-il criterio, dal 4,1% all'8,2% a seconda del giorno, non erano passaggi avvenuti ma
+stesso massimo sta fra **10.020 e 70.229 secondi**. Le righe torinesi che superavano
+il criterio, dal 3,9% all'8,2% a seconda del giorno, non erano passaggi avvenuti ma
 previsioni **selezionate per essere molto in anticipo**: lo **0,00% di esse ha
-ritardo positivo, tutti i giorni**, e il ritardo massimo fra loro e' di **1 secondo**.
+ritardo positivo, tutti i giorni**, e il ritardo massimo fra loro e' di **1 secondo**
+(*fonte: `results/diagnosi_constatazioni.csv`, colonne `feed_meno_programmato_max`,
+`quota_constatazioni`, `constatazioni_con_ritardo_positivo` e
+`ritardo_massimo_fra_le_constatazioni`, finestra `2026-09-09`*).
 Era una selezione sistematica che restituiva per costruzione la coda negativa della
 distribuzione. *Alternative considerate:* togliere Torino dal modello dei ritardi,
 che farebbe perdere la seconda citta' e con essa il criterio di generalita';
@@ -1990,12 +2046,16 @@ ricostruire i passaggi avvenuti dalla **sparizione** di una fermata fra due dump
 consecutivi, che e' l'unico segnale che quel produttore offre, ma che i nostri stessi
 dati indeboliscono - su 288 corse torinesi presenti in due dump distanti, 130
 risultavano accorciate e **113 allungate**, e se le liste crescono e calano la
-sparizione non e' un segnale pulito di passaggio. La scelta e' stata **un'unica
+sparizione non e' un segnale pulito di passaggio (*misura una tantum del 9 settembre
+2026, su due dump grezzi scelti a mano: i grezzi delle giornate successive sono
+archiviati compressi e nessun CSV la sostiene*). La scelta e' stata **un'unica
 popolazione con la sola dimensione del contesto**, e con essa il cambio di nome di
 cio' che si stima: su Torino il dato e' l'ultima stima del produttore prima che la
 fermata sparisca dal feed. La riformulazione ha rimesso a posto quattro letture della
 correlazione che sulla popolazione fasulla si contraddicevano, Pearson +0,999 su
-tutto contro +0,240 dentro i bordi dei bin, e che ora concordano fra loro. La scelta
+tutto contro +0,240 dentro i bordi dei bin, e che ora concordano fra loro (*misura
+una tantum del 9 settembre 2026: quei due numeri descrivono una popolazione che il
+progetto ha abbandonato, e nessuna esecuzione odierna li riproduce*). La scelta
 non e' scritta a mano nel codice: `Citta.scale` guarda il massimo di
 `timestamp_feed - orario_programmato` e passa a una dimensione sola sotto la soglia,
 quindi se il produttore torinese cominciasse a pubblicare il passato la scala
@@ -2083,7 +2143,9 @@ invece che di una previsione.
 *Alternativa scartata:* la chiave naturale `(trip_id, stop_id, stop_sequence)`, che era
 la prima implementazione. *Perche' e' stata abbandonata:* eseguendo il consolidamento
 sui dati veri il numero di passaggi conservati non tornava, 4.691 invece dei 13.092
-misurati. La causa e' che **GTT non include mai lo `stop_id`** nei `stop_time_update`,
+misurati (*misura una tantum del 26 agosto 2026: l'implementazione che la produceva
+e' stata sostituita, e il numero non e' rifacibile senza reintrodurre il difetto*).
+La causa e' che **GTT non include mai lo `stop_id`** nei `stop_time_update`,
 identificando la fermata con il solo `stop_sequence`, mentre Roma si comporta
 all'opposto e lo fornisce sempre. Con la chiave naturale il join su Torino non trovava
 mai corrispondenza: la colonna `stop_id` restava vuota, l'orario programmato nullo e il
@@ -2092,7 +2154,8 @@ nulla lo segnalasse. *Perche' la chiave ridotta e' altrettanto precisa:* la spec
 GTFS [5] garantisce che `stop_sequence` sia univoco dentro una corsa. *Il controllo che
 ne discende:* quando il feed fornisce anche lo `stop_id` si usa quello del feed e si
 verifica che coincida con quello statico, e una divergenza viene contata e segnalata,
-perche' significherebbe che la corsa in circolazione non e' quella che l'orario descrive.
+perche' significherebbe che la corsa in circolazione non e' quella che l'orario
+descrive.
 
 **L'orario statico e' archiviato a ogni cambiamento, ed e' un requisito e non una
 precauzione.** Il ritardo e' uno scostamento da un orario programmato, e quell'orario
@@ -2110,7 +2173,10 @@ ritardo calcolato su quel giorno sarebbe uno scostamento da un orario che quel g
 non era in vigore. L'errore non si sarebbe manifestato come un'eccezione ma come
 ritardi plausibili e falsi. *Perche' il confronto dell'impronta e non il download.*
 L'archivio di Roma pesa 48,5 MB per revisione, mentre il file `.md5` che l'azienda
-pubblica accanto ne costa 59 byte. *Alternativa scartata:* fidarsi dell'intestazione
+pubblica accanto ne costa 59 byte (*misura una tantum del 25 agosto 2026: il `.md5`
+non viene conservato su disco, quindi il secondo numero richiederebbe una richiesta
+di rete e oggi potrebbe essere un altro*). *Alternativa scartata:* fidarsi
+dell'intestazione
 HTTP `Last-Modified`, che molti server aggiornano a ogni rigenerazione anche quando il
 contenuto e' identico. *Il caso di Torino:* GTT non pubblica alcun `.md5`, quindi per
 quella citta' il meccanismo ripiega sullo scaricamento dell'archivio e sul confronto
@@ -2189,15 +2255,68 @@ per gradino, scelti per discesa coordinata sulle giornate di taratura.
 `constatazioni sole` (Roma) e `popolazione unica` (Torino); griglia dei candidati da
 0,5 a 1.000.000 su scala logaritmica.*
 
-Un gradino che sceglie il massimo della griglia non e' tarato ma **trasparente**: con
-una concentrazione molto maggiore del numero di osservazioni della cella, la sua
-stima coincide con quella del genitore, cioe' il gradino non serve. Succede al
-livello per tipo di veicolo in entrambe le citta', e ha una spiegazione diretta: con
-quasi tutte le linee di superficie classificate come autobus, quel livello ripete
-quello sotto di se'. Su Torino sono trasparenti **due gradini su cinque**, perche' vi
-si aggiunge il livello per tipo, fascia e giorno. Distinguere la trasparenza dal
-troncamento richiederebbe di allargare la griglia e verificare che la perdita non si
-muova; qui la lettura e' che la scala torinese lavora effettivamente su tre gradini.
+**Che cosa significa un alfa al massimo della griglia, misurato.** Tre gradini su
+otto scelgono l'estremo superiore, e l'estremo superiore non e' un valore come gli
+altri: per `alfa` che cresce la stima di una cella tende a quella del genitore,
+perche' il peso che la cella conserva sui propri conteggi vale `N / (N + alfa)`. Un
+gradino ad `alfa` massimo sta dunque chiedendo di somigliare al genitore quanto la
+griglia gli concede, e la domanda non e' se allargare la griglia ma **quanto sia
+gia' vicino**. E' un confronto di matrici, e si fa senza rieseguire nulla.
+
+| gradino | citta' | alfa | scarto massimo per cella | divergenza media (bit) | celle |
+| --- | --- | ---: | ---: | ---: | ---: |
+| tipo | Roma | 1.000.000 | 0,043324 | 0,004842 | 8 |
+| tipo x fascia | Roma | 1.000 | 0,322302 | 0,321038 | 48 |
+| tipo x fascia x giorno | Roma | 250 | 0,065960 | 0,006797 | 144 |
+| linea x fascia x giorno | Roma | 50 | 0,309487 | 0,025122 | 60.912 |
+| tipo | Torino | 1.000.000 | 0,004169 | 0,000229 | 16 |
+| tipo x fascia | Torino | 1.000 | 0,100685 | 0,009188 | 96 |
+| tipo x fascia x giorno | Torino | 1.000.000 | 0,000459 | 0,000000429 | 288 |
+| linea x fascia x giorno | Torino | 250 | 0,198990 | 0,012264 | 18.144 |
+
+*Fonte: `results/trasparenza_gradini.csv`, scale principali delle due citta', bordi
+`ottili`, finestra `2026-09-09`. Lo scarto massimo e' la piu' grande differenza fra
+una probabilita' del gradino e la corrispondente del genitore; la divergenza e'
+`KL(gradino || genitore)` in bit, mediata sulle celle col peso delle loro
+osservazioni. Le celle mai visitate coincidono col genitore per costruzione e non
+entrano nella divergenza.*
+
+**La risposta e' diversa per i tre.** Su Torino il livello per tipo, fascia e giorno
+e' **trasparente davvero**: si discosta dal genitore di meno di mezzo millesimo su
+ogni cella, cioe' meno di quanto qualunque uso del pianificatore possa distinguere,
+e la sua divergenza e' di quattro decimilionesimi di bit. Quel gradino non serve, e
+la taratura lo ha detto. Gli altri due no. Il livello per tipo di Torino resta a
+quattro millesimi, e quello di **Roma a quarantatre millesimi**, che su una
+probabilita' sono piu' di quattro punti percentuali: li' la griglia e' **troppo
+stretta**, e chiamarlo trasparente sarebbe sbagliato.
+
+La ragione sta nella formula del peso residuo. Il livello per tipo di Roma ha otto
+celle sole su 1,17 milioni di coppie, cioe' circa centoquarantaseimila osservazioni
+per cella: con `alfa` a un milione la cella conserva ancora **circa un ottavo** del
+proprio conteggio, e nessun valore della griglia basta ad annullarlo. Il livello per
+tipo, fascia e giorno di Torino ha invece 288 celle e poche migliaia di osservazioni
+ciascuna, e lo stesso `alfa` lo azzera. Non e' quindi l'importanza del gradino a
+decidere se l'estremo lo renda trasparente, ma **quanto sono popolose le sue celle**.
+
+Va detto perche' quel gradino sia ridondante su Roma: nei dati romani tutte le linee
+portano **un solo `route_type`**, quindi il livello per tipo di veicolo produce
+esattamente la stessa partizione del livello sotto di se' e la sua mappa dei genitori
+e' l'identita'. Un gradino che ripete il proprio genitore non puo' che riapplicare gli
+stessi conteggi due volte, ed e' esattamente cio' che la taratura sta cercando di
+spegnere spingendo `alfa` all'estremo. Che non ci riesca del tutto e' un limite della
+griglia, non un difetto della stima: il gradino non introduce informazione nuova, e
+l'effetto residuo e' di riportare la tabella un po' piu' vicino alle frequenze
+osservate di quanto il gradino precedente facesse. Allargare la griglia e' la
+correzione naturale, e resta da fare.
+
+**Dove la scala lavora davvero.** La stessa tabella lo dice, e non era ovvio: il
+gradino che sposta di piu' non e' quello piu' fine ma **il livello per tipo e fascia
+oraria**, con 0,321 bit di divergenza su Roma contro i 0,025 del livello per linea.
+La fascia oraria e' il fattore che porta quasi tutta la struttura; la linea aggiunge
+un ventesimo di bit, su trentaduemila celle osservate. E' coerente con il confronto
+fra le scale piu' avanti, dove il solo tipo di linea arriva vicino alla scala intera:
+la risalita serve soprattutto a non pagare le celle fini, non ad aggiungerne il
+contenuto.
 
 **La scelta dei bordi.** Il confronto fra i cinque candidati, sul banco di prova
 tenuto fuori sia dalla stima sia dalla verifica.
@@ -2211,8 +2330,10 @@ tenuto fuori sia dalla stima sia dalla verifica.
 | decisione | -300 -60 0 120 300 900 1800 | 1,7867 | 1,3383 | 0,2821 | 0,0987 | 293,4 s | 184,4 s |
 
 *Fonte: `results/scelta_bordi.csv`, finestra `2026-09-09`, due giornate di banco;
-colonne `guadagno`, `massa_nei_bin_aperti` e `ampiezza_confusa_decisione`. Le
-ampiezze sono ristrette alle osservazioni fra zero e trenta minuti.*
+colonne `guadagno`, `massa_nei_bin_aperti` e `ampiezza_confusa_decisione`; le
+soglie di ammissione sono la colonna `deviazione_perdita` della riga `attuali` di
+ciascuna citta'. Le ampiezze sono ristrette alle osservazioni fra zero e trenta
+minuti.*
 
 I bordi ereditati dalla Fase 3 lasciavano quasi due terzi della massa romana in un
 bin aperto, dove il modello dichiara di non distinguere nulla, e il loro guadagno e'
@@ -2241,14 +2362,16 @@ media e deviazione su quattro giornate di verifica.*
 
 La scala completa vince su entrambe le citta' e su entrambi gli estremi, ma i due
 confronti non hanno lo stesso peso e vanno letti separatamente. Contro il **livello
-fine da solo** il vantaggio e' netto - 0,2965 bit su Roma e 0,0657 su Torino - e
-soprattutto e' accompagnato da un **crollo della variabilita' fra giornate**, da
-+/-0,3588 a +/-0,0625 su Roma e da +/-0,0867 a +/-0,0303 su Torino: il modello a
+fine da solo** il vantaggio e' netto - circa tre decimi di bit su Roma e sette
+centesimi su Torino, dalla tabella - e soprattutto e' accompagnato da un **crollo
+della variabilita' fra giornate**, che su Roma si riduce quasi a un sesto e su
+Torino a meno di un terzo: il modello a
 sole celle fini non e' semplicemente peggiore, e' **instabile**, perche' su ogni
 giornata sbaglia in modo diverso a seconda di quali linee rare vi compaiano. E' il
 difetto che la risalita esiste per curare, e la misura mostra che lo cura. Contro il
-**tipo di linea da solo** il vantaggio e' invece piccolo, 0,0135 bit su Roma e 0,0119
-su Torino, **dentro la deviazione fra giornate di entrambe le scale**: le deviazioni
+**tipo di linea da solo** il vantaggio e' invece di poco piu' di un centesimo di bit
+in entrambe le citta', **dentro la deviazione fra giornate di entrambe le scale**:
+le deviazioni
 riportate sono quelle di ciascuna scala separatamente e non quelle della loro
 differenza, quindi non permettono di concludere che il vantaggio sia significativo.
 La lettura onesta e' che la scala compra **soprattutto stabilita'**, e che gran parte
@@ -2273,8 +2396,9 @@ quello finale e confrontando.
 perche' vi esiste una popolazione sola.*
 
 Sulla popolazione che conta, le constatazioni, aggiungere le previsioni migliora di
-**0,0029 bit**, cioe' un ventesimo della deviazione fra giornate: non migliora.
-Sulla popolazione delle previsioni migliora di 0,0202 bit, il che e' atteso e non
+**tre millesimi di bit**, cioe' un ventesimo della deviazione fra giornate: non
+migliora. Sulla popolazione delle previsioni migliora di due centesimi, il che e'
+atteso e non
 decide, perche' un modello che ha visto le previsioni predice meglio le previsioni.
 Raddoppiare i gradini portandoli a dieci non aggiunge nulla di piu'. Si adotta
 percio' la scala piu' semplice, cinque gradini di sole constatazioni, che e' anche
@@ -2311,8 +2435,9 @@ quattro giornate di verifica messe insieme; lo scarto medio e' la colonna
 Lo scarto medio pesato sta sotto il mezzo punto percentuale in entrambe le citta', e
 la tabella mostra dove si concentra: nelle classi centrali e alte il modello e'
 leggermente **ottimista**, cioe' promette qualche punto in piu' di quanto osservi -
-su Roma 0,5720 contro 0,5331 nella classe 0,5-0,6 e 0,6623 contro 0,6383 nella
-successiva. Non e' un dettaglio indifferente per questo progetto, perche' il
+su Roma circa 0,57 contro 0,53 nella classe 0,5-0,6 e 0,66 contro 0,64 nella
+successiva, con le cifre piene in tabella. Non e' un dettaglio indifferente per
+questo progetto, perche' il
 pianificatore robusto sceglie l'itinerario che massimizza `P(arrivo <= T)` e un
 modello ottimista sovrastima la probabilita' di tutti i candidati: finche'
 l'ottimismo e' uniforme non sposta la graduatoria, ma va dichiarato che la
@@ -2349,16 +2474,18 @@ realta', ed e' esattamente il mondo in cui un pianificatore che ignori la
 correlazione sbaglia di meno: il vantaggio del metodo robusto misurato la' e' da
 considerarsi **prudente**, non gonfiato. La seconda e' che la discretizzazione in
 otto bin **non distrugge la dipendenza che deve rappresentare**: la correlazione
-implicita nella matrice stimata vale 0,9625 contro 0,9634 misurata sui secondi su
-Roma - meno di un millesimo di scarto - e 0,9198 contro 0,9148 su Torino. E' il
+implicita nella matrice stimata e quella misurata sui secondi distano **meno di un
+millesimo su Roma** e **cinque millesimi su Torino**, entrambe intorno a 0,96 e a
+0,92: le cifre piene sono in tabella. E' il
 controllo che giustifica a posteriori l'intera rappresentazione a bin, perche' una
 matrice che perdesse la correlazione renderebbe inutile il condizionamento sul
 ritardo a monte. La terza e' che **le quattro letture concordano fra loro**: Pearson
 e Spearman, su tutte le coppie e dentro i soli bordi dei bin, stanno tutte fra 0,91
 e 0,98. Non e' un'osservazione oziosa, perche' sulla popolazione torinese mal
 definita descritta nelle decisioni di progetto le stesse quattro letture si
-contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi, e la loro discordanza
-e' stato il segnale che qualcosa non andava nella definizione della popolazione prima
+contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi (*misura una tantum
+del 9 settembre 2026, su una popolazione poi abbandonata*), e la loro discordanza e'
+stato il segnale che qualcosa non andava nella definizione della popolazione prima
 ancora che nei numeri.
 
 **Che cosa questa valutazione non dice.** Non dice se il modello appreso faccia

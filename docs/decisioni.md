@@ -2875,6 +2875,29 @@ che e' come si sono scoperti i numeri della rete ASP a piena scala, esistenti so
 nel log di una esecuzione. Il programma dichiara il proprio tasso di falso a ogni
 esecuzione, perche' chi lo legge sappia quanto vale un "trovato".
 
+**Quando un numero non ha un CSV: si dichiara, non si toglie.** Alcuni numeri del
+documento non sono rifacibili e non lo saranno mai, perche' misurano una condizione
+passata, dati da allora potati, o il comportamento di un'implementazione che e' stata
+rimossa. Toglierli impoverirebbe il documento di cio' che ha davvero deciso le scelte;
+lasciarli senza segno li farebbe sembrare verificabili come gli altri. Vanno percio'
+marcati in chiaro come **misura una tantum, con la data in cui fu presa**, al posto
+della riga di fonte:
+
+> *Misura una tantum del 26 agosto 2026: l'implementazione che la produceva e' stata
+> sostituita e nessun CSV la sostiene.*
+
+La data non e' un ornamento: dice al lettore che quel numero descrive i dati e il
+codice di quel giorno, e che la distanza fra quella data e oggi e' la misura di quanto
+vada preso con cautela. La regola vale in entrambi i versi: un numero **senza** quel
+marchio deve avere una riga di fonte, e uno **con** quel marchio non va rigenerato
+accidentalmente da un'esecuzione nuova, perche' non sarebbe la stessa misura.
+
+Le quattro misure che nel documento portano questo marchio sono: le 288 corse torinesi
+in due dump distanti (9 settembre 2026), i 4.691 passaggi contro 13.092 della chiave
+naturale (26 agosto 2026), i 48,5 MB dell'archivio romano e i 59 byte del suo `.md5`
+(25 agosto 2026), e le correlazioni +0,999 e +0,240 della popolazione torinese poi
+abbandonata (9 settembre 2026).
+
 **Come si potrebbe verificare.** Prendere una tabella a caso del documento, leggere
 la sua riga di fonte, ed eseguire cio' che dice. Se il numero non viene fuori, o la
 riga e' sbagliata o il numero lo e'.
