@@ -327,8 +327,16 @@ def consolida_giorno(
     radice: Path = RADICE,
     politica: Politica | None = None,
     fuso: str = "Europe/Rome",
+    scrivi: bool = True,
 ) -> Riepilogo:
-    """Converte i dump di un giorno in parquet. Non tocca i grezzi."""
+    """Converte i dump di un giorno in parquet. Non tocca i grezzi.
+
+    Con ``scrivi=False`` conta e basta: nessun parquet viene creato o sostituito.
+    Serve a misurare quanto la deduplica conservi su tutte le giornate senza
+    rigenerare i file che le Fasi 3 e 5 hanno gia' usato - rifarli significherebbe
+    rischiare di sostituire dati buoni con dati ricostruiti da grezzi che nel
+    frattempo potrebbero essere stati potati, e accorgersene dopo.
+    """
     politica = politica or Politica.dal_nome("tutti")
     zona = ZoneInfo(fuso)
     sorgente = SorgenteDump(radice / "data" / "raw" / "rt" / citta / giorno.isoformat())
@@ -364,7 +372,8 @@ def consolida_giorno(
     # Contatore in una lista per poterlo aggiornare dentro il ciclo senza nonlocal.
     divergenze = [0]
 
-    scrittore = pq.ParquetWriter(destinazione, _schema(), compression="zstd")
+    scrittore = (pq.ParquetWriter(destinazione, _schema(), compression="zstd")
+                 if scrivi else None)
     accumulate: list[list] = []
     stu_totali = 0
     righe_scritte = 0
@@ -373,10 +382,11 @@ def consolida_giorno(
         nonlocal accumulate, righe_scritte
         if not accumulate:
             return
-        tabella = pa.Table.from_arrays(
-            [pa.array(colonna) for colonna in zip(*accumulate)], schema=_schema()
-        )
-        scrittore.write_table(tabella)
+        if scrittore is not None:
+            tabella = pa.Table.from_arrays(
+                [pa.array(colonna) for colonna in zip(*accumulate)], schema=_schema()
+            )
+            scrittore.write_table(tabella)
         righe_scritte += len(accumulate)
         accumulate = []
 
@@ -493,7 +503,8 @@ def consolida_giorno(
             accumulate = list(ultima_riga.values())
         scarica_gruppo()
     finally:
-        scrittore.close()
+        if scrittore is not None:
+            scrittore.close()
 
     if divergenze[0]:
         log.warning(
@@ -503,7 +514,10 @@ def consolida_giorno(
         )
 
     mb_grezzi = sorgente.byte_totali() / 1_048_576
-    mb_parquet = destinazione.stat().st_size / 1_048_576
+    # Senza scrittura il parquet non esiste: si riporta zero invece di leggere il
+    # file vecchio, che darebbe una compressione riferita a un'altra esecuzione.
+    mb_parquet = (destinazione.stat().st_size / 1_048_576
+                  if scrivi and destinazione.is_file() else 0.0)
     passaggi = len(ultimo_valore) or len(ultima_riga)
     if politica.nome == "ultimo":
         soppresse_dalla_data[0] = len(ultima_riga) - len(chiavi_storiche)
@@ -600,6 +614,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     analizzatore.add_argument(
         "--senza-archivio", action="store_true", help="non comprimere i grezzi",
     )
+    analizzatore.add_argument(
+        "--senza-scrittura", action="store_true",
+        help="conta e riempie results/consolidamento.csv senza creare il parquet",
+    )
     argomenti = analizzatore.parse_args(argv)
 
     logging.basicConfig(
@@ -632,12 +650,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         destinazione = (
             RADICE / "data" / "processed" / "osservazioni" / citta / f"{giorno.isoformat()}.parquet"
         )
-        if destinazione.exists() and not argomenti.rifai:
+        if destinazione.exists() and not (argomenti.rifai or argomenti.senza_scrittura):
             log.info("[%s] %s gia' consolidato, salto (usare --rifai per rigenerarlo)", citta, giorno)
             continue
         try:
-            riepilogo = consolida_giorno(citta, giorno, RADICE, politica)
-            verifica(destinazione, riepilogo.righe_scritte)
+            riepilogo = consolida_giorno(citta, giorno, RADICE, politica,
+                                         scrivi=not argomenti.senza_scrittura)
+            if not argomenti.senza_scrittura:
+                verifica(destinazione, riepilogo.righe_scritte)
             log.info(
                 "[%s] %s: %d dump, %s stop_time_update -> %s righe (%s passaggi distinti)",
                 citta, giorno, riepilogo.dump_letti,
@@ -671,7 +691,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "soppresse_dalla_data": riepilogo.soppresse_dalla_data,
                 "duplicate_dalla_data": riepilogo.duplicate_dalla_data,
             })
-            if not argomenti.senza_archivio:
+            if not (argomenti.senza_archivio or argomenti.senza_scrittura):
                 archivio = archivia_grezzi(citta, giorno, RADICE)
                 if archivio is not None:
                     log.info("[%s] grezzi archiviati in %s (%.1f MB)", citta, archivio.name,

@@ -369,3 +369,34 @@ def test_sotto_la_politica_ultimo_la_data_nella_chiave_salva_un_passaggio(
 
     assert riepilogo.righe_scritte == 2, "un passaggio per giorno di servizio"
     assert riepilogo.soppresse_dalla_data == 1, "la chiave storica ne avrebbe tenuto uno solo"
+
+
+def test_senza_scrittura_conta_e_non_crea_il_parquet(tmp_path: Path) -> None:
+    """E' un presidio, non una comodita'.
+
+    I parquet in `data/processed/osservazioni` sono l'ingresso delle Fasi 3 e 5:
+    rigenerarli per contare significherebbe rischiare di sostituire dati buoni con
+    dati ricostruiti da grezzi che nel frattempo potrebbero essere stati potati, e
+    accorgersene dopo. Il conteggio su tutte le giornate va fatto senza toccarli, e
+    che non li tocchi lo deve dire un test.
+    """
+    _prepara(tmp_path, [_dump(1_000, [("T1", "", 2, 1_800_000_000)])], ["080000.pb"])
+    destinazione = (tmp_path / "data/processed/osservazioni/prova"
+                    / f"{GIORNO.isoformat()}.parquet")
+    riepilogo = consolida_giorno("prova", GIORNO, tmp_path,
+                                 Politica.dal_nome("tutti"), scrivi=False)
+    assert not destinazione.exists(), "senza scrittura nessun parquet deve nascere"
+    assert riepilogo.righe_scritte == 1, "il conteggio pero' si fa lo stesso"
+    assert riepilogo.stu_totali == 1
+    assert riepilogo.mb_parquet == 0.0, "nessun file, nessuna dimensione da riportare"
+
+
+def test_senza_scrittura_non_sostituisce_un_parquet_esistente(tmp_path: Path) -> None:
+    """Il caso che conta davvero: il file c'e' gia' e deve restare quello."""
+    _prepara(tmp_path, [_dump(1_000, [("T1", "", 2, 1_800_000_000)])], ["080000.pb"])
+    consolida_giorno("prova", GIORNO, tmp_path, Politica.dal_nome("tutti"))
+    destinazione = (tmp_path / "data/processed/osservazioni/prova"
+                    / f"{GIORNO.isoformat()}.parquet")
+    prima = destinazione.read_bytes()
+    consolida_giorno("prova", GIORNO, tmp_path, Politica.dal_nome("tutti"), scrivi=False)
+    assert destinazione.read_bytes() == prima, "il parquet non deve essere toccato"
