@@ -2557,11 +2557,27 @@ cambiarli e' essa stessa misurata.
 
 Sul primo giro i due insiemi parevano distinguersi: a quindici minuti di margine
 `decisione` dava +11,1 punti di viaggi arrivati entro la scadenza e `ottili`
-+7,5. La differenza veniva **per intero da una giornata**: Roma 2026-09-07, che il
-consolidamento aveva prodotto parziale, contribuiva sette coppie invece di trenta
-e pesava nella media fra giornate quanto le altre. Escludendola con la regola
-dichiarata al punto seguente, i due insiemi danno **+10,0 punti entrambi**, e le
-deviazioni si stringono da +/-3,5 e +/-10,4 a +/-1,9 per tutti e due.
++7,5. La differenza veniva **per intero da una giornata**: Roma 2026-09-07, che ha
+contribuito **sette coppie rigiocabili invece di trenta** e pesava nella media fra
+giornate quanto le altre. Escludendola con la regola dichiarata al punto seguente, i
+due insiemi danno **+10,0 punti entrambi**, e le deviazioni si stringono da +/-3,5 e
++/-10,4 a +/-1,9 per tutti e due.
+
+*Fonte: `results/backtest_riepilogo_con_magre.csv` per i numeri col giorno magro
+dentro, `results/backtest_riepilogo.csv` per quelli senza; il flag che li separa e'
+`--tieni-giornate-magre`.*
+
+**Una correzione a questa voce: la causa dichiarata era sbagliata.** La prima
+stesura attribuiva le sette coppie a un consolidamento parziale di quella giornata.
+Non e' cosi': `results/consolidamento.csv` le assegna **1.433 dump e 18,4 milioni di
+righe**, esattamente come alle giornate vicine. Perche' ne siano risultate rigiocabili
+solo sette non e' accertato. L'unica anomalia nota di quel giorno sta altrove:
+e' una delle due giornate romane in cui il feed pubblica molto piu' passato del
+solito (voce 63), col novantanovesimo percentile di
+`timestamp_feed - orario_programmato` a 36.526 secondi contro i circa duemila delle
+altre. Puo' essere la causa e puo' essere una coincidenza; finche' non e' misurata
+non va scritta come spiegazione. La regola di esclusione non ne dipende: conta
+quante coppie una giornata contribuisce, non perche'.
 
 | margine | `decisione` | `ottili` |
 | ---: | ---: | ---: |
