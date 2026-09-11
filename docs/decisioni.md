@@ -2995,3 +2995,48 @@ per una mutazione di una riga.
 
 **Come si potrebbe verificare.** `git status` prima di ogni mutazione: se elenca
 file modificati, il ripristino ne portera' via le modifiche.
+
+### 75. Un collector che funziona non garantisce dati
+
+**Constatazione.** Dalla mezzanotte del 10 settembre 2026 il feed real-time di
+Torino restituisce un `FeedMessage` protobuf **vuoto**: quindici byte, il solo
+header. Il collector ha continuato a interrogare regolarmente - 1.440 dump il 10,
+altri 834 entro le 13:53 dell'11 - e ha scritto su disco 1.440 file identici e
+privi di contenuto. L'ultimo dump utile e' delle 23:59 del 9 settembre.
+
+**Perche' nessun controllo se ne e' accorto.** `deploy/stato.sh` guardava il
+servizio, non il dato: unit attiva, nessuna interruzione registrata in
+`gaps.jsonl`, interrogazioni tutte riuscite, spazio su disco che scende, battito
+aggiornato al minuto. Ogni indicatore diceva che andava bene, ed erano tutti veri:
+il collector **funzionava**. Cio' che mancava era la domanda successiva, se quello
+che arrivava contenesse qualcosa.
+
+Se ne e' accorto per caso un conteggio fatto per un'altra ragione - la quota di
+righe conservate dalla deduplica su tutte le giornate - in cui una riga riportava
+zero `stop_time_update` su 1.440 dump. Senza quel conteggio il silenzio sarebbe
+rimasto invisibile fino a quando qualcuno non avesse provato a usare quei giorni.
+
+**E' lo stesso meccanismo della voce 63.** Li' il ritardo massimo fra le
+constatazioni torinesi valeva esattamente zero, e non era un dato ma una
+definizione chiusa su se' stessa; qui l'indicatore di salute misurava se stesso
+invece del fenomeno. In entrambi i casi il segnale d'allarme e' arrivato da una
+statistica di contorno chiesta per altro, ed e' la ragione per cui vanno guardate
+anche quando non servono alla domanda.
+
+**Decisione.** `deploy/stato.sh` misura ora la **dimensione mediana** dei dump di
+`trip_updates` delle ultime due giornate, e avvisa se scende sotto i cento byte o
+se piu' di un quarto dei dump sono vuoti. La mediana e non la media, perche' di
+notte qualche dump vuoto e' normale anche su un feed sano; cento byte e non una
+soglia tarata, perche' fra un protobuf vuoto - quindici byte - e il piu' piccolo
+dump utile osservato in tre settimane - trentaquattromila - ci sono tre ordini di
+grandezza e nessuna zona grigia.
+
+**Che cosa questo non tocca.** La finestra di stima si ferma al 9 settembre, quindi
+nessun risultato del progetto usa quelle giornate. Toccherebbe pero' chiunque
+rieseguisse senza `--fino-a`, ed e' un'altra ragione per cui quella colonna esiste
+(voce 73). Roma non ne e' mai stata affetta: la mediana dei suoi dump sta fra
+431.149 e 881.271 byte in tutte e diciassette le giornate.
+
+**Come si potrebbe verificare.** `./deploy/stato.sh` sulla VM lo dice a ogni
+esecuzione. La prova che il controllo funzioni e' che, appena installato, ha
+segnalato che il silenzio era **ancora in corso** - cosa che nessuno sapeva.

@@ -181,6 +181,62 @@ for citta in elenco:
     print(f"  {citta:<10} {len(versioni)} revisioni distinte, {len(giorni)} giorni mappati, "
           f"ultimo controllo {ultimo}")
 
+# =============================================================================
+# Il collector puo' funzionare benissimo e non raccogliere nulla.
+#
+# Il 10 settembre il feed di Torino ha restituito per ventiquattro ore un
+# FeedMessage vuoto: 1.440 dump da quindici byte ciascuno. Il servizio era
+# attivo, nessuna interruzione era registrata, lo spazio su disco scendeva, e
+# tutti i controlli qui sopra dicevano che andava tutto bene. Se ne e' accorto,
+# settimane dopo, un conteggio fatto per un'altra ragione.
+#
+# La salute del FEED e' una misura separata dalla salute del SERVIZIO, e la
+# distingue una sola grandezza: quanto pesa un dump. Un protobuf vuoto sta sotto
+# il centinaio di byte; uno pieno, sui dati raccolti, sta fra le trentamila e il
+# milione a seconda della citta'. Fra i due non c'e' zona grigia, quindi la
+# soglia non e' una taratura ma un confine.
+# =============================================================================
+
+DUMP_SOSPETTO_BYTE = 100
+"""Sotto questa dimensione un dump non contiene osservazioni.
+
+Un ``FeedMessage`` protobuf col solo header pesa quindici byte; il piu' piccolo
+dump utile osservato in tre settimane ne pesa trentaquattromila. La soglia e'
+lasca di proposito: deve distinguere "vuoto" da "pieno", non misurare quanto sia
+pieno, e un valore in mezzo a un vuoto di tre ordini di grandezza non va tarato.
+"""
+
+print("\n\033[1m== Salute del feed\033[0m")
+print("  Un collector che funziona non garantisce dati: qui si guarda se cio' che")
+print("  arriva contenga qualcosa. La mediana e' robusta alle ore notturne, in cui")
+print("  qualche dump vuoto e' normale anche su un feed sano.")
+
+for citta in elenco:
+    giornate = sorted((p for p in (RT / citta).iterdir() if p.is_dir()), reverse=True)
+    if not giornate:
+        print(f"  {citta:<10} nessuna giornata")
+        continue
+    for cartella in giornate[:2]:
+        dimensioni = sorted(p.stat().st_size
+                            for p in (cartella / "trip_updates").glob("*.pb")) \
+            if (cartella / "trip_updates").is_dir() else []
+        if not dimensioni:
+            # I grezzi archiviati non si aprono qui: leggere un tar da centinaia
+            # di megabyte a ogni fotografia costerebbe piu' di tutto il resto
+            # dello script messo insieme.
+            stato = "archiviata" if (cartella / "grezzi.tar.gz").is_file() else "vuota"
+            print(f"  {citta:<10} {cartella.name}  ({stato}, niente da misurare)")
+            continue
+        mediana = dimensioni[len(dimensioni) // 2]
+        vuoti = sum(1 for d in dimensioni if d < DUMP_SOSPETTO_BYTE)
+        allarme = ""
+        if mediana < DUMP_SOSPETTO_BYTE:
+            allarme = "  <== IL FEED NON PUBBLICA NULLA"
+        elif vuoti > len(dimensioni) // 4:
+            allarme = f"  <== {vuoti} dump vuoti su {len(dimensioni)}"
+        print(f"  {citta:<10} {cartella.name}  mediana {mediana:>9,} byte su "
+              f"{len(dimensioni):>5} dump{allarme}")
+
 print("\n\033[1m== Osservazioni consolidate\033[0m")
 consolidate = sorted(Path("data/processed/osservazioni").rglob("*.parquet")) if Path("data/processed/osservazioni").is_dir() else []
 if not consolidate:
