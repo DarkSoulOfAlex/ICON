@@ -301,7 +301,7 @@ def scarta_giornate_magre(tabella: pd.DataFrame,
     return tabella[tenute]
 
 
-def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
+def segna_divergenze(tabella: pd.DataFrame, scarta_magre: bool = True) -> pd.DataFrame:
     """Marca le istanze in cui le due strategie scelgono itinerari diversi.
 
     Serve perche' dove scelgono lo stesso itinerario la differenza fra loro e' zero
@@ -313,7 +313,8 @@ def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
     # Una riga ripetuta non cambia le medie ma gonfia i conteggi, e soprattutto e'
     # il sintomo di due esecuzioni che hanno scritto sullo stesso file: si toglie e
     # si dice, invece di assorbirla in silenzio.
-    tabella = scarta_giornate_magre(tabella)
+    if scarta_magre:
+        tabella = scarta_giornate_magre(tabella)
     identificativo = ["citta", "bordi", "giornata", "coppia", "margine", "strategia"]
     ripetute = int(tabella.duplicated(subset=identificativo).sum())
     if ripetute:
@@ -332,14 +333,14 @@ def segna_divergenze(tabella: pd.DataFrame) -> pd.DataFrame:
     return tabella.merge(scelte[chiave + ["divergono"]], on=chiave, how="left")
 
 
-def riepiloga(righe: list[dict]) -> pd.DataFrame:
+def riepiloga(righe: list[dict], scarta_magre: bool = True) -> pd.DataFrame:
     """Media e deviazione **sulle giornate**, non sulle istanze.
 
     Le istanze di uno stesso giorno condividono il traffico di quel giorno e non
     sono indipendenti: una deviazione calcolata su di esse sarebbe piu' stretta del
     vero e farebbe sembrare significative differenze che non lo sono.
     """
-    tabella = segna_divergenze(pd.DataFrame(righe))
+    tabella = segna_divergenze(pd.DataFrame(righe), scarta_magre)
     if tabella.empty:
         return tabella
     chiave = ["citta", "bordi", "strategia", "margine"]
@@ -393,6 +394,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--solo-riepilogo", action="store_true",
                         help="non rigioca nulla: rilegge results/backtest.csv e "
                              "ricalcola il riepilogo")
+    parser.add_argument("--tieni-giornate-magre", action="store_true",
+                        help="non applica QUOTA_MINIMA_DI_COPPIE e scrive "
+                             "backtest_riepilogo_con_magre.csv: serve a misurare "
+                             "quanto la regola sposti, invece di affermarlo")
     parser.add_argument("--riprendi", action="store_true",
                         help="riusa le righe gia' in results/backtest.csv e calcola "
                              "solo le combinazioni mancanti")
@@ -419,7 +424,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         tutte = pd.read_csv(dettaglio).to_dict("records")
         print(f"  riepilogo da {dettaglio.name}: {len(tutte):,} righe lette")
-        return riferisci(tutte, risultati, dettaglio)
+        return riferisci(tutte, risultati, dettaglio,
+                         scarta_magre=not argomenti.tieni_giornate_magre)
     if argomenti.riprendi and dettaglio.is_file():
         gia = pd.read_csv(dettaglio)
         tutte = gia.to_dict("records")
@@ -521,7 +527,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     return riferisci(tutte, risultati, dettaglio)
 
 
-def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path) -> int:
+def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path,
+              scarta_magre: bool = True) -> int:
     """Riepiloga, scrive e stampa.
 
     Separato dal ciclo che rigioca per poterlo rifare senza ricalcolare nulla: la
@@ -532,8 +539,13 @@ def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path) -> int:
         print("\nnessuna istanza rigiocabile: nessun risultato scritto")
         return 1
 
-    riepilogo = riepiloga(tutte)
-    destinazione = risultati / "backtest_riepilogo.csv"
+    riepilogo = riepiloga(tutte, scarta_magre)
+    # Il riepilogo con le giornate magre dentro non sostituisce quello principale:
+    # sta accanto, perche' la differenza fra i due E' il risultato che giustifica
+    # la regola (voce 64), e senza un file quel confronto sarebbe un numero scritto
+    # a memoria.
+    destinazione = risultati / ("backtest_riepilogo.csv" if scarta_magre
+                                else "backtest_riepilogo_con_magre.csv")
     riepilogo.to_csv(destinazione, index=False)
     # Il dettaglio non si scrive qui: viene aggiunto a ogni giornata conclusa,
     # perche' un'interruzione non porti via ore di replica. Qui si dice soltanto

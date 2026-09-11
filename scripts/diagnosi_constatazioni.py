@@ -112,6 +112,10 @@ def verdetto(righe: list[dict]) -> tuple[bool, str]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--citta", nargs="*", default=list(CITTA))
+    parser.add_argument("--fino-a", default=None, metavar="AAAA-MM-GG",
+                        help="ignora le giornate successive: senza, due esecuzioni "
+                             "a giorni di distanza guardano finestre diverse e la "
+                             "differenza si attribuisce alla misura invece che ai dati")
     parser.add_argument("--radice", type=Path, default=RADICE)
     argomenti = parser.parse_args(argv)
 
@@ -125,11 +129,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     for citta in argomenti.citta:
         cartella = argomenti.radice / "data" / "processed" / "osservazioni" / citta
         giorni = sorted(cartella.glob("*.parquet"))
+        if argomenti.fino_a:
+            giorni = [g for g in giorni if g.stem <= argomenti.fino_a]
         if not giorni:
             print(f"  [{citta}] nessun parquet in {cartella}")
             continue
+        finestra = giorni[-1].stem
         print()
-        print(f"  === {citta} ===")
+        print(f"  === {citta} ({len(giorni)} giornate, fino al {finestra}) ===")
         print(f"  {'giornata':<12} {'righe':>12} {'feed-prog p50':>13} {'p99':>9} "
               f"{'max':>9} {'constat.':>9} {'con ritardo > 0':>16}")
         righe = []
@@ -150,11 +157,13 @@ def main(argv: Sequence[str] | None = None) -> int:
               f" - {spiegazione}")
         for r in righe:
             r["constatazioni_reali"] = int(esistono)
+            r["finestra"] = finestra
         tutte.extend(righe)
 
     if tutte:
         destinazione = risultati / "diagnosi_constatazioni.csv"
-        colonne = ["citta", "giornata", "righe_con_orario", "feed_meno_programmato_p50",
+        colonne = ["citta", "finestra", "giornata", "righe_con_orario",
+                   "feed_meno_programmato_p50",
                    "feed_meno_programmato_p99", "feed_meno_programmato_max",
                    "quota_constatazioni", "constatazioni_con_ritardo_positivo",
                    "ritardo_massimo_fra_le_constatazioni", "constatazioni_reali"]
