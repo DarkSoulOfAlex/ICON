@@ -1,9 +1,9 @@
 citta,finestra,scala,gradino,alfa,al_bordo,scarto_massimo,divergenza_media_bit,celle,celle_osservate
-roma,2026-09-09,constatazioni sole,tipo / constatazioni,1000000.0,1,0.04332442658239355,0.004842365524263803,8,8
-roma,2026-09-09,constatazioni sole,tipo x fascia / constatazioni,1000.0,0,0.32230171629393234,0.32103803819011606,48,48
-roma,2026-09-09,constatazioni sole,tipo x fascia x giorno / constatazioni,250.0,0,0.06596022959131043,0.006796732747006215,144,144
-roma,2026-09-09,constatazioni sole,linea x fascia x giorno / constatazioni,50.0,0,0.30948680499402115,0.02512178614702992,60912,32350
-torino,2026-09-09,popolazione unica,tipo / tutte,1000000.0,1,0.004168714121581707,0.0002293967607758901,16,16
-torino,2026-09-09,popolazione unica,tipo x fascia / tutte,1000.0,0,0.10068541435654998,0.009188272229746669,96,96
-torino,2026-09-09,popolazione unica,tipo x fascia x giorno / tutte,1000000.0,1,0.0004588500294941955,4.2905837595829553e-07,288,288
-torino,2026-09-09,popolazione unica,linea x fascia x giorno / tutte,250.0,0,0.19898961790709777,0.012264438001957497,18144,10354
+roma,2026-09-09,constatazioni sole,tipo / constatazioni,100000.0,0,0.20507668439641202,0.1171099269192382,8,8
+roma,2026-09-09,constatazioni sole,tipo x fascia / constatazioni,250.0,0,0.16629847488479632,0.13870100634025806,48,48
+roma,2026-09-09,constatazioni sole,tipo x fascia x giorno / constatazioni,25000.0,0,0.006631689218774328,7.027385948332569e-05,144,144
+roma,2026-09-09,constatazioni sole,linea x fascia x giorno / constatazioni,50.0,0,0.3096211281211047,0.02515576735688772,60912,32350
+torino,2026-09-09,popolazione unica,tipo / tutte,100000000.0,1,6.435669753246387e-05,4.238130109681761e-08,16,16
+torino,2026-09-09,popolazione unica,tipo x fascia / tutte,250.0,0,0.11600333885298375,0.01222116227725552,96,96
+torino,2026-09-09,popolazione unica,tipo x fascia x giorno / tutte,100000000.0,1,4.9928128069698374e-06,4.739844830754695e-11,288,288
+torino,2026-09-09,popolazione unica,linea x fascia x giorno / tutte,250.0,0,0.1991926727863487,0.012225582336357326,18144,10354
