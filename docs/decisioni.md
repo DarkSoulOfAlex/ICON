@@ -3094,18 +3094,25 @@ osservazioni per passaggio fra le misure su cui i due produttori differiscono. I
 confronto resta valido, ma andava rifatto a cadenza pari, perche' Roma aveva avuto
 una fase iniziale a cadenza ridotta - 1.244 dump al giorno in media contro i 1.394
 di Torino - che **abbassava** il suo numero. Rifatto sulle sole giornate a cadenza
-piena, il divario non si riduce: **si allarga**, da 2,43 a 2,87 volte.
+piena, il divario non si riduce: **si allarga**, da 2,43 a 2,85 volte.
 
 | | tutte le giornate piene | solo cadenza piena (>= 1.400 dump) |
 | --- | ---: | ---: |
-| Roma | 17,96 (16 giornate) | **20,28** (9 giornate) |
-| Torino | 7,03 (15 giornate) | **7,07** (14 giornate) |
-| divario | 2,55x | **2,87x** |
+| Roma | 17,6725 +/- 3,6034 (16 giornate) | **20,1924 +/- 0,9716** (9 giornate) |
+| Torino | 7,0381 +/- 0,3237 (15 giornate) | **7,0805 +/- 0,2896** (14 giornate) |
+| divario fra le medie | 2,51x | **2,85x** |
 
 Torino non si muove perche' era gia' a cadenza piena quasi ovunque; Roma sale
 perche' le sue giornate lente pesavano verso il basso. La conclusione della voce
 59 - due filosofie di pubblicazione diverse - ne esce rafforzata, e con un numero
 che ora misura loro invece di noi.
+
+*Una correzione a questa stessa voce.* La prima stesura riportava 20,28 e 7,07,
+che sono i **rapporti aggregati** - righe totali su passaggi totali - e non hanno
+deviazione. Le medie fra giornate valgono 20,19 e 7,08, e sono quelle che il
+documento usa, perche' un risultato senza la sua variabilita' e' un risultato da
+rifare. La differenza fra le due letture e' di un decimo di punto e non sposta
+alcuna conclusione, ma le due forme non si scambiano.
 
 **Decisione.** Le osservazioni per passaggio si riportano **solo su giornate a
 cadenza piena**, dichiarando la soglia, e accanto alla misura si dichiara la

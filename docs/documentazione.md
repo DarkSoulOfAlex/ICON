@@ -144,10 +144,13 @@ tre strategie di riferimento su una griglia di scadenze.
 
 **Argomento 4 — Apprendimento supervisionato (cap. 7) e apprendimento con
 incertezza (cap. 10).** Le distribuzioni di ritardo che il terzo modulo compone
-saranno stimate dai dati raccolti sul campo, con una stima condizionata alla
-linea, alla fascia oraria, alla posizione lungo la corsa e al ritardo osservato a
-monte. E' l'argomento attualmente in corso di realizzazione: la raccolta dei dati
-e' completa e funzionante, la stima non e' ancora stata eseguita.
+sono stimate dai dati raccolti sul campo, condizionatamente alla linea, alla fascia
+oraria, al tipo di giorno e al bin del ritardo osservato a monte sulla stessa corsa.
+La stima e' organizzata come una scala di risalita a cinque gradini in cui ciascun
+livello di contesto fa da priore di Dirichlet al livello immediatamente piu' fine.
+La valutazione misura la perdita logaritmica fuori campione contro i due estremi
+della scala, la calibrazione delle probabilita' prodotte, e la correlazione reale
+lungo la corsa contro il valore sintetico assunto nell'argomento precedente.
 
 **Argomento 5 — Soddisfacimento di vincoli (cap. 4).** Il viaggio con piu' tappe
 obbligate e' formulato come problema di vincoli: le variabili sono le tratte, i
@@ -1695,178 +1698,680 @@ stessa corsa a fermate consecutive sono osservazioni dello stesso veicolo, e la
 loro dipendenza e' precisamente cio' che il modello deve catturare, non un
 disturbo da eliminare.
 
-Questo modulo stimera' dai dati raccolti sul campo le distribuzioni che
-l'argomento precedente compone. Fino a oggi quel ragionamento e' stato collaudato
-su distribuzioni sintetiche, che permettono di verificare il calcolo ma non dicono
-nulla sul trasporto pubblico reale; sostituirle con distribuzioni apprese e' cio'
-che trasforma il metodo in un risultato sperimentale.
+**Che cosa si stima.** La grandezza appresa e' la tabella
 
-La grandezza da stimare e' la distribuzione dello scostamento di un passaggio
-dall'orario programmato, condizionata alla linea, alla fascia oraria, alla
-posizione lungo la corsa e al ritardo gia' osservato a monte sulla stessa corsa.
-Le prime tre variabili spiegano quanto una linea sia strutturalmente puntuale in
-un certo momento della giornata e in un certo punto del percorso; l'ultima e'
-quella che rende esprimibile la correlazione dentro una corsa, ed e' la ragione
-per cui l'interfaccia del modello dei ritardi la prevede fin dalla prima versione.
+    P(bin del ritardo alla fermata a valle | contesto, bin del ritardo a monte)
 
-**La raccolta dei dati e' completa e funzionante**, ed e' l'unica parte di questo
-argomento gia' conclusa. Un sistema installato su una macchina virtuale sempre
-accesa interroga a intervalli fissi i due feed GTFS Real-Time [14] di ciascuna
-citta', `trip_updates` e `vehicle_positions`, conserva i dump grezzi, archivia
-l'orario statico ogni volta che cambia e consolida ogni notte le osservazioni
-della giornata in formato colonnare, calcolando lo scostamento fra orario
-osservato e orario programmato. La raccolta prosegue quotidianamente e la
-copertura reale misurata sul 27 agosto e' del **100% su entrambe le citta'**; il
-volume complessivo verra' riportato a raccolta conclusa, quando i dati saranno
-rigenerati per intero, perche' una cifra presa a meta' campagna invecchia ogni
-notte. Per dare un ordine di grandezza, una sola giornata di Roma produce circa
-sessanta megabyte di dati colonnari a fronte di quattrocentosettanta di dump
-grezzi.
+dove "a monte" e "a valle" sono due fermate **consecutive della stessa corsa**, il
+ritardo e' discretizzato in otto bin i cui bordi sono essi stessi una scelta
+misurata, e il contesto e' una fra cinque codifiche annidate: nulla, il tipo di
+veicolo, il tipo per fascia oraria, il tipo per fascia per tipo di giorno, e infine
+la linea per fascia per tipo di giorno. Le due variabili al condizionamento non
+hanno lo stesso ruolo. Il contesto dice **quanto una linea sia strutturalmente
+puntuale** in un certo momento della giornata; il bin a monte e' cio' che rende
+esprimibile la **correlazione dentro una corsa**, ed e' la ragione per cui
+l'interfaccia del modello dei ritardi lo prevede fin dalla prima versione.
 
-La copertura non e' pero' l'unica grandezza da guardare, e il registro delle
-interruzioni tiene traccia di cio' che la copertura non vede. Lo stesso 27 agosto
-vi compare una finestra di **32 minuti su Torino** con causa
-`errori_di_rete_prolungati`, mentre Roma raccoglieva regolarmente. E' la prima
-interruzione di quel tipo: tutte le precedenti avevano causa
-`processo_non_attivo`, cioe' il collector spento. La distinzione fra le due cause
-non e' contabile ma **metodologica**, e va portata avanti fino alla stima. Quando
-il collector e' spento non sappiamo che cosa sia accaduto sulla rete in quella
-finestra: l'informazione esisteva e noi non l'abbiamo raccolta, quindi quei
-minuti vanno esclusi dal backtesting, perche' altrimenti una coincidenza mai
-osservata verrebbe scambiata per una coincidenza persa. Quando invece e' il feed
-a non rispondere, l'informazione **non era disponibile nemmeno a un passeggero
-reale** in quel momento: e' una condizione del mondo, non una lacuna della
-raccolta, e un pianificatore che in quel momento avesse dovuto decidere si
-sarebbe trovato senza dati esattamente come noi. Trattare i due casi allo stesso
-modo scarterebbe proprio le finestre in cui il problema e' piu' difficile e in
-cui un metodo robusto dovrebbe distinguersi.
+**Come le cinque codifiche stanno insieme: una scala di risalita a priori
+incatenati.** Al livello piu' fine le celle sono centinaia di migliaia e la loro
+popolazione e' fortemente disuguale: poche linee portanti concentrano la maggior
+parte dei passaggi, mentre molte combinazioni corrispondono a servizi marginali con
+pochi dati o nessuno. Stimarle tutte con le sole frequenze proprie darebbe tabelle
+precise dove i dati abbondano e prive di senso dove scarseggiano; stimarle tutte al
+livello piu' grossolano darebbe l'opposto. La soluzione adottata e' una scala di
+cinque gradini, dal contesto piu' vago al piu' fine, in cui **ogni gradino usa come
+priore di Dirichlet la stima del gradino precedente**, con concentrazione `alfa`:
 
-Cio' che manca e' la stima vera e propria: la scelta della famiglia di
-distribuzioni, il raggruppamento delle condizioni con numerosita' campionaria
-sufficiente, la validazione della bonta' di adattamento su dati non usati per la
-stima, e il confronto fra il modello appreso e quello sintetico sulle stesse
-coppie origine-destinazione. La valutazione di questo argomento sara' percio'
-anche la risposta finale alla domanda di ricerca del progetto.
+    P(cella) = (conteggi + alfa * P(genitore)) / (osservazioni + alfa)
+
+Una cella con tre osservazioni resta quasi uguale al genitore, una con tremila lo
+ignora, una senza osservazioni **coincide** con il genitore. Non esiste quindi una
+soglia separata che dica "sotto tante osservazioni, usa il livello sopra": `alfa`
+governa gia' quella transizione, e la governa in modo graduale invece che a
+gradino. Si tara una concentrazione **per gradino**, il che permette di essere
+prudenti dove i dati scarseggiano e fiduciosi dove abbondano. Il vincolo che la
+scala impone e' di contenimento: lungo la scala il contesto puo' restare fermo o
+infittirsi, mai allargarsi, perche' ogni cella deve avere per genitore una cella
+che la contiene.
+
+**I dati su cui tutto questo poggia.** La finestra e' il **25 agosto - 9 settembre
+2026**, sedici giornate per ciascuna citta', dichiarata nella colonna `finestra` di
+ogni CSV di questo argomento. Le giornate sono divise in ordine temporale: nove di
+addestramento, tre di taratura della concentrazione e quattro di verifica (6-9
+settembre); le ultime due dell'addestramento fanno da banco di prova per la scelta
+dei bordi e non entrano nella stima finale, cosi' che nessun iperparametro venga
+scelto guardando le giornate su cui il modello e' poi misurato. Il dimensionamento
+reale della raccolta dentro quella finestra, e cio' che ne sopravvive fino alla
+tabella stimata, e' il seguente.
+
+| | Roma | Torino |
+| --- | ---: | ---: |
+| giornate nella finestra | 16 | 16 |
+| `stop_time_update` letti | 286.539.573 | 30.903.705 |
+| righe conservate dalla deduplica | 211.769.671 | 21.957.502 |
+| quota conservata (giornate a cadenza piena) | 0,7471 +/- 0,0132 | 0,7149 +/- 0,0273 |
+| valori per passaggio (giornate a cadenza piena) | 20,19 +/- 0,97 | 7,08 +/- 0,29 |
+| coppie di stima (addestramento + taratura) | 1.169.608 | 2.200.003 |
+| coppie di verifica (4 giornate) | 543.922 | 811.915 |
+
+*Fonte: `results/consolidamento.csv` per le prime cinque righe - le prime due sono
+somme sulle giornate dal 25 agosto al 9 settembre, le altre due media e deviazione
+sulle sole giornate con almeno 1.400 dump, nove su Roma e quattordici su Torino;
+`results/stima_rete.csv` colonna `coppie_stima` e `results/correlazione_rete.csv`
+colonna `coppie` (riga `fascia = tutte`) per le ultime due.*
+
+Il rapporto fra le due colonne va letto con cautela e non come un giudizio sulle
+due aziende: il volume romano e' un ordine di grandezza sopra quello torinese, ma
+una parte di quel divario dipende da noi, come il paragrafo che segue mostra.
+
+**Le popolazioni non sono le stesse nelle due citta', e senza dirlo la Valutazione
+non si legge.** GTFS Real-Time non offre alcun segnale di "il mezzo e' gia'
+passato": il progetto lo deduce confrontando l'orario atteso con l'istante di
+pubblicazione, e la deduzione presuppone che il produttore continui a pubblicare le
+fermate gia' servite. Roma lo fa, Torino no. Ne segue che **su Roma il modello si
+stima sulle sole constatazioni**, cioe' sui passaggi gia' avvenuti al momento
+dell'emissione, e su **Torino su un'unica popolazione che comprende tutte le
+coppie**, il cui dato non e' un ritardo osservato ma l'ultima stima del produttore
+prima che la fermata sparisca dal feed, emessa con una mediana di circa due minuti
+di anticipo. Le due perdite non sono percio' confrontabili fra loro come se
+rispondessero alla stessa domanda, e ogni tabella che segue porta la popolazione
+accanto al numero. Le colonne `raffronto_tutte_*` di `results/stima_rete.csv`
+danno, per Roma, la lettura omogenea su tutte le coppie: e' quella, e non la
+principale, che si puo' accostare a Torino.
+
+**Una grandezza dei dati che misura noi e non il trasporto.** Il numero di valori
+distinti conservati per ciascun passaggio dipende fortemente da quanto spesso
+interroghiamo il feed: sulle giornate piene di raccolta - tutte tranne il 25 agosto,
+che e' parziale - la correlazione fra i dump raccolti in una giornata e i valori per
+passaggio di quella giornata vale **+0,847 (p = 3,5e-05, sedici giornate) su Roma** e
+**+0,530 (p = 0,042, quindici giornate) su Torino**. Ogni interrogazione e'
+un'occasione di vedere una previsione cambiata, e chi interroga ogni minuto ne
+coglie piu' di chi interroga
+ogni mezz'ora, a parita' di produttore. Quella grandezza si riporta percio' **solo
+sulle giornate a cadenza piena**, cioe' con almeno 1.400 dump, ed e' riportata cosi'
+nella tabella qui sopra: circa venti valori per passaggio su Roma e circa sette su
+Torino. La quota di righe che la deduplica conserva non mostra invece dipendenza
+significativa dalla cadenza (+0,376, p = 0,151 su Roma; +0,490, p = 0,064 su
+Torino), perche' e' un rapporto fra due grandezze che crescono insieme, ed e'
+quindi confrontabile fra citta' interrogate diversamente. Le quattro correlazioni
+si ricalcolano dalla colonna `dump_letti` di `results/consolidamento.csv` accanto
+alle due grandezze, una giornata per riga.
+
+**Che cosa il modello prende dalla base di conoscenza, e che cosa no.** Prende
+l'**orario programmato**, senza il quale il ritardo non esisterebbe come grandezza,
+e lo prende dall'archivio statico **in vigore nella giornata osservata** e non dal
+piu' recente, perche' confrontare un'osservazione di oggi con un orario di due
+settimane fa produrrebbe ritardi inventati. Prende la **linea** e il **tipo di
+veicolo**, quest'ultimo dal `route_type` dell'archivio, che sono due dei tre fattori
+del contesto; il terzo, il tipo di giorno, viene dal calendario. Non prende invece
+**nulla di cio' che la base di conoscenza in ASP deriva**: i trasbordi, la loro
+accessibilita' e la loro utilita' sono relazioni fra fermate, e la distribuzione di
+un ritardo non dipende da esse. La direzione del flusso e' l'opposta: la tabella
+stimata qui viene consegnata al pianificatore dell'argomento precedente attraverso
+il contratto `ModelloRitardo` fissato nella Fase 2, ed e' li' che incontra i
+trasbordi derivati dalla base di conoscenza. Il modello dei ritardi ignora inoltre
+del tutto la topologia della rete: due fermate consecutive di una corsa sono per lui
+una coppia ordinata di osservazioni, non due punti a una certa distanza. E' una
+semplificazione dichiarata e non una svista, e il campo `sequenza_a_monte` aggiunto
+al contratto e' il posto da cui un modello futuro potrebbe cominciare a usarla.
 
 ## Strumenti utilizzati
 
-La stima impieghera' **scikit-learn** [13] per la parte di apprendimento
-supervisionato e **scipy.stats** [12] per l'adattamento delle distribuzioni e i
-test di bonta' di adattamento; le nozioni di stima, validazione e sovradattamento
-sono quelle del testo del corso [1, cap. 7], e il trattamento dei modelli
-probabilistici appresi quelle del capitolo successivo [1, cap. 10]. La
-manipolazione dei dati colonnari usa **pandas** [6] e il formato Parquet tramite
-**pyarrow**. La raccolta gia' in esercizio usa **gtfs-realtime-bindings** [14] per
-interpretare il formato protobuf dei feed e la sola libreria standard di Python
-per le richieste HTTP.
+La rete bayesiana come rappresentazione di una distribuzione congiunta fattorizzata,
+la stima di una multinomiale con priore di Dirichlet e la perdita logaritmica come
+criterio di valutazione di una distribuzione predittiva sono nozioni standard e si
+trovano nel testo del corso [1, cap. 7, 9 e 10]; non vengono rispiegate qui. Il
+calcolo e' interamente in **NumPy** [10], perche' la stima si riduce a conteggi su
+matrici sparse di celle e a una ricorrenza fra livelli, e una libreria di
+apprendimento supervisionato non avrebbe nulla da offrirle: la lettura dei dati
+colonnari usa **pandas** [6] e **pyarrow**, e **scipy.stats** [12] fornisce la
+correlazione di rango usata nella valutazione. La raccolta che alimenta tutto questo
+usa **gtfs-realtime-bindings** [14] per il formato protobuf dei feed e la sola
+libreria standard di Python per le richieste HTTP.
+
+Due costruzioni meritano invece di essere dichiarate, perche' non sono
+un'applicazione diretta di quelle nozioni. La prima e' la **scala di risalita a
+priori incatenati**: non e' uno smorzamento con un parametro solo ne' una miscela di
+esperti, ma una successione di stime in cui la posteriore di ciascun livello di
+contesto diventa la media del priore di Dirichlet del livello immediatamente piu'
+fine, con una concentrazione tarata separatamente per gradino. E' la struttura dei
+modelli gerarchici di Dirichlet usati nello smorzamento dei modelli linguistici
+[18, 19], trasportata qui dalla gerarchia delle n-uple di parole a quella dei
+contesti di linea, fascia e tipo di giorno. La seconda e' l'**assunzione di massima
+entropia dentro ciascun bin** [20], necessaria perche' il pianificatore chiede una
+probabilita' su un istante mentre la tabella conosce solo un intervallo: dentro i
+bin limitati si assume una distribuzione uniforme, in quelli aperti verso l'infinito
+un'esponenziale con la media misurata dentro quel bin. E' l'unico punto in cui il
+progetto aggiunge informazione che i dati non contengono, ed e' scelto col criterio
+che ne aggiunge il meno possibile.
 
 ## Decisioni di Progetto
 
-Le decisioni gia' prese riguardano la raccolta, e sono vincolanti per la stima
-perche' determinano che cosa sara' disponibile. Sono riportate qui perche' e' in
-questo argomento che i dati raccolti vengono consumati.
+**Il ritardo si discretizza in otto bin, e ogni arco assente nella rete e'
+approssimato di conseguenza.** La discretizzazione e' necessaria, perche' senza di
+essa non ci sarebbero tabelle di probabilita' da stimare, e ha una conseguenza che
+va dichiarata accanto alla scelta e non in fondo alle conclusioni: **condizionare
+sul bin non e' condizionare sulla variabile**. Dentro lo stesso bin si trovano
+ritardi diversi, e un antenato piu' lontano conserva un residuo di informazione su
+*dove dentro il bin* stesse il genitore. Quel residuo si manifesta come dipendenza
+condizionata ed e' reale nella rappresentazione discretizzata pur non esistendo nel
+processo. La misura che lo quantifica e' netta: su una catena costruita in modo da
+essere markoviana in senso esatto, l'informazione mutua condizionata vale 0,01174
+bit contro un riferimento per permutazione di 0,00087 +/- 0,00007, cioe' **dodici
+volte** il riferimento. Un criterio che si fermasse li' avrebbe dichiarato non
+markoviano un processo markoviano per costruzione. Ne segue che ogni indipendenza
+condizionata che la struttura della rete assume e' **approssimata dalla
+discretizzazione, non esatta**: l'arco che non c'e' fra due variabili significa
+"indipendenti dato il genitore", ma il genitore che la rete osserva e' un bin e non
+un ritardo, e una parte di dipendenza sopravvive sempre, tanto maggiore quanto piu'
+grossolani sono i bin. Non e' un difetto da correggere, perche' bin piu' fini
+riducono l'approssimazione e moltiplicano le celle peggiorando la stima: e' un
+compromesso, ed e' un limite del modello da dichiarare.
 
-**Si conserva una riga a ogni cambio della previsione, non solo l'ultima.** Per
-ogni passaggio, identificato da `(trip_id, stop_sequence)`, si conserva una riga a
-ogni cambio del valore osservato, con il timestamp della prima comparsa di quel
-valore. *Alternative scartate:* una riga per passaggio, conservando solo l'ultima
-osservazione; oppure una riga per ogni dump, senza alcuna deduplica. *Perche' no
-alla prima:* una previsione che cambia nel corso della giornata **non e' un
-duplicato**, e' l'evoluzione della stima dell'azienda, e dice quanto quella
-previsione fosse affidabile con un certo anticipo; e' informazione che potrebbe
-servire come variabile esplicativa e che non e' ricostruibile a posteriori se la
-si getta ora. *Perche' no alla seconda:* conserverebbe soprattutto ripetizioni.
-*Un dettaglio deliberato:* l'implementazione registra i **cambi** anziche' i
-valori distinti in senso insiemistico, quindi una previsione che torna a un valore
-gia' visto viene conservata come evento a se'; e' voluto, perche' un'oscillazione
-e' informazione sulla stabilita' della stima, e perche' riconoscere i valori gia'
-visti richiederebbe di tenere in memoria l'intero insieme dei valori di ogni
-passaggio, che su Roma significa decine di milioni di voci.
+**Il secondo antenato porta informazione e non entra nella rete, e le due
+affermazioni non si contraddicono.** Il criterio che distingue l'artefatto dalla
+struttura e' il verso con cui l'eccesso di informazione varia al raffinarsi dei bin:
+sulla catena markoviana costruita l'eccesso si dissolve (dal 3,6% con due bin allo
+0,1% con venti), mentre su una catena in cui la dipendenza esiste davvero non si
+dissolve. Sui dati veri non si dissolve, ma cala in modo regolare, e vale fra l'1,3%
+e il 4,8% di cio' che il primo antenato gia' spiega. "Non si dissolve" non implica
+pero' "aggiungi l'arco": implica "misura quanto vale". La misura e' stata fatta due
+volte, con esiti di segno opposto. Confrontando `P(R0|R-1)` con `P(R0|R-1,R-2)`
+**senza contesto** - sessantaquattro celle contro cinquecentododici, su un milione e
+settecentomila terne - l'arco guadagna fra il **+2,37%** e il **+7,67%**. Rifacendo
+lo stesso confronto **dentro il modello vero**, dove il ritardo e' condizionato anche
+a linea, fascia e tipo di giorno e le celle passano da 403 mila a 3,2 milioni,
+l'arco **peggiora fra il -4,04% e il -8,58%** su tutte e sei le combinazioni di
+citta' e popolazione. La causa sta nei conteggi: con l'arco le osservazioni per cella
+in addestramento scendono a **1,80 su Roma**, a 0,69 sulle sole previsioni e a
+**0,16** sulle sole constatazioni, e una tabella stimata su celle vuote e' peggiore
+di una tabella piu' grossolana stimata su celle piene. Le due misure rispondono a
+domande diverse - "il secondo antenato porta informazione?" e' una domanda sui dati,
+"l'arco migliora il modello?" e' una domanda sul modello - e la seconda decide.
+L'arco non si aggiunge e **l'assunzione markoviana si tiene come approssimazione
+dichiarata**: e' una posizione piu' forte di quella di partenza, perche' la Fase 4
+la assumeva senza averla verificata mentre ora si sa che cosa si trascura e quanto
+vale. Il punto di metodo che ne discende vale oltre questo caso: una misura va fatta
+**nel regime in cui la decisione si applica**. Il confronto senza contesto era
+corretto - misurava esattamente cio' che dichiarava - ma era calcolato in abbondanza
+di dati mentre la decisione si applica in scarsita', e fra i due regimi il segno del
+risultato cambia.
 
-**Il risultato negativo che accompagna quella scelta.** Il presupposto della regola
-era che lo stesso passaggio comparisse identico in centinaia di dump consecutivi e
-che la deduplica scartasse quindi la quasi totalita' delle righe. Misurato sui
-dati reali non e' cosi': su 98 dump di Roma, 1.982.754 `stop_time_update` hanno
-prodotto 1.361.088 righe, cioe' il **68,6%** del totale, perche' Roma ricalcola la
-previsione quasi a ogni giro e ogni passaggio riceve in media 10,9 valori
-distinti, fino a un massimo di 76; su Torino la quota e' il 65,1% con 5,4 valori
-per passaggio. La proiezione a giornata piena e' di circa **20 milioni di righe al
-giorno per Roma** e 2,2 milioni per Torino, dell'ordine dei 280 milioni di righe
-su due settimane. La regola resta quella scelta, perche' la motivazione che la
-giustifica non e' il risparmio ma la conservazione di un'informazione
-irripetibile; va pero' registrato che il beneficio in volume che le era stato
-attribuito non si e' verificato, e che il dimensionamento di questo argomento va
+**I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno: e' una
+doppia tautologia.** E' la decisione piu' istruttiva del capitolo, perche' i due
+criteri che verrebbero naturali sono **sbagliati per costruzione in versi opposti**.
+La **perdita grezza** fuori campione premia i bordi che ammucchiano la massa in
+pochi bin: cosi' l'entropia marginale cala, e la perdita cala con lei per quanto male
+il modello lavori. Preferire i bordi a perdita minore significherebbe preferire la
+discretizzazione che ha meno da spiegare, non il modello che spiega meglio. Il
+**guadagno sul marginale** - la differenza fra l'entropia marginale e la perdita,
+cioe' quanto il modello aggiunga a chi non sa nulla - corregge esattamente quel
+difetto, e ne introduce uno simmetrico: a numero di bin fisso, i bin a **frequenza
+uguale massimizzano l'entropia marginale** e quindi il tetto del guadagno, per cui
+preferire il guadagno maggiore significa preferire gli ottili prima ancora di
+guardare i dati. I due criteri non sono uno giusto e uno sbagliato: sono le due
+facce dello stesso errore, e nessuno dei due sa che cosa serva al pianificatore.
+
+Cio' che serve al pianificatore e' **distinguere secondi**, dell'ordine di un margine
+di coincidenza. Si e' misurata quindi una terza grandezza, l'**ampiezza confusa**:
+per ciascun bin la differenza fra il novantanovesimo e l'unesimo percentile dei
+ritardi che vi cadono - i secondi che il modello dichiara quando dice solo "bin b" -
+mediata sui bin col peso delle loro numerosita' e **ristretta alle osservazioni fra
+zero e trenta minuti**, che e' l'orizzonte del margine di coincidenza. Sono secondi
+e non bit, e si confrontano con un margine invece che con un'altra discretizzazione.
+La regola che ne discende usa **il guadagno per escludere e i secondi per decidere**:
+un candidato e' ammesso se il suo guadagno, in *ciascuna* citta', non dista dal
+migliore piu' della deviazione fra giornate del riferimento di quella citta' (0,0040
+bit su Roma, 0,0167 su Torino, misurata e non fissata); fra gli ammessi vince quello
+che confonde meno secondi.
+
+Su questa corsa la regola ha ammesso un solo candidato, gli **ottili**, e la scelta
+e' caduta su di loro **senza che i secondi decidessero nulla** - il secondo
+classificato, i `misti`, resta indietro di 0,066 bit su Roma e 0,097 su Torino,
+oltre le due soglie. E' un esito onesto della regola, non una sua conferma: con dati
+diversi potrebbe pronunciare un vincitore diverso, e va riletta a ogni riacquisto dei
+dati. Va anche dichiarato che la scelta non e' neutra rispetto al criterio, perche'
+normalizzando la perdita per l'entropia marginale propria di ciascun candidato gli
+ottili sono **ultimi ex aequo** su Roma, e il candidato `decisione` confonde **2,4
+volte meno secondi** (293 s contro 701). I bordi precedenti, ereditati dalla Fase 3 e
+scelti su una popolazione diversa, erano invece sbagliati in modo non opinabile: con
+essi il **62,3%** delle osservazioni romane e il **45,7%** delle torinesi finiva in
+uno dei due bin aperti, dove il modello dichiara di non distinguere nulla.
+
+**La chiusura: la scelta dei bordi non e' un punto di decisione del progetto.** La
+domanda lasciata aperta - se `ottili` e `decisione` diano risultati diversi la' dove
+la decisione si applica - e' stata rimessa al backtesting della Fase 5, dove la
+grandezza che conta non e' piu' la perdita sui bin ma i viaggi arrivati entro la
+scadenza. La risposta e' **no**. Al primo giro i due insiemi parevano distinguersi, e
+la differenza veniva per intero da una giornata: Roma 2026-09-07, che il
+consolidamento aveva prodotto parziale, contribuiva sette coppie invece di trenta e
+pesava nella media fra giornate quanto le altre. Escludendola con una regola fissata
+prima di guardarne l'esito - una giornata che contribuisca meno della meta' delle
+coppie richieste non entra nelle medie - i due insiemi coincidono a quindici e a
+trenta minuti di margine, e le deviazioni si stringono da +/-3,5 e +/-10,4 a +/-1,9
+per tutti e due. Si adottano gli `ottili`, che vincevano sul guadagno, e si dichiara
+che `decisione` avrebbe dato gli stessi risultati. Il lavoro di misura non e' sprecato:
+ha stabilito che i bordi vecchi erano sbagliati e che fra i candidati ragionevoli la
+scelta e' indifferente, che sono due conclusioni diverse, e solo la prima richiedeva
+una decisione.
+
+**Le constatazioni vengono prima nella scala, e non e' una ponderazione.** Su Roma il
+**23,07%** delle transizioni fra previsioni consecutive e' l'identita' al secondo,
+contro il **4,66%** fra constatazioni: sono copie, valori che il produttore non ha
+ricalcolato, non informazione indipendente. Pesarle come le constatazioni
+spingerebbe la matrice di transizione verso la diagonale, e il modello ne uscirebbe
+convinto che il ritardo cambi meno di quanto cambi - proprio l'errore che un
+pianificatore robusto non puo' permettersi, perche' sottostimerebbe la variabilita'
+su cui si fonda la sua ragione di esistere. *Alternativa scartata:* pesare le due
+popolazioni, che richiederebbe di scegliere quanto valga una previsione rispetto a
+una constatazione, e quel numero non lo sappiamo. L'ordine nella scala non lo
+richiede: una cella si stima sulle constatazioni se ne ha abbastanza, altrimenti si
+sale a un contesto piu' grossolano **restando sulle constatazioni**, e solo dopo, se
+neanche li' bastano, si ricorre alle previsioni. Va detto che questa misura era nata
+per mettere alla prova l'ipotesi opposta - che il produttore **congelasse** il
+ritardo dopo il passaggio, ripetendolo sulle fermate seguenti, il che avrebbe reso la
+maggiore prevedibilita' delle constatazioni un artefatto - e l'ha esclusa: a
+ripetersi sono le previsioni, cinque volte piu' delle constatazioni.
+
+**Su Torino le constatazioni non esistono, e la scala perde una dimensione.** La
+deduzione con cui il progetto riconosce un passaggio avvenuto presuppone che il
+produttore pubblichi anche le fermate gia' servite, e nessuno lo aveva verificato.
+Su tutte e quattordici le giornate allora disponibili, il massimo di
+`timestamp_feed - orario_programmato` su Torino vale **fra 0 e 4 secondi**: il feed
+torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita. Su Roma lo
+stesso massimo sta fra **10.020 e 69.656 secondi**. Le righe torinesi che superavano
+il criterio, dal 4,1% all'8,2% a seconda del giorno, non erano passaggi avvenuti ma
+previsioni **selezionate per essere molto in anticipo**: lo **0,00% di esse ha
+ritardo positivo, tutti i giorni**, e il ritardo massimo fra loro e' di **1 secondo**.
+Era una selezione sistematica che restituiva per costruzione la coda negativa della
+distribuzione. *Alternative considerate:* togliere Torino dal modello dei ritardi,
+che farebbe perdere la seconda citta' e con essa il criterio di generalita';
+ricostruire i passaggi avvenuti dalla **sparizione** di una fermata fra due dump
+consecutivi, che e' l'unico segnale che quel produttore offre, ma che i nostri stessi
+dati indeboliscono - su 288 corse torinesi presenti in due dump distanti, 130
+risultavano accorciate e **113 allungate**, e se le liste crescono e calano la
+sparizione non e' un segnale pulito di passaggio. La scelta e' stata **un'unica
+popolazione con la sola dimensione del contesto**, e con essa il cambio di nome di
+cio' che si stima: su Torino il dato e' l'ultima stima del produttore prima che la
+fermata sparisca dal feed. La riformulazione ha rimesso a posto quattro letture della
+correlazione che sulla popolazione fasulla si contraddicevano, Pearson +0,999 su
+tutto contro +0,240 dentro i bordi dei bin, e che ora concordano fra loro. La scelta
+non e' scritta a mano nel codice: `Citta.scale` guarda il massimo di
+`timestamp_feed - orario_programmato` e passa a una dimensione sola sotto la soglia,
+quindi se il produttore torinese cominciasse a pubblicare il passato la scala
+tornerebbe a due dimensioni da sola.
+
+Il punto di metodo che accomuna questa decisione alla precedente e' che il criterio
+era **una deduzione travestita da osservazione**: era stato verificato che il calcolo
+fosse giusto, mai che la premessa lo fosse, e la premessa riguardava il comportamento
+di un produttore esterno su cui non si ha alcun controllo. Il segnale d'allarme non
+e' arrivato dal criterio ma da un quantile chiesto per altro - un massimo esattamente
+zero non e' un dato, e' una definizione chiusa su se stessa.
+
+**Dentro un bin si assume la distribuzione di massima entropia.** Il pianificatore
+chiede `P(arrivo <= T)` per un istante, la tabella conosce solo un intervallo, e
+qualcosa va assunto. Si assume **uniforme nei bin limitati**, dove si conosce solo
+l'intervallo, ed **esponenziale nei due bin aperti verso l'infinito**, dove
+all'intervallo si aggiunge il ritardo medio misurato dentro quel bin. *Alternative
+scartate:* concentrare la massa di ogni bin nel suo valore medio, che renderebbe la
+ripartizione una scala a gradini e farebbe saltare `P(arrivo <= T)` al variare di T di
+un secondo - non un difetto di precisione ma un artefatto, che il pianificatore
+prenderebbe per un fatto e su cui sceglierebbe; assegnare ai bin aperti un'ampiezza
+convenzionale, che inventerebbe il parametro che pesa di piu', dato che i bin aperti
+raccolgono fra il 2,4% e il 62,3% della massa a seconda dei bordi. *Perche' massima
+entropia:* e' l'unico punto in cui il progetto aggiunge informazione che i dati non
+contengono, e va scelto col criterio che ne aggiunge il meno possibile; ha inoltre il
+pregio di non lasciare parametri liberi, perche' gli estremi vengono dai bordi tarati
+e le medie dalle stesse giornate su cui si stima. Quando il contesto manca del tutto -
+alla prima fermata di un itinerario il ritardo a monte non esiste ancora - non si
+sceglie un bin arbitrario ma si **marginalizza** sulla distribuzione dei bin a monte
+misurata sulle giornate di stima, che e' cio' che una rete bayesiana fa su una
+variabile non osservata; una linea mai vista ripiega sul livello piu' grossolano della
+scala, e i ripieghi si contano e si riportano invece di restare invisibili.
+
+**Il contratto `Tratta` si riapre per un campo, e la riapertura si annota.**
+L'interfaccia fra pianificatore e modello dei ritardi era stata congelata nella Fase 2
+proprio per non doverla inseguire. La Fase 5 chiede pero' una cosa che nel congelare
+non era stata prevista: nel backtesting il modello viene interrogato a meta' viaggio,
+quando il viaggiatore e' gia' a bordo, e in quel momento si sa non solo *quanto* fosse
+il ritardo all'ultima fermata osservata ma anche *dove* quella fermata stesse lungo la
+corsa. Le due informazioni non sono la stessa: un ritardo di tre minuti alla seconda
+fermata e uno alla ventesima dicono cose diverse, perche' nel primo caso restano
+diciotto fermate per accumularne o recuperarne e nel secondo nessuna. Il campo
+`sequenza_a_monte` entra **in coda e con valore predefinito**, esattamente come vi era
+entrato `ritardo_a_monte`, cosi' ogni chiamata esistente continua a valere. *Perche' si
+annota invece di farlo e basta:* una modifica retrocompatibile non lascia traccia nei
+test ne' negli errori, e fra sei mesi il campo sembrerebbe esserci sempre stato, e la
+ragione per cui l'interfaccia era stata congelata sembrerebbe non essere mai esistita.
+Il campo **non e' ancora usato** dal modello stimato: sta li' perche' la Fase 5 possa
+passarlo senza dover riaprire di nuovo il contratto.
+
+Le decisioni che seguono riguardano la raccolta e sono vincolanti per la stima,
+perche' determinano che cosa sia disponibile. Sono riportate qui perche' e' in questo
+argomento che i dati raccolti vengono consumati.
+
+**Si conserva una riga a ogni cambio della previsione, non solo l'ultima.** Per ogni
+passaggio, identificato da `(trip_id, stop_sequence)`, si conserva una riga a ogni
+cambio del valore osservato, con il timestamp della prima comparsa di quel valore.
+*Alternative scartate:* una riga per passaggio, conservando solo l'ultima osservazione;
+oppure una riga per ogni dump, senza alcuna deduplica. *Perche' no alla prima:* una
+previsione che cambia nel corso della giornata **non e' un duplicato**, e' l'evoluzione
+della stima dell'azienda, e dice quanto quella previsione fosse affidabile con un certo
+anticipo; e' informazione che potrebbe servire come variabile esplicativa e che non e'
+ricostruibile a posteriori se la si getta ora. *Perche' no alla seconda:* conserverebbe
+soprattutto ripetizioni. *Un dettaglio deliberato:* l'implementazione registra i
+**cambi** anziche' i valori distinti in senso insiemistico, quindi una previsione che
+torna a un valore gia' visto viene conservata come evento a se'; e' voluto, perche'
+un'oscillazione e' informazione sulla stabilita' della stima, e perche' riconoscere i
+valori gia' visti richiederebbe di tenere in memoria l'intero insieme dei valori di ogni
+passaggio.
+
+**Il risultato negativo che accompagna quella scelta.** Il presupposto della regola era
+che lo stesso passaggio comparisse identico in centinaia di dump consecutivi e che la
+deduplica scartasse quindi la quasi totalita' delle righe. Misurato su tutte le giornate
+non e' cosi': la quota di righe conservate vale **circa tre quarti in entrambe le
+citta'** (tabella del sommario), perche' la previsione viene ricalcolata quasi a ogni
+giro e ogni ricalcolo produce una riga. La regola resta quella scelta, perche'
+la motivazione che la giustifica non e' il risparmio ma la conservazione di
+un'informazione irripetibile; va pero' registrato che il beneficio in volume che le era
+stato attribuito non si e' verificato, e che il dimensionamento di questo argomento e'
 fatto su questi numeri e non su quelli attesi. Le politiche alternative `ultimo` e
-`fasce` restano implementate proprio per poter cambiare idea sulla base di una
-misura invece che di una previsione.
+`fasce` restano implementate proprio per poter cambiare idea sulla base di una misura
+invece che di una previsione.
 
 **La chiave di join e' `(trip_id, stop_sequence)`, non quella naturale.**
-*Alternativa scartata:* la chiave naturale `(trip_id, stop_id, stop_sequence)`,
-che era la prima implementazione. *Perche' e' stata abbandonata:* eseguendo il
-consolidamento sui dati veri il numero di passaggi conservati non tornava, 4.691
-invece dei 13.092 misurati. La causa e' che **GTT non include mai lo `stop_id`**
-nei `stop_time_update`, identificando la fermata con il solo `stop_sequence`,
-mentre Roma si comporta all'opposto e lo fornisce sempre. Con la chiave naturale
-il join su Torino non trovava mai corrispondenza: la colonna `stop_id` restava
-vuota, l'orario programmato nullo e il ritardo non calcolabile, e i dati di Torino
-sarebbero stati inutilizzabili senza che nulla lo segnalasse. *Perche' la chiave
-ridotta e' altrettanto precisa:* la specifica GTFS [5] garantisce che
-`stop_sequence` sia univoco dentro una corsa. *Il controllo che ne discende:*
-quando il feed fornisce anche lo `stop_id` si usa quello del feed e si verifica
-che coincida con quello statico, e una divergenza viene contata e segnalata,
-perche' significherebbe che la corsa in circolazione non e' quella che l'orario
-descrive.
+*Alternativa scartata:* la chiave naturale `(trip_id, stop_id, stop_sequence)`, che era
+la prima implementazione. *Perche' e' stata abbandonata:* eseguendo il consolidamento
+sui dati veri il numero di passaggi conservati non tornava, 4.691 invece dei 13.092
+misurati. La causa e' che **GTT non include mai lo `stop_id`** nei `stop_time_update`,
+identificando la fermata con il solo `stop_sequence`, mentre Roma si comporta
+all'opposto e lo fornisce sempre. Con la chiave naturale il join su Torino non trovava
+mai corrispondenza: la colonna `stop_id` restava vuota, l'orario programmato nullo e il
+ritardo non calcolabile, e i dati di Torino sarebbero stati inutilizzabili senza che
+nulla lo segnalasse. *Perche' la chiave ridotta e' altrettanto precisa:* la specifica
+GTFS [5] garantisce che `stop_sequence` sia univoco dentro una corsa. *Il controllo che
+ne discende:* quando il feed fornisce anche lo `stop_id` si usa quello del feed e si
+verifica che coincida con quello statico, e una divergenza viene contata e segnalata,
+perche' significherebbe che la corsa in circolazione non e' quella che l'orario descrive.
 
 **L'orario statico e' archiviato a ogni cambiamento, ed e' un requisito e non una
-precauzione.** Il ritardo e' uno scostamento da un orario programmato, e
-quell'orario cambia: confrontare un'osservazione di oggi con l'orario di due
-settimane fa produrrebbe ritardi inventati. Ogni giorno si verifica se l'archivio
-sia cambiato e, in caso affermativo, se ne conserva una nuova revisione; un
-indice associa a ogni data la revisione valida quel giorno.
+precauzione.** Il ritardo e' uno scostamento da un orario programmato, e quell'orario
+cambia: confrontare un'osservazione di oggi con l'orario di due settimane fa
+produrrebbe ritardi inventati. Ogni giorno si verifica se l'archivio sia cambiato e, in
+caso affermativo, se ne conserva una nuova revisione; un indice associa a ogni data la
+revisione valida quel giorno. *Quanto spesso cambia, misurato.* Sui quindici giorni
+mappati fra il 25 agosto e l'8 settembre, **Roma ha prodotto quindici revisioni
+distinte su quindici giorni**, cioe' cambia archivio ogni giorno senza una sola
+eccezione, e **Torino cinque su quindici**, cioe' una ogni tre. La lettura corretta non
+e' dunque che Roma aggiorna l'orario e Torino no, ma che **entrambe lo aggiornano, con
+frequenza diversa**: se avessimo scaricato il GTFS una volta sola, i dump del 25
+sarebbero oggi associati a un orario sbagliato **per entrambe le citta'**, e ogni
+ritardo calcolato su quel giorno sarebbe uno scostamento da un orario che quel giorno
+non era in vigore. L'errore non si sarebbe manifestato come un'eccezione ma come
+ritardi plausibili e falsi. *Perche' il confronto dell'impronta e non il download.*
+L'archivio di Roma pesa 48,5 MB per revisione, mentre il file `.md5` che l'azienda
+pubblica accanto ne costa 59 byte. *Alternativa scartata:* fidarsi dell'intestazione
+HTTP `Last-Modified`, che molti server aggiornano a ogni rigenerazione anche quando il
+contenuto e' identico. *Il caso di Torino:* GTT non pubblica alcun `.md5`, quindi per
+quella citta' il meccanismo ripiega sullo scaricamento dell'archivio e sul confronto
+della sua impronta, piu' costoso ma corretto.
 
-*Quanto spesso cambia, misurato.* Sui quindici giorni mappati fra il 25 agosto e
-l'8 settembre, **Roma ha prodotto quindici revisioni distinte su quindici giorni**,
-cioe' cambia archivio ogni giorno senza una sola eccezione, e **Torino cinque su
-quindici**, cioe' una ogni tre: l'archivio di Torino e' cambiato la prima volta fra il 25 e
-il 26 agosto, passando da **19.905.201 a 20.264.224 byte**. La lettura corretta
-non e' dunque che Roma aggiorna l'orario e Torino no, ma che **entrambe lo
-aggiornano, con frequenza diversa**. E' la differenza che trasforma
-l'archiviazione giornaliera da precauzione a requisito: se avessimo scaricato il
-GTFS una volta sola, per esempio il 27 agosto, i dump del 25 sarebbero oggi
-associati a un orario sbagliato **per entrambe le citta'**, e ogni ritardo
-calcolato su quel giorno sarebbe uno scostamento da un orario che quel giorno non
-era in vigore. L'errore non si sarebbe manifestato come un'eccezione ma come
-ritardi plausibili e falsi.
+**Si raccolgono entrambi i feed, non solo `trip_updates`.** *Perche':* i `trip_updates`
+portano le previsioni di orario, che sono cio' che serve al modello, ma i
+`vehicle_positions` portano la posizione effettiva e permettono di distinguere una
+corsa soppressa da una corsa semplicemente non aggiornata, che nel primo feed sono
+indistinguibili. La distinzione ha avuto un uso che non era stato previsto: e' sul
+confronto fra i due feed che si e' diagnosticato il silenzio del produttore torinese
+descritto piu' avanti, quando `trip_updates` ha smesso di contenere entita' mentre
+`vehicle_positions` continuava a pubblicarne.
 
-*Perche' il confronto dell'impronta e non il download.* L'archivio di Roma pesa
-48,5 MB per revisione, quindi scaricarlo ogni giorno per scoprire che nulla e'
-cambiato costerebbe quella banda per nulla; il file `.md5` che l'azienda pubblica
-accanto all'archivio ne costa 59 byte. *Alternativa scartata:* fidarsi
-dell'intestazione HTTP `Last-Modified`, che molti server aggiornano a ogni
-rigenerazione anche quando il contenuto e' identico e che quindi non
-distinguerebbe una revisione vera da una ripubblicazione. *Il caso di Torino:*
-GTT non pubblica alcun `.md5`, quindi per quella citta' il meccanismo ripiega
-sullo scaricamento dell'archivio e sul confronto della sua impronta — piu' costoso
-ma corretto, e sostenibile perche' l'archivio di Torino pesa venti megabyte
-scarsi.
-
-**Si raccolgono entrambi i feed, non solo `trip_updates`.** *Perche':* i
-`trip_updates` portano le previsioni di orario, che sono cio' che serve al
-modello, ma i `vehicle_positions` portano la posizione effettiva e permettono di
-distinguere una corsa soppressa da una corsa semplicemente non aggiornata, che nel
-primo feed sono indistinguibili.
+**Un collector che funziona non garantisce dati.** Il registro delle interruzioni
+distingue due cause, e la distinzione non e' contabile ma metodologica. Quando il
+collector e' spento non sappiamo che cosa sia accaduto sulla rete in quella finestra:
+l'informazione esisteva e noi non l'abbiamo raccolta, quindi quei minuti vanno esclusi
+dal backtesting, perche' altrimenti una coincidenza mai osservata verrebbe scambiata
+per una coincidenza persa. Quando invece e' il feed a non rispondere, l'informazione
+**non era disponibile nemmeno a un passeggero reale** in quel momento: e' una
+condizione del mondo e non una lacuna della raccolta, e un pianificatore che in quel
+momento avesse dovuto decidere si sarebbe trovato senza dati esattamente come noi.
+A questa distinzione se n'e' aggiunta una terza, scoperta per caso: **dalla mezzanotte
+del 10 settembre il feed di Torino restituisce un `FeedMessage` protobuf vuoto**,
+quindici byte, il solo header. Il collector ha continuato a interrogare regolarmente e
+a scrivere su disco file identici e privi di contenuto, e ogni indicatore di salute
+diceva che andava bene - unit attiva, nessuna interruzione registrata, interrogazioni
+tutte riuscite - perche' erano tutti veri: il collector funzionava. Cio' che mancava era
+la domanda successiva, se quello che arrivava contenesse qualcosa. Se ne e' accorto un
+conteggio fatto per un'altra ragione, in cui una riga riportava zero `stop_time_update`
+su 1.440 dump. Il controllo aggiunto misura la **dimensione mediana** dei dump delle
+ultime due giornate e avvisa sotto i cento byte, che e' un confine e non una taratura:
+fra un protobuf vuoto, quindici byte, e il piu' piccolo dump utile osservato in tre
+settimane, trentaquattromila, ci sono tre ordini di grandezza e nessuna zona grigia.
+**La finestra di stima si ferma al 9 settembre, quindi nessun risultato di questo
+capitolo usa quelle giornate**, ed e' un'altra ragione per cui la finestra e' un
+parametro dichiarato invece che "l'ultima giornata disponibile".
 
 ## Valutazione
 
-La valutazione di questo argomento non e' ancora stata eseguita. Comprendera' la
-bonta' di adattamento delle distribuzioni stimate, misurata su dati non usati per
-la stima; il confronto fra il modello appreso e quello sintetico a parita' di
-coppie origine-destinazione e di griglia di scadenze; e la ripetizione, sui
-ritardi reali, dell'esperimento della griglia della scadenza riportato
-nell'argomento precedente, che e' la risposta alla domanda di ricerca del
-progetto. Ogni risultato sara' riportato come media e deviazione standard su piu'
-giornate di raccolta, in modo che la variabilita' fra giorni feriali e festivi e
-fra condizioni di traffico diverse sia visibile e non nascosta in un valore unico.
+**Le grandezze, prima di usarle.** La **perdita logaritmica** e' il logaritmo in base
+due della probabilita' che il modello assegnava al bin poi osservato, cambiato di
+segno e mediato sulle coppie: si misura in bit, e' zero per un modello che indovina
+con certezza, e cresce senza limite per un modello che assegna probabilita' vicine a
+zero a cio' che accade. Non e' calcolabile dentro campione senza mentire, quindi si
+calcola sulle **quattro giornate di verifica**, che non hanno partecipato ne' alla
+stima ne' alla taratura ne' alla scelta dei bordi; ogni giornata da' un valore, e
+media e deviazione standard sono prese fra giornate, perche' le coppie di uno stesso
+giorno condividono il traffico di quel giorno e non sono indipendenti. L'**entropia
+marginale** e' la perdita di un modello che ignora tutto, contesto e ritardo a monte:
+e' il tetto, e **dipende dai bordi**, per cui due perdite calcolate su
+discretizzazioni diverse non sono confrontabili senza di essa. Il **guadagno** e' la
+differenza fra le due, cioe' quanto il modello aggiunge a chi non sa nulla, ed e' la
+grandezza confrontabile fra bordi diversi. Lo **scarto di calibrazione** e' la
+differenza media, in valore assoluto, fra la probabilita' che il modello attribuisce
+a un bin e la frequenza con cui quel bin poi si verifica, raccogliendo le previsioni
+in dieci classi di valore simile e pesando ciascuna classe per la sua numerosita'.
+La **correlazione implicita** e' la correlazione fra ritardo a monte e ritardo a
+valle che la matrice stimata comporta, calcolata usando come rappresentante di
+ciascun bin il ritardo medio **misurato** dentro di esso e non il punto medio
+dell'intervallo, che per i due bin aperti non esisterebbe.
+
+**Le concentrazioni scelte dalla taratura.** Sono l'iperparametro della scala, uno
+per gradino, scelti per discesa coordinata sulle giornate di taratura.
+
+| gradino | Roma (constatazioni) | Torino (popolazione unica) |
+| --- | ---: | ---: |
+| bin | 100.000 | 5.000 |
+| tipo | 1.000.000 *(al bordo)* | 1.000.000 *(al bordo)* |
+| tipo x fascia | 1.000 | 1.000 |
+| tipo x fascia x giorno | 250 | 1.000.000 *(al bordo)* |
+| linea x fascia x giorno | 50 | 250 |
+
+*Fonte: `results/stima_rete.csv`, colonne `alfa` e `alfa_al_bordo`, righe
+`constatazioni sole` (Roma) e `popolazione unica` (Torino); griglia dei candidati da
+0,5 a 1.000.000 su scala logaritmica.*
+
+Un gradino che sceglie il massimo della griglia non e' tarato ma **trasparente**: con
+una concentrazione molto maggiore del numero di osservazioni della cella, la sua
+stima coincide con quella del genitore, cioe' il gradino non serve. Succede al
+livello per tipo di veicolo in entrambe le citta', e ha una spiegazione diretta: con
+quasi tutte le linee di superficie classificate come autobus, quel livello ripete
+quello sotto di se'. Su Torino sono trasparenti **due gradini su cinque**, perche' vi
+si aggiunge il livello per tipo, fascia e giorno. Distinguere la trasparenza dal
+troncamento richiederebbe di allargare la griglia e verificare che la perdita non si
+muova; qui la lettura e' che la scala torinese lavora effettivamente su tre gradini.
+
+**La scelta dei bordi.** Il confronto fra i cinque candidati, sul banco di prova
+tenuto fuori sia dalla stima sia dalla verifica.
+
+| candidato | estremi (s) | guadagno Roma | guadagno Torino | massa bin aperti Roma | massa bin aperti Torino | ampiezza confusa Roma | ampiezza confusa Torino |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| attuali | -60 0 60 120 300 600 1200 | 1,4070 | 1,2274 | 0,6228 | 0,4566 | 201,0 s | 122,2 s |
+| **ottili** | -554 -366 -250 -158 -80 18 213 | **2,0717** | **1,5406** | 0,2338 | 0,0807 | 701,1 s | 368,3 s |
+| centrati | -518 -458 -398 -338 -158 142 742 | 1,7933 | 1,0783 | 0,1553 | 0,0242 | 417,2 s | 275,4 s |
+| misti | -452 -228 -82 0 130 398 1192 | 2,0061 | 1,4438 | 0,1718 | 0,0322 | 309,0 s | 201,4 s |
+| decisione | -300 -60 0 120 300 900 1800 | 1,7867 | 1,3383 | 0,2821 | 0,0987 | 293,4 s | 184,4 s |
+
+*Fonte: `results/scelta_bordi.csv`, finestra `2026-09-09`, due giornate di banco;
+colonne `guadagno`, `massa_nei_bin_aperti` e `ampiezza_confusa_decisione`. Le
+ampiezze sono ristrette alle osservazioni fra zero e trenta minuti.*
+
+I bordi ereditati dalla Fase 3 lasciavano quasi due terzi della massa romana in un
+bin aperto, dove il modello dichiara di non distinguere nulla, e il loro guadagno e'
+il piu' basso su Roma: su questo non c'e' ambiguita'. Fra i quattro candidati nuovi
+la lettura dipende invece dal criterio, come la doppia tautologia fa prevedere: gli
+ottili vincono il guadagno in entrambe le citta' e confondono il maggior numero di
+secondi, mentre `decisione` e `misti` fanno l'opposto. La regola adottata ammette
+solo gli ottili, e il backtesting ha poi mostrato che la differenza non arriva ai
+risultati.
+
+**La scala di risalita contro i suoi due estremi.** La domanda a cui la tabella
+risponde e' se la scala serva davvero, cioe' se batta sia il modello che stima tutto
+al livello piu' fine sia quello che si ferma al livello grossolano.
+
+| scala | gradini | perdita Roma (constatazioni) | perdita Torino (tutte) |
+| --- | ---: | ---: | ---: |
+| **scala completa** | 5 | **0,9437 +/- 0,0625** | **1,1260 +/- 0,0303** |
+| solo livello fine | 1 | 1,2402 +/- 0,3588 | 1,1917 +/- 0,0867 |
+| solo tipo di linea | 1 | 0,9572 +/- 0,0698 | 1,1380 +/- 0,0318 |
+| entropia marginale | — | 2,9979 | 2,6600 |
+| guadagno della scala completa | — | 2,0541 | 1,5339 |
+
+*Fonte: `results/stima_rete.csv`, righe `constatazioni sole` / `popolazione unica`,
+`solo livello fine` e `solo tipo di linea`, bordi `ottili`, finestra `2026-09-09`;
+media e deviazione su quattro giornate di verifica.*
+
+La scala completa vince su entrambe le citta' e su entrambi gli estremi, ma i due
+confronti non hanno lo stesso peso e vanno letti separatamente. Contro il **livello
+fine da solo** il vantaggio e' netto - 0,2965 bit su Roma e 0,0657 su Torino - e
+soprattutto e' accompagnato da un **crollo della variabilita' fra giornate**, da
++/-0,3588 a +/-0,0625 su Roma e da +/-0,0867 a +/-0,0303 su Torino: il modello a
+sole celle fini non e' semplicemente peggiore, e' **instabile**, perche' su ogni
+giornata sbaglia in modo diverso a seconda di quali linee rare vi compaiano. E' il
+difetto che la risalita esiste per curare, e la misura mostra che lo cura. Contro il
+**tipo di linea da solo** il vantaggio e' invece piccolo, 0,0135 bit su Roma e 0,0119
+su Torino, **dentro la deviazione fra giornate di entrambe le scale**: le deviazioni
+riportate sono quelle di ciascuna scala separatamente e non quelle della loro
+differenza, quindi non permettono di concludere che il vantaggio sia significativo.
+La lettura onesta e' che la scala compra **soprattutto stabilita'**, e che gran parte
+di cio' che sa dire lo sa gia' dire il livello grossolano; e' anche il motivo per cui
+la taratura rende trasparente piu' di un gradino intermedio.
+
+**Se le previsioni aggiungano qualcosa a cio' che le constatazioni sanno gia'.** E'
+la domanda che il piano poneva come scambio di gradini e che nella scala a priori
+incatenati non e' esprimibile in quella forma, perche' il contesto puo' solo
+infittirsi. Si risponde inserendo il gradino delle previsioni fini appena prima di
+quello finale e confrontando.
+
+| scala | gradini | perdita sulle constatazioni | perdita sulle previsioni |
+| --- | ---: | ---: | ---: |
+| constatazioni sole | 5 | 0,9437 +/- 0,0625 | 0,9304 +/- 0,0330 |
+| previsioni al livello fine | 6 | 0,9409 +/- 0,0648 | 0,9102 +/- 0,0333 |
+| previsioni a ogni livello | 10 | 0,9409 +/- 0,0649 | 0,9099 +/- 0,0347 |
+| previsioni sole | 5 | 0,9557 +/- 0,0607 | 0,8829 +/- 0,0291 |
+
+*Fonte: `results/stima_rete.csv`, citta' `roma`, colonne `perdita`/`deviazione` e
+`perdita_previsioni`/`deviazione_previsioni`, bordi `ottili`; Torino non compare
+perche' vi esiste una popolazione sola.*
+
+Sulla popolazione che conta, le constatazioni, aggiungere le previsioni migliora di
+**0,0029 bit**, cioe' un ventesimo della deviazione fra giornate: non migliora.
+Sulla popolazione delle previsioni migliora di 0,0202 bit, il che e' atteso e non
+decide, perche' un modello che ha visto le previsioni predice meglio le previsioni.
+Raddoppiare i gradini portandoli a dieci non aggiunge nulla di piu'. Si adotta
+percio' la scala piu' semplice, cinque gradini di sole constatazioni, che e' anche
+l'unica delle quattro il cui significato si dica in una frase. Va notato che
+`previsioni sole` e' la peggiore sulle constatazioni e la migliore sulle previsioni,
+che e' la firma di due popolazioni realmente diverse e non di un capriccio del
+campione.
+
+**La calibrazione.** Una probabilita' non si verifica un'osservazione alla volta: si
+raccolgono tutte le previsioni di valore simile e si guarda con quale frequenza
+l'evento previsto sia poi accaduto. Le coppie sono (probabilita' attribuita al bin
+*k*, il bin osservato era *k*) su tutti e otto i bin, e non solo su quello
+realizzato, perche' un modello che sbaglia i bin che non escono mai e' comunque
+sbagliato.
+
+| classe di probabilita' | Roma attesa | Roma osservata | Roma coppie | Torino attesa | Torino osservata | Torino coppie |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0,0 - 0,1 | 0,0103 | 0,0117 | 3.314.713 | 0,0082 | 0,0098 | 4.599.815 |
+| 0,1 - 0,2 | 0,1377 | 0,1436 | 437.753 | 0,1402 | 0,1418 | 961.158 |
+| 0,2 - 0,3 | 0,2288 | 0,2400 | 51.358 | 0,2296 | 0,2141 | 118.806 |
+| 0,3 - 0,4 | 0,3256 | 0,3303 | 3.506 | 0,3226 | 0,3130 | 3.451 |
+| 0,4 - 0,5 | 0,4520 | 0,3936 | 597 | 0,4740 | 0,5010 | 1.022 |
+| 0,5 - 0,6 | 0,5720 | 0,5331 | 10.348 | 0,5730 | 0,5447 | 30.402 |
+| 0,6 - 0,7 | 0,6623 | 0,6383 | 93.503 | 0,6580 | 0,6387 | 192.731 |
+| 0,7 - 0,8 | 0,7499 | 0,7326 | 176.088 | 0,7453 | 0,7323 | 318.650 |
+| 0,8 - 0,9 | 0,8403 | 0,8263 | 130.574 | 0,8412 | 0,8453 | 238.541 |
+| 0,9 - 1,0 | 0,9542 | 0,9504 | 132.936 | 0,9216 | 0,9364 | 30.744 |
+| **scarto medio pesato** | | **0,0037** | | | **0,0033** | |
+
+*Fonte: `results/calibrazione_rete_roma.csv` e `results/calibrazione_rete_torino.csv`,
+quattro giornate di verifica messe insieme; lo scarto medio e' la colonna
+`scarto_calibrazione` di `results/stima_rete.csv`.*
+
+Lo scarto medio pesato sta sotto il mezzo punto percentuale in entrambe le citta', e
+la tabella mostra dove si concentra: nelle classi centrali e alte il modello e'
+leggermente **ottimista**, cioe' promette qualche punto in piu' di quanto osservi -
+su Roma 0,5720 contro 0,5331 nella classe 0,5-0,6 e 0,6623 contro 0,6383 nella
+successiva. Non e' un dettaglio indifferente per questo progetto, perche' il
+pianificatore robusto sceglie l'itinerario che massimizza `P(arrivo <= T)` e un
+modello ottimista sovrastima la probabilita' di tutti i candidati: finche'
+l'ottimismo e' uniforme non sposta la graduatoria, ma va dichiarato che la
+probabilita' stampata accanto a un itinerario e' un paio di punti sopra la frequenza
+osservata. Le classi centrali che sembrano peggiori, 0,4-0,5, sono anche le meno
+popolate - 597 coppie su Roma - e non reggono da sole nessuna conclusione.
+
+**La correlazione reale contro lo 0,70 sintetico della Fase 4.** L'argomento
+precedente aveva assunto un parametro scalare in [0, 1] per la trasmissione del
+ritardo lungo la corsa e aveva usato **0,70**, dichiarandolo un numero scelto per
+buon senso in attesa della misura. Questa e' la misura.
+
+| | Roma | Torino |
+| --- | ---: | ---: |
+| Pearson sui secondi, tutte le coppie | 0,9634 +/- 0,0100 | 0,9148 +/- 0,0165 |
+| Spearman sui secondi, tutte le coppie | 0,9839 +/- 0,0028 | 0,9380 +/- 0,0051 |
+| Pearson dentro i bordi dei bin | 0,9657 +/- 0,0067 | 0,9474 +/- 0,0014 |
+| Spearman dentro i bordi dei bin | 0,9667 +/- 0,0063 | 0,9351 +/- 0,0016 |
+| correlazione implicita nella matrice stimata | 0,9625 +/- 0,0017 | 0,9198 +/- 0,0034 |
+| quota di coppie dentro i bordi | 0,7324 +/- 0,0110 | 0,8599 +/- 0,0261 |
+| quota di transizioni identiche al secondo | 0,0435 +/- 0,0124 | 0,0116 +/- 0,0006 |
+| valore sintetico usato nella Fase 4 | 0,70 | 0,70 |
+
+*Fonte: `results/correlazione_rete.csv`, riga `fascia = tutte`, media e deviazione su
+quattro giornate di verifica; popolazione `constatazioni` per Roma e `tutte` per
+Torino.*
+
+Tre letture, nell'ordine. La prima e' che **il ritardo si trasmette lungo la corsa
+molto piu' di quanto la Fase 4 avesse assunto**: 0,96 su Roma e 0,91 su Torino
+contro 0,70, e la distanza e' di venti-trenta punti, ben oltre qualunque
+variabilita' fra giornate. Gli esperimenti sintetici dell'argomento precedente sono
+stati quindi eseguiti in un mondo in cui il ritardo si propaga meno che nella
+realta', ed e' esattamente il mondo in cui un pianificatore che ignori la
+correlazione sbaglia di meno: il vantaggio del metodo robusto misurato la' e' da
+considerarsi **prudente**, non gonfiato. La seconda e' che la discretizzazione in
+otto bin **non distrugge la dipendenza che deve rappresentare**: la correlazione
+implicita nella matrice stimata vale 0,9625 contro 0,9634 misurata sui secondi su
+Roma - meno di un millesimo di scarto - e 0,9198 contro 0,9148 su Torino. E' il
+controllo che giustifica a posteriori l'intera rappresentazione a bin, perche' una
+matrice che perdesse la correlazione renderebbe inutile il condizionamento sul
+ritardo a monte. La terza e' che **le quattro letture concordano fra loro**: Pearson
+e Spearman, su tutte le coppie e dentro i soli bordi dei bin, stanno tutte fra 0,91
+e 0,98. Non e' un'osservazione oziosa, perche' sulla popolazione torinese mal
+definita descritta nelle decisioni di progetto le stesse quattro letture si
+contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi, e la loro discordanza
+e' stato il segnale che qualcosa non andava nella definizione della popolazione prima
+ancora che nei numeri.
+
+**Che cosa questa valutazione non dice.** Non dice se il modello appreso faccia
+arrivare puntuale un passeggero: la perdita logaritmica e la calibrazione misurano
+quanto bene il modello descriva i ritardi, non quanto bene un itinerario scelto con
+esso regga il mondo reale. Quella misura e' un'altra, si fa rigiocando gli itinerari
+sulle giornate osservate, ed e' l'oggetto dell'argomento che segue e la risposta alla
+domanda di ricerca del progetto. Va inoltre ricordato che i numeri romani e torinesi
+di questo capitolo **non rispondono alla stessa domanda**: su Roma la perdita e'
+calcolata su passaggi avvenuti, su Torino sull'ultima stima del produttore a circa
+due minuti dal transito, e le colonne `raffronto_tutte_*` esistono proprio perche' il
+lettore che voglia accostarli disponga della lettura omogenea invece di accostare due
+grandezze che condividono solo il nome.
 
 # Sezione Argomento 5 — Soddisfacimento di vincoli
 
@@ -2456,3 +2961,12 @@ orario statico <https://www.gtt.to.it/open_data/gtt_gtfs.zip> e feed real-time
 
 [17] J. D. Hunter. *Matplotlib: A 2D Graphics Environment*. Computing in Science &
 Engineering, 9(3):90-95, 2007.
+
+[18] D. J. C. MacKay, L. C. Bauman Peto. *A hierarchical Dirichlet language model*.
+Natural Language Engineering, 1(3):289-308, 1995.
+
+[19] S. F. Chen, J. Goodman. *An empirical study of smoothing techniques for
+language modeling*. Computer Speech & Language, 13(4):359-394, 1999.
+
+[20] E. T. Jaynes. *Information Theory and Statistical Mechanics*. Physical Review,
+106(4):620-630, 1957.
