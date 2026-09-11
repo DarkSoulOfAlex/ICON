@@ -1,0 +1,3 @@
+citta,archivio,seme,velocita_m_s,origine,destinazione,chiave,istante_nella_chiave,stati_espansi,stati_generati,secondi,orario_arrivo,cambi,trovato
+torino,2026-08-26.zip,20260826,139.123,3176,3492,"(fermata, istante, cambi)",True,1464312,27525905,57.1,1787727413,4,True
+torino,2026-08-26.zip,20260826,139.123,3176,3492,"(fermata, cambi)",False,23597,147758,0.57,1787727413,4,True

@@ -623,6 +623,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     politica = Politica.dal_nome(argomenti.politica)
     problemi = 0
+    # Il riepilogo di ogni giornata finiva solo nel log, e i log si ruotano: la
+    # quota di righe che la deduplica conserva - il risultato negativo che sta nel
+    # documento - non era piu' verificabile da nessuno. Si accumula in un CSV che
+    # cresce una riga per citta' e giornata, senza mai riscrivere le precedenti.
+    consuntivi: list[dict] = []
     for citta in elenco:
         destinazione = (
             RADICE / "data" / "processed" / "osservazioni" / citta / f"{giorno.isoformat()}.parquet"
@@ -649,6 +654,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 citta, f"{riepilogo.soppresse_dalla_data:,}",
                 f"{riepilogo.duplicate_dalla_data:,}",
             )
+            consuntivi.append({
+                "citta": citta, "giorno": giorno.isoformat(),
+                "politica": argomenti.politica,
+                "dump_letti": riepilogo.dump_letti,
+                "stop_time_update": riepilogo.stu_totali,
+                "righe_scritte": riepilogo.righe_scritte,
+                "quota_conservata": (riepilogo.righe_scritte / riepilogo.stu_totali
+                                     if riepilogo.stu_totali else float("nan")),
+                "passaggi_distinti": riepilogo.passaggi_distinti,
+                "valori_per_passaggio": (riepilogo.righe_scritte /
+                                         riepilogo.passaggi_distinti
+                                         if riepilogo.passaggi_distinti else float("nan")),
+                "mb_grezzi": round(riepilogo.mb_grezzi, 1),
+                "mb_parquet": round(riepilogo.mb_parquet, 1),
+                "soppresse_dalla_data": riepilogo.soppresse_dalla_data,
+                "duplicate_dalla_data": riepilogo.duplicate_dalla_data,
+            })
             if not argomenti.senza_archivio:
                 archivio = archivia_grezzi(citta, giorno, RADICE)
                 if archivio is not None:
@@ -661,7 +683,32 @@ def main(argv: Sequence[str] | None = None) -> int:
             log.exception("[%s] errore imprevisto nel consolidamento di %s", citta, giorno)
             problemi += 1
 
+    if consuntivi:
+        scrivi_consuntivo(consuntivi)
     return 1 if problemi else 0
+
+
+def scrivi_consuntivo(righe: list[dict], radice: Path = RADICE) -> Path:
+    """Aggiunge le giornate consolidate a ``results/consolidamento.csv``.
+
+    Si accumula invece di riscrivere: ogni notte ne arriva una, e rifare il file
+    da capo perderebbe tutte le precedenti. Le righe gia' presenti per la stessa
+    coppia citta'-giornata vengono sostituite, cosi' un ``--rifai`` aggiorna invece
+    di duplicare.
+    """
+    import pandas as pd
+
+    destinazione = radice / "results" / "consolidamento.csv"
+    destinazione.parent.mkdir(parents=True, exist_ok=True)
+    nuove = pd.DataFrame(righe)
+    if destinazione.is_file():
+        vecchie = pd.read_csv(destinazione)
+        chiavi = set(zip(nuove["citta"], nuove["giorno"]))
+        tenute = [k not in chiavi for k in zip(vecchie["citta"], vecchie["giorno"])]
+        nuove = pd.concat([vecchie[tenute], nuove], ignore_index=True)
+    nuove.sort_values(["citta", "giorno"]).to_csv(destinazione, index=False)
+    log.info("consuntivo del consolidamento in %s (%d righe)", destinazione, len(nuove))
+    return destinazione
 
 
 if __name__ == "__main__":

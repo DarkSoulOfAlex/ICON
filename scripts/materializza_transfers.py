@@ -37,15 +37,26 @@ CARTELLA_USCITA = RADICE / "data" / "processed"
 RISULTATI = RADICE / "results"
 
 
-def archivio_piu_recente(citta: str) -> Path:
+def archivio_scelto(citta: str, fino_a: str | None = None) -> Path:
+    """L'archivio in vigore a una data, o il piu' recente se non la si fissa.
+
+    Le altre fasi del progetto - il grafo, la ricerca, il CSP - sono state misurate
+    sull'archivio in vigore a fine agosto, e l'orario cambia ogni giorno. Prendere
+    sempre il piu' recente farebbe dire al documento 8.325 fermate in un capitolo e
+    usarne 8.301 nel successivo: i numeri vecchi non erano sbagliati, erano giusti
+    sul loro archivio, e cio' che mancava era il modo di dirlo.
+    """
     archivi = sorted((RADICE / "data" / "raw" / "gtfs" / citta).glob("*.zip"))
+    if fino_a:
+        archivi = [a for a in archivi if a.stem.split("_")[0] <= fino_a]
     if not archivi:
-        raise SystemExit(f"Nessun archivio GTFS per '{citta}'.")
+        raise SystemExit(f"Nessun archivio GTFS per '{citta}'"
+                         + (f" valido al {fino_a}." if fino_a else "."))
     return archivi[-1]
 
 
-def materializza_citta(citta: str) -> dict:
-    percorso = archivio_piu_recente(citta)
+def materializza_citta(citta: str, fino_a: str | None = None) -> dict:
+    percorso = archivio_scelto(citta, fino_a)
     inizio = monotonic()
     archivio = carica_archivio(percorso, con_stop_times=True)
     fermate = fermate_fisiche(archivio.stops)
@@ -110,8 +121,12 @@ def materializza_citta(citta: str) -> dict:
 def main(argv: Sequence[str] | None = None) -> int:
     analizzatore = argparse.ArgumentParser(description=__doc__)
     analizzatore.add_argument("--citta", default="torino,roma")
+    analizzatore.add_argument("--archivio", default=None, metavar="AAAA-MM-GG",
+                              help="usa l'archivio GTFS in vigore a questa data "
+                                   "invece del piu' recente")
     argomenti = analizzatore.parse_args(argv)
-    righe = [materializza_citta(c.strip()) for c in argomenti.citta.split(",")]
+    righe = [materializza_citta(c.strip(), argomenti.archivio)
+             for c in argomenti.citta.split(",")]
     if righe:
         RISULTATI.mkdir(parents=True, exist_ok=True)
         destinazione = RISULTATI / "kb_rete_intera.csv"
