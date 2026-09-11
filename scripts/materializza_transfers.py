@@ -1,9 +1,15 @@
 """Esegue la base di conoscenza sull'intera rete di ogni citta'.
 
 Produce ``data/processed/transfers_<citta>.parquet``, che e' l'artefatto su cui
-poggera' il grafo tempo-espanso della Fase 2, e riporta il costo dell'esecuzione
-a piena scala. Quest'ultimo numero serve al documento: e' la misura reale, non
-l'estrapolazione della curva di complessita'.
+poggera' il grafo tempo-espanso della Fase 2, e ``results/kb_rete_intera.csv``, che
+riporta il costo dell'esecuzione a piena scala. Quest'ultimo serve al documento:
+e' la misura reale, non l'estrapolazione della curva di complessita'.
+
+**Perche' scrive un CSV e non solo a schermo.** Fino alla verifica del 11 settembre
+questi numeri esistevano soltanto nel log di un'esecuzione: erano veri quando furono
+scritti nel documento e non erano piu' verificabili da nessuno, che e' esattamente il
+difetto della voce 70. Undici secondi di grounding non sono un costo che giustifichi
+di non rifare la misura: mancava lo sbocco, non il tempo.
 
 Uso:
     python scripts/materializza_transfers.py
@@ -22,10 +28,13 @@ RADICE = Path(__file__).resolve().parent.parent
 if str(RADICE) not in sys.path:
     sys.path.insert(0, str(RADICE))
 
+import pandas as pd  # noqa: E402
+
 from src.gtfs.loader import carica_archivio, fermate_fisiche  # noqa: E402
 from src.kb.engine import ErroreKB, esegui, genera_fatti  # noqa: E402
 
 CARTELLA_USCITA = RADICE / "data" / "processed"
+RISULTATI = RADICE / "results"
 
 
 def archivio_piu_recente(citta: str) -> Path:
@@ -35,7 +44,7 @@ def archivio_piu_recente(citta: str) -> Path:
     return archivi[-1]
 
 
-def materializza_citta(citta: str) -> None:
+def materializza_citta(citta: str) -> dict:
     percorso = archivio_piu_recente(citta)
     inizio = monotonic()
     archivio = carica_archivio(percorso, con_stop_times=True)
@@ -80,14 +89,35 @@ def materializza_citta(citta: str) -> None:
     destinazione = CARTELLA_USCITA / f"transfers_{citta}.parquet"
     tabella.to_parquet(destinazione, index=False)
     print(f"  scritto {destinazione.name} ({destinazione.stat().st_size / 1024:.0f} KB)", flush=True)
+    return {
+        "citta": citta,
+        "archivio": percorso.name,
+        "fermate_fisiche": len(fermate),
+        "fatti": fatti.n_fatti,
+        "secondi_generazione_fatti": round(tempo_fatti, 2),
+        "atomi": risultato.atomi,
+        "regole": risultato.regole,
+        "secondi_grounding": round(risultato.tempo_grounding, 2),
+        "secondi_solving": round(risultato.tempo_solving, 2),
+        "trasbordi": len(tabella),
+        "trasbordi_a_piedi": int(tabella["a_piedi"].sum()),
+        "trasbordi_accessibili": int(tabella["accessibile"].sum()),
+        "trasbordi_utili": int(tabella["utile"].sum()),
+        "corse": int(archivio.trips["trip_id"].nunique()),
+    }
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     analizzatore = argparse.ArgumentParser(description=__doc__)
     analizzatore.add_argument("--citta", default="torino,roma")
     argomenti = analizzatore.parse_args(argv)
-    for citta in (c.strip() for c in argomenti.citta.split(",")):
-        materializza_citta(citta)
+    righe = [materializza_citta(c.strip()) for c in argomenti.citta.split(",")]
+    if righe:
+        RISULTATI.mkdir(parents=True, exist_ok=True)
+        destinazione = RISULTATI / "kb_rete_intera.csv"
+        pd.DataFrame(righe).to_csv(destinazione, index=False)
+        print()
+        print(f"scritto {destinazione} ({len(righe)} righe)")
     return 0
 
 
