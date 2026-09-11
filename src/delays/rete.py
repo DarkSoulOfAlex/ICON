@@ -247,12 +247,22 @@ def stima(livelli: list[Livello], n_valori: int, alfa: float | list[float]) -> M
 
 
 CANDIDATI = (0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 1_000.0, 5_000.0,
-             25_000.0, 100_000.0, 1_000_000.0)
+             25_000.0, 100_000.0, 1_000_000.0, 10_000_000.0, 100_000_000.0)
 """I valori provati per la concentrazione, su scala logaritmica.
 
 L'estremo superiore e' alto di proposito. Un gradino che scegliesse il massimo
 disponibile non sarebbe tarato ma troncato: direbbe solo che il suo ottimo sta
 oltre il punto dove si e' smesso di cercare, e ``Taratura.al_bordo`` lo segnala.
+
+**Perche' arriva a cento milioni e non a un milione.** Con un milione la griglia si
+fermava troppo presto per i gradini a poche celle molto popolose. Il peso che una
+cella conserva sui propri conteggi vale ``N / (N + alfa)``: il gradino per tipo di
+veicolo di Roma ha otto celle su 1,17 milioni di coppie, cioe' circa
+centoquarantaseimila osservazioni ciascuna, e a un milione ne conservava ancora un
+ottavo - restando a quattro punti percentuali dal genitore invece di coincidervi.
+La saturazione era del cercatore, non della stima. Due ordini di grandezza in piu'
+portano quel residuo sotto il punto percentuale e rendono la trasparenza
+raggiungibile, senza togliere nulla ai gradini che un alfa piccolo gia' serviva.
 
 Con una concentrazione molto maggiore del numero di osservazioni della cella, il
 gradino diventa **trasparente**: la sua stima coincide con quella del genitore.
