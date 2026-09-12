@@ -2850,10 +2850,19 @@ verificabili da nessuno e non possono comparire da nessuna parte. Vedere la voce
 
 **Un limite della selezione, misurato.** Solo una parte delle corse dell'orario compare
 nel tempo reale, quindi non ogni itinerario e' rigiocabile: si tengono le coppie con
-almeno due candidati interamente osservati, e sulla giornata di prova sono circa quattro
-su dieci dei candidati - il 38,4% su Roma e il 36,5% su Torino, misurati sul 9
-settembre. E' una selezione che favorisce le linee frequenti, e la quota si riporta
-accanto ai risultati invece di restare implicita.
+almeno due candidati interamente osservati, e ne sopravvive il **53,80% +/- 4,37% su
+Roma** e il **48,69% +/- 12,01% su Torino**, media e deviazione sulle quattro giornate
+di verifica. E' una selezione che favorisce le linee frequenti e ben coperte, e la
+quota si riporta accanto ai risultati invece di restare implicita.
+
+*Fonte: `results/backtest_riepilogo.csv`, colonne `quota_rigiocabili` e
+`deviazione_rigiocabili`.* **Numeri superati da non riusare:** il 38,4% e il 36,5% che
+questa voce riportava prima erano misurati **su una sola giornata**, il 9 settembre, ed
+esistevano solo nel log di quell'esecuzione - il difetto della voce 70. Le colonne
+esistono da quando il backtesting le scrive, e la differenza fra i vecchi valori e i
+nuovi non e' una correzione ma il passaggio da una giornata a quattro, con la sua
+deviazione: su Torino quella deviazione vale dodici punti, cioe' un quarto del valore,
+e un numero preso su un giorno solo non poteva dirlo.
 
 **Come si potrebbe verificare.** `tests/test_replica.py` costruisce itinerari di cui si
 conosce l'esito - la coincidenza persa per anticipo, quella tenuta per un soffio, quella

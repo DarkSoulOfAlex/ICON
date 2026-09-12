@@ -3316,12 +3316,47 @@ e' la scadenza a cambiare, non l'itinerario che minimizza l'orario teorico.*
 Su questa grandezza il vantaggio e' piu' netto che sugli arrivi, e cresce in modo
 monotono col margine su entrambe le citta': a trenta minuti il robusto perde **meno
 della meta'** delle coincidenze del piu' veloce su Roma (0,1889 contro 0,4222) e **un
-terzo** su Torino (0,1167 contro 0,3417). E' coerente con il meccanismo: il margine
-piu' ampio consente di scegliere itinerari con coincidenze meno tese, e sono
-esattamente quelle che non si perdono. Il numero medio di cambi scende con esso, da
-2,68 a 2,29 su Roma e da 2,18 a 1,88 su Torino: parte del vantaggio viene dal
-prendere itinerari con **un cambio in meno**, il che e' un modo legittimo di essere
-robusti e va detto invece di lasciarlo scoprire.
+terzo** su Torino (0,1167 contro 0,3417).
+
+**Per quale meccanismo, misurato.** La strategia di riferimento ha un numero medio di
+cambi **costante a ogni margine** - 2,678 su Roma, 2,183 su Torino - perche' il suo
+itinerario non dipende dalla scadenza. Quella robusta parte quasi dallo stesso valore
+a margine nullo (2,644 e 2,208) e **scende al crescere del margine**, fino a 2,289 e
+1,875 a trenta minuti. Non e' quindi che il robusto prenda "un cambio in meno" in
+generale: e' che **usa lo spazio che il margine gli concede per togliere coincidenze
+invece che per allargarle**, e la discesa e' progressiva perche' lo spazio cresce.
+
+Quanto del vantaggio passi di li' si misura restringendo alle istanze in cui le due
+strategie scelgono itinerari con lo **stesso numero di cambi**:
+
+| citta' | gruppo | istanze | perse, veloce | perse, robusto | differenza |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Roma | tutte le divergenti | 163 | 0,6933 | 0,2638 | **-0,4294** |
+| Roma | a parita' di cambi | 38 | 0,5263 | 0,5526 | **+0,0263** |
+| Roma | robusto con meno cambi | 120 | 0,7583 | 0,1583 | -0,6000 |
+| Torino | tutte le divergenti | 174 | 0,7299 | 0,0920 | **-0,6379** |
+| Torino | a parita' di cambi | 51 | 0,4118 | 0,1176 | **-0,2941** |
+| Torino | robusto con meno cambi | 119 | 0,8908 | 0,0840 | -0,8067 |
+
+*Fonte: `results/backtest.csv`, bordi `ottili`, sole istanze in cui le due strategie
+scelgono itinerari con orario di arrivo teorico diverso; giornata magra esclusa.*
+
+La risposta e' diversa nelle due citta', e va detta cosi'. **Su Roma il vantaggio
+sulle coincidenze perse sparisce del tutto a parita' di cambi** - anzi cambia segno di
+tre centesimi, su trentotto istanze - quindi li' il meccanismo e' **interamente** la
+semplificazione dell'itinerario: il robusto non sceglie coincidenze migliori, sceglie
+itinerari che ne hanno meno. Su Torino il vantaggio si riduce di oltre la meta' ma
+**resta netto**, -0,2941 su cinquantuno istanze: li' una parte viene dalla
+semplificazione e una parte dal scegliere meglio a parita' di struttura.
+
+Togliere un cambio e' un modo legittimo di essere robusti, ed e' esattamente cio' che
+un viaggiatore disposto ad arrivare piu' tardi comprerebbe; ma e' un meccanismo
+**diverso** da quello che il progetto si proponeva di dimostrare, che era scegliere
+coincidenze con margini piu' larghi. Sugli arrivi entro la scadenza, a parita' di
+cambi, il vantaggio resta positivo in entrambe le citta' - **+0,0263 su Roma e +0,0784
+su Torino** - ma su campioni di trentotto e cinquantuno istanze, troppo piccoli per
+reggere da soli una conclusione. Va letto come un indizio che qualcosa oltre la
+semplificazione ci sia, non come la sua dimostrazione.
 
 **Dove le due strategie divergono davvero.** Le tabelle sopra mediano anche sulle
 istanze in cui le due scelgono lo stesso itinerario, dove la differenza e' nulla per
@@ -3420,27 +3455,139 @@ puo' confrontarla con la frequenza con cui quei viaggi sono poi arrivati.
 `quota_entro`, strategia `robusto`, bordi `ottili`.*
 
 Il modello e' **pessimista** a ogni margine e in entrambe le citta': i viaggi arrivano
-piu' spesso di quanto prometta, fino a quindici punti su Roma a quindici minuti. E'
-l'opposto dell'errore che ci si aspetterebbe da un modello che sceglie il proprio
-massimo, e ha una spiegazione plausibile nel tetto sui recuperi - la replica ne
-concede due, il calcolo della probabilita' ne assume meno - ma non e' stata misurata e
-resta un'ipotesi. Va dichiarata cosi': il pessimismo e' un fatto, la sua causa no.
+piu' spesso di quanto prometta, fino a quindici punti su Roma a quindici minuti. Il
+segno e' quello sbagliato, e non nel senso banale.
+
+**Perche' il segno sorprende.** Un criterio che sceglie il proprio massimo dovrebbe
+**sovrastimare**, e per una ragione che non dipende dal modello: fra candidati le cui
+probabilita' sono stimate con rumore, quello che vince e' anche quello la cui stima e'
+stata piu' fortunata verso l'alto, e la probabilita' del vincitore e' percio' una
+stima distorta in eccesso della sua vera probabilita'. E' la maledizione del
+vincitore, e qui non si vede affatto: si vede il contrario, e di parecchio. Tre
+spiegazioni sono state messe alla prova, e nessuna regge.
+
+**Prima ipotesi: il tetto sui recuperi. Falsificata, e con il segno rovesciato.** La
+replica concede due recuperi consecutivi, il calcolo della probabilita' ne assume
+meno, quindi il modello non si accrediterebbe salvataggi che nella realta' avvengono.
+Se fosse cosi', il pessimismo dovrebbe concentrarsi nelle istanze in cui i recuperi
+sono serviti davvero. Misurato, accade l'opposto:
+
+| gruppo | istanze | dichiarata | osservata | scarto |
+| --- | ---: | ---: | ---: | ---: |
+| Roma, nessun recupero | 377 | 0,6485 | 0,8090 | **+0,1606** |
+| Roma, almeno un recupero | 163 | 0,4541 | 0,4110 | **-0,0431** |
+| Torino, nessun recupero | 580 | 0,7906 | 0,9121 | **+0,1214** |
+| Torino, almeno un recupero | 140 | 0,5154 | 0,3429 | **-0,1725** |
+
+*Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`, raggruppate per
+`recuperi > 0`; giornata magra esclusa.*
+
+Il pessimismo sta **tutto nei viaggi filati lisci**, e dove i recuperi sono serviti il
+modello e' invece ottimista. L'ipotesi prevedeva l'opposto e cade. Va detto che questo
+raggruppamento usa un esito della replica e non un'informazione disponibile al momento
+della scelta, quindi non e' una misura di calibrazione: serve solo a localizzare il
+divario, ed e' sufficiente a escludere il meccanismo proposto.
+
+**Seconda ipotesi: la composizione lungo la catena.** La calibrazione dell'argomento
+precedente misura il modello leggermente **ottimista** sul singolo bin, di due o tre
+punti nelle classi centrali. Se sul singolo passo e' ottimista e sulla composizione e'
+pessimista, l'errore starebbe nel comporre e non nello stimare - e sarebbe
+un'osservazione sull'assunzione markoviana, che e' il pezzo di teoria piu' esposto del
+progetto. La previsione verificabile e' che il divario **cresca con la lunghezza della
+catena**, cioe' col numero di cambi. Non cresce:
+
+| cambi | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 86 | +0,1163 | 233 | +0,0708 |
+| 2 | 199 | -0,0057 | 293 | +0,0816 |
+| 3 | 169 | +0,1152 | 136 | +0,0678 |
+| 4 | 86 | +0,2927 | 58 | -0,0576 |
+
+*Fonte: come sopra, raggruppate per `cambi`; escluse le classi con meno di venti
+istanze.*
+
+Su Torino il divario e' piatto - fra +0,07 e +0,08 da uno a tre cambi - e su Roma non
+e' monotono. L'ipotesi non e' sostenuta: qualunque cosa produca il pessimismo, non
+scala con la lunghezza della catena composta.
+
+**Terza ipotesi: la selezione. Esclusa da un controllo diretto.** Se il divario venisse
+dal fatto che il criterio sceglie il proprio massimo, la strategia di riferimento -
+che sceglie l'arrivo nominale minimo e **non** guarda la probabilita' - non dovrebbe
+mostrarlo. Lo mostra, e uguale:
+
+| citta' | strategia | dichiarata | osservata | scarto |
+| --- | --- | ---: | ---: | ---: |
+| Roma | piu' veloce | 0,5342 | 0,6185 | +0,0843 |
+| Roma | robusto | 0,5898 | 0,6889 | +0,0991 |
+| Torino | piu' veloce | 0,6867 | 0,7847 | +0,0980 |
+| Torino | robusto | 0,7371 | 0,8014 | **+0,0643** |
+
+*Fonte: `results/backtest_riepilogo.csv`, colonne `probabilita_attesa` e `quota_entro`,
+bordi `ottili`, medie sulle sei scadenze pesate per istanza.*
+
+Il pessimismo e' quindi una proprieta' delle **probabilita' che il modello produce per
+questo compito**, non della selezione: su Torino la strategia che sceglie il massimo e'
+addirittura **meno** pessimista dell'altra. Ne segue anche che la maledizione del
+vincitore, se e' presente, e' piu' piccola del fenomeno che stiamo guardando e ne
+risulta nascosta.
+
+**Dove il divario vive, questo si': nelle probabilita' basse.** Raccogliendo le
+istanze in classi di probabilita' dichiarata - che e' l'informazione disponibile al
+momento della scelta, e quindi l'unico raggruppamento che misuri davvero la
+calibrazione - il modello risulta **ben calibrato quando e' sicuro e fortemente
+pessimista quando e' dubbioso**:
+
+| classe dichiarata | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
+| --- | ---: | ---: | ---: | ---: |
+| 0,0 - 0,2 | 59 | **+0,2698** | 43 | +0,1427 |
+| 0,2 - 0,4 | 96 | +0,1546 | 77 | **+0,2096** |
+| 0,4 - 0,6 | 95 | +0,1424 | 84 | +0,1024 |
+| 0,6 - 0,8 | 131 | -0,0162 | 123 | +0,1260 |
+| 0,8 - 1,0 | 159 | +0,0713 | 393 | **-0,0002** |
+
+*Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`, cinque classi di
+ampiezza 0,2 sulla colonna `probabilita_attesa`.*
+
+Nella classe piu' alta di Torino, su 393 istanze, lo scarto e' di **due
+decimillesimi**: quando il modello dichiara che un viaggio riuscira' quasi
+certamente, ha ragione. Quando dichiara meno di 0,2, su Roma il viaggio riesce invece
+il 37% delle volte. E' la firma di una distribuzione la cui **coda sfavorevole e'
+troppo pesante**: il modello attribuisce troppa massa agli arrivi molto tardivi, e
+questo si vede solo quando la scadenza e' stretta, cioe' quando la probabilita'
+dichiarata e' bassa. L'assunzione di massima entropia nei bin aperti - esponenziale
+con la media misurata - e' il candidato naturale, perche' e' l'unico punto in cui il
+progetto mette una forma dove i dati non ne danno una; ma questa e' una congettura e
+non e' stata verificata, e non va scritta come se lo fosse.
+
+**Il pessimismo resta quindi un risultato senza causa accertata**, e con tre cause
+plausibili escluse. Non e' un difetto che invalida i confronti - il vantaggio del
+criterio probabilistico e' misurato sulla replica e non sulle probabilita' dichiarate,
+quindi non ne dipende - ma tocca cio' che il pianificatore puo' **promettere** a un
+utente: la probabilita' che stampa accanto a un itinerario e' conservativa, e lo e'
+tanto piu' quanto piu' e' bassa.
 
 **Che cosa questa valutazione non dice, e i limiti da tenere insieme.** Il vantaggio
-del criterio probabilistico esiste ed e' misurato, ma va letto con quattro cautele che
+del criterio probabilistico esiste ed e' misurato, ma va letto con cinque cautele che
 non si elidono a vicenda. **A margine zero non c'e'**, ed e' atteso: senza margine non
 c'e' nulla da comprare, e su Torino il segno e' persino negativo. **Su Torino e'
-piccolo** - fra zero e quattro punti sugli arrivi - e non e' stabile fra le giornate,
+piccolo** sugli arrivi - fra zero e quattro punti - e non e' stabile fra le giornate,
 mentre sulle coincidenze perse e' netto anche li'. **Poggia su quattro giornate**, tre
 su Roma dopo l'esclusione della giornata mal coperta, che sono poche e tutte della
-stessa settimana di settembre. E **riguarda una sottorete**: gli autobus di superficie
+stessa settimana di settembre. **Riguarda una sottorete**: gli autobus di superficie
 su Roma, tram e una parte degli autobus su Torino, sulle sole coppie i cui candidati
-erano interamente osservati, cioe' circa la meta'. Il risultato che regge tutte e
-quattro le cautele e' quello centrale: **su Roma, con margini fra quindici e trenta
-minuti, il criterio probabilistico perde dal 24% al 55% di coincidenze in meno del
-riferimento, e porta dieci punti percentuali o piu' di viaggi entro la scadenza, su
-tutte le giornate e con un costo mediano fra quattro e sette minuti di orario
-teorico**.
+erano interamente osservati, cioe' circa la meta'. E il **meccanismo non e' quello
+atteso**: su Roma il vantaggio sulle coincidenze perse passa interamente per la
+scelta di itinerari con meno cambi, e a parita' di cambi svanisce.
+
+Il risultato che regge tutte e cinque le cautele e' percio' piu' stretto di quanto la
+prima tabella suggerisca, e va enunciato per intero: **su Roma, con margini fra
+quindici e trenta minuti, il criterio probabilistico perde dal 24% al 55% di
+coincidenze in meno del riferimento e porta dieci punti percentuali o piu' di viaggi
+entro la scadenza, su tutte le giornate, al prezzo di quattro-sette minuti mediani di
+orario teorico - e lo ottiene soprattutto spendendo il margine per togliere
+coincidenze, non per allargarle**. Su Torino il beneficio sugli arrivi non e'
+distinguibile dal rumore fra giornate, quello sulle coincidenze perse e' netto, e a
+parita' di cambi ne sopravvive circa la meta'.
 
 # Conclusioni
 
