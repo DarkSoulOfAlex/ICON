@@ -2367,6 +2367,13 @@ Torino passa da 1,1260 a 1,1261, cioe' **un decimillesimo**. La scelta dei bordi
 cambia, e tutte le altre grandezze del capitolo si spostano al quarto o quinto
 decimale. Allargare la griglia non compra accuratezza.
 
+*I valori "prima" di questo confronto non stanno in nessun CSV, ed e' voluto: i file
+in `results/` portano lo stato corrente, e tenerne due versioni per un confronto
+transitorio moltiplicherebbe le fonti invece di chiarirle. Il confronto si rifa'
+cambiando `CANDIDATI` in `src/delays/rete.py` e rieseguendo `scripts/stima_rete.py
+--fino-a 2026-09-09`; i valori con la griglia a un milione sono quelli del commit
+`a59f0b9`.*
+
 *Secondo: su Torino lo scarto crolla.* I due gradini all'estremo passano da
 quattro millesimi e mezzo millesimo a **sei centomillesimi e cinque milionesimi**, cioe'
 da "quasi trasparenti" a trasparenti senza residuo. Era davvero un troncamento, e ora
