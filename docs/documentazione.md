@@ -1979,6 +1979,23 @@ migliore piu' della deviazione fra giornate del riferimento di quella citta' (0,
 bit su Roma, 0,0168 su Torino, misurata e non fissata); fra gli ammessi vince quello
 che confonde meno secondi.
 
+**Una soglia di quattro millesimi di bit, dopo aver detto che l'alfa non e'
+identificabile: le due cose stanno nello stesso regime?** La domanda e' legittima e
+la risposta va data prima che venga posta. Le due grandezze **non sono la stessa
+scala**: la soglia e' la deviazione della perdita **fra giornate di verifica** a
+bordi fissi, cioe' quanto lo stesso candidato oscilla cambiando il giorno su cui lo
+si misura; la piattezza descritta piu' avanti riguarda quanto la perdita si muove
+cambiando la **configurazione di alfa** a giornate fisse. Confonderle sarebbe un
+errore, ma il sospetto che la soglia sia troppo fine per essere significativa merita
+comunque una verifica, e la verifica c'e': **ripetendo l'intera scelta dei bordi con
+la griglia degli alfa allargata di due ordini di grandezza, il guadagno di ogni
+candidato si sposta al piu' di 0,00053 bit e la graduatoria resta identica in
+entrambe le citta'**. Lo scarto massimo e' un ottavo della soglia romana e un
+centoventesimo del margine che decide. La scelta dei bordi non dipende dunque dalla
+taratura, ed e' questo che chiude la questione: non che la soglia sia larga, ma che
+il margine sia sedici volte piu' grande di lei e centoventi volte piu' grande di
+quanto la taratura possa spostare.
+
 **Su questa finestra la regola si e' ridotta al criterio che doveva evitare, e va
 detto per intero.** L'esclusione ha ammesso **un solo candidato**, gli `ottili`, che
 sono esattamente quelli che il guadagno preferiva; i secondi non hanno quindi deciso

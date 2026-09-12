@@ -18,10 +18,13 @@ from src.delays.contesto import (
     LIVELLI,
     N_FASCE,
     N_GIORNI,
+    SOGLIA_COPERTURA_ORARIO,
     Codifica,
     ErroreContesto,
+    avviso_copertura,
     constatazione,
     coppie_contigue,
+    copertura_orario,
     fascia_oraria,
     tipo_di_giorno,
     ultima_revisione,
@@ -186,3 +189,31 @@ def test_una_constatazione_e_un_passaggio_gia_avvenuto():
     ritardo = np.array([60.0, 60.0, -30.0])
     feed = np.array([1100.0, 1000.0, 1000.0])
     assert constatazione(programmato, ritardo, feed).tolist() == [True, False, True]
+
+
+def test_la_copertura_conta_le_righe_con_orario():
+    prog = np.array([100.0, np.nan, 300.0, np.nan, 500.0])
+    assert copertura_orario(prog) == pytest.approx(0.6)
+
+
+def test_una_giornata_vuota_non_e_una_giornata_mal_coperta():
+    """Zero righe darebbe zero copertura, e sarebbero due problemi confusi in uno."""
+    assert copertura_orario(np.array([], dtype=np.float64)) == 1.0
+
+
+def test_sopra_la_soglia_non_si_avvisa():
+    assert avviso_copertura(0.99) == ""
+    assert avviso_copertura(SOGLIA_COPERTURA_ORARIO) == ""
+
+
+def test_sotto_la_soglia_l_avviso_dice_la_quota():
+    """L'avviso deve portare il numero: 'attenzione' senza quota non fa decidere."""
+    testo = avviso_copertura(0.395)
+    assert "ATTENZIONE" in testo
+    assert "39.5%" in testo or "39,5%" in testo
+
+
+def test_la_soglia_si_puo_spostare_senza_toccare_la_regola():
+    """Chi chiama puo' essere piu' severo: la soglia e' un parametro, non un cablaggio."""
+    assert avviso_copertura(0.95) == ""
+    assert avviso_copertura(0.95, soglia=0.99) != ""

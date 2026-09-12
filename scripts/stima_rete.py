@@ -59,8 +59,10 @@ from src.delays.contesto import (  # noqa: E402
     N_FASCE,
     SOGLIA_PUBBLICA_IL_PASSATO,
     Codifica,
+    avviso_copertura,
     constatazione,
     coppie_contigue,
+    copertura_orario,
     fascia_oraria,
     maschera_rollover,
     tipo_di_giorno,
@@ -259,6 +261,10 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
         "secondi_monte": rit[:-1][valida].astype(np.float32),
         "secondi_valle": rit[1:][valida].astype(np.float32),
         "massimo_feed_meno_programmato": massimo_feed,
+        # La copertura si calcola **prima** di qualunque filtro, sulle righe come
+        # sono state consolidate: e' una proprieta' del dato pubblicato quel giorno,
+        # non di cio' che questa funzione decide di tenere.
+        "copertura_orario": copertura_orario(prog),
     }, scartate, n
 
 
@@ -825,11 +831,13 @@ def carica(citta: str, cartella: Path, cartella_gtfs: Path, quanti_giorni: int,
             print(f"  [{citta}] {percorso.stem}: nessuna coppia utilizzabile")
             continue
         massimo = max(massimo, colonne.pop("massimo_feed_meno_programmato"))
+        copertura = colonne.pop("copertura_orario")
         grezzi_dati.aggiungi(percorso.stem, colonne)
         print(f"  [{citta}] {percorso.stem}: {colonne['secondi_valle'].size:,} coppie, "
               f"{int(colonne['constatata'].sum()):,} constatate | salti di giorno "
               f"{'scartati' if scarta_salti else 'tenuti'} {scartate:,} su {righe:,} "
-              f"righe ({scartate / max_uno(righe):.3%})", flush=True)
+              f"righe ({scartate / max_uno(righe):.3%})"
+              f"{avviso_copertura(copertura)}", flush=True)
     dati = grezzi_dati.unisci()
     if not dati:
         return None

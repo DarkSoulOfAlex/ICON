@@ -144,6 +144,55 @@ l'ordine del minuto cambierebbe il verdetto.
 """
 
 
+SOGLIA_COPERTURA_ORARIO = 0.90
+"""Quota minima di righe che trovano il proprio orario programmato in una giornata.
+
+Il ritardo e' uno scostamento da un orario programmato: una riga la cui corsa non
+esiste nell'archivio statico in vigore quel giorno non ha un ritardo calcolabile, e
+non entra ne' nella stima ne' nel backtesting. Che potesse succedere su scala
+massiccia non era stato previsto, e quando e' successo la conseguenza si e'
+manifestata altrove e senza spiegazione: una giornata romana che contribuiva sette
+coppie rigiocabili invece di trenta, attribuita per giorni a un consolidamento
+parziale che non c'era.
+
+Non e' una taratura ma un confine. Sui dati raccolti ogni giornata sta **sopra il
+97%** oppure **sotto il 40%**, e in mezzo non c'e' nulla: il 31 agosto e il 7
+settembre, gli unici due lunedi' della finestra, Roma riconosce il 43,5% e il 46,6%
+dei ``trip_id`` del proprio feed nell'archivio che ha pubblicato quel giorno. La
+soglia separa due popolazioni che i dati tengono gia' separate.
+
+**Chi la supera avvisa e non scarta.** Escludere in automatico cambierebbe in
+silenzio il campione di stima, e quelle due giornate sono dentro la finestra su cui
+il modello e' stato stimato: toglierle e' una decisione da prendere guardando i
+numeri, non un effetto collaterale di un controllo. Cio' che mancava non era
+l'esclusione ma la visibilita'.
+"""
+
+
+def copertura_orario(orario_programmato: np.ndarray) -> float:
+    """Quota di righe che hanno trovato il proprio orario programmato.
+
+    Un'array vuoto da' 1.0 e non 0.0: una giornata senza righe non e' una giornata
+    mal coperta, e segnalarla come tale confonderebbe due problemi diversi.
+    """
+    if orario_programmato.size == 0:
+        return 1.0
+    return float(np.isfinite(orario_programmato).mean())
+
+
+def avviso_copertura(quota: float, soglia: float = SOGLIA_COPERTURA_ORARIO) -> str:
+    """Il testo dell'avviso da stampare, o stringa vuota se la copertura basta.
+
+    Restituisce testo invece di stampare perche' chi chiama sa dove metterlo - in
+    coda alla propria riga di riepilogo - e perche' cosi' la regola si collauda
+    senza catturare l'uscita a schermo.
+    """
+    if quota >= soglia:
+        return ""
+    return (f"  <== ATTENZIONE: solo il {quota:.1%} delle righe ha un orario "
+            f"programmato, la giornata e' in gran parte non utilizzabile")
+
+
 def constatazione(orario_programmato: np.ndarray, ritardo: np.ndarray,
                   istante_feed: np.ndarray) -> np.ndarray:
     """Il passaggio era gia' avvenuto quando il feed lo ha pubblicato?

@@ -50,6 +50,7 @@ import pandas as pd                                         # noqa: E402
 import pyarrow.parquet as pq                                # noqa: E402
 
 from src.delays.bayesiano import Forma, ModelloBayesiano     # noqa: E402
+from src.delays.contesto import avviso_copertura, copertura_orario  # noqa: E402
 from src.delays.interfaccia import assicura_utilizzabile     # noqa: E402
 from src.eval.replica import replica, rigiocabile            # noqa: E402
 from src.graph.search import cerca_frontiera_pareto          # noqa: E402
@@ -123,7 +124,8 @@ class Esito:
     candidati: int
 
 
-def ritardi_osservati(percorso: Path, giornata: str) -> dict[tuple[str, str], int]:
+def ritardi_osservati(percorso: Path,
+                      giornata: str) -> tuple[dict[tuple[str, str], int], float]:
     """Il ritardo dell'ultima revisione di ogni passaggio, per (corsa, fermata).
 
     Si tiene l'ultima revisione, come nella stima: e' quella che il viaggiatore
@@ -131,12 +133,19 @@ def ritardi_osservati(percorso: Path, giornata: str) -> dict[tuple[str, str], in
     confrontabile col modello, addestrato sulle stesse righe.
     """
     tabella = pq.read_table(percorso, columns=["service_date", "trip_id", "stop_id",
-                                               "ritardo_secondi", "timestamp_feed"])
+                                               "ritardo_secondi", "timestamp_feed",
+                                               "orario_programmato"])
     dati = tabella.to_pandas()
     del tabella
     dati = dati[dati["service_date"] == giornata]
     if dati.empty:
-        return {}
+        return {}, 1.0
+    # Una giornata in cui gran parte delle corse non esiste nell'archivio in vigore
+    # produce poche tratte osservate e quindi poche coppie rigiocabili: e' successo
+    # su Roma il 31 agosto e il 7 settembre, e la conseguenza si e' manifestata
+    # altrove e senza spiegazione. Si misura qui e si dichiara, non si esclude.
+    copertura = copertura_orario(
+        dati["orario_programmato"].to_numpy(dtype="float64", na_value=np.nan))
     # Un ritardo assente non e' uno zero: e' una riga di cui non si sa nulla, e
     # tenerla convertendola dichiarerebbe puntuale cio' che non si e' visto. Si
     # scarta, con la stessa regola per cui una tratta non osservata ferma la replica.
@@ -144,12 +153,12 @@ def ritardi_osservati(percorso: Path, giornata: str) -> dict[tuple[str, str], in
     noti = np.isfinite(ritardo.to_numpy(dtype="float64", na_value=np.nan))
     dati = dati[noti]
     if dati.empty:
-        return {}
+        return {}, copertura
     dati = dati.sort_values("timestamp_feed").drop_duplicates(
         subset=["trip_id", "stop_id"], keep="last")
     return {(str(t), str(s)): int(r) for t, s, r in
             zip(dati["trip_id"], dati["stop_id"],
-                pd.to_numeric(dati["ritardo_secondi"]))}
+                pd.to_numeric(dati["ritardo_secondi"]))}, copertura
 
 
 def archivio_per(citta: str, giornata: str) -> Path:
@@ -477,8 +486,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             # gia' fatto vale ore, e perderlo per un dato malformato in fondo alla
             # griglia significherebbe rifare tutto per scoprire lo stesso guasto.
             try:
-                ritardo_di = ritardi_osservati(cartella / f"{giornata}.parquet",
-                                               giornata)
+                ritardo_di, copertura = ritardi_osservati(
+                    cartella / f"{giornata}.parquet", giornata)
             except Exception as errore:                      # noqa: BLE001
                 print(f"      {giornata}: osservazioni non leggibili ({errore})")
                 continue
@@ -516,7 +525,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 pd.DataFrame(nuove).to_csv(dettaglio, mode="a", index=False,
                                            header=not dettaglio.is_file())
             print(f"      {giornata}: {len(istanze)} coppie rigiocabili su "
-                  f"{esaminate} esaminate ({quota:.0%}), {quante} righe", flush=True)
+                  f"{esaminate} esaminate ({quota:.0%}), {quante} righe"
+                  f"{avviso_copertura(copertura)}", flush=True)
 
         for etichetta, (modello, _) in modelli.items():
             d = modello.diagnostica()

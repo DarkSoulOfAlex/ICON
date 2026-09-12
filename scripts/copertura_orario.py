@@ -46,17 +46,10 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import pyarrow.parquet as pq  # noqa: E402
 
+from src.delays.contesto import SOGLIA_COPERTURA_ORARIO  # noqa: E402
 from src.gtfs.indice_statico import carica_indice, versione_valida  # noqa: E402
 
 CITTA = ("roma", "torino")
-SOGLIA_SOSPETTA = 0.90
-"""Sotto questa quota di righe con orario la giornata va guardata, non usata.
-
-Non e' una taratura: sui dati raccolti tutte le giornate stanno sopra il 97% oppure
-sotto il 40%, e in mezzo non c'e' nulla. La soglia separa due popolazioni che i dati
-tengono gia' separate, e serve a far comparire un avviso invece di lasciare la
-differenza dentro una media.
-"""
 
 
 def trip_dell_archivio(percorso: Path) -> set[str]:
@@ -129,7 +122,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             r["finestra"] = finestra
             righe.append(r)
             avviso = ("   <== la maggior parte delle corse non e' nell'archivio"
-                      if r["quota_con_orario"] < SOGLIA_SOSPETTA else "")
+                      if r["quota_con_orario"] < SOGLIA_COPERTURA_ORARIO else "")
             print(f"  {r['giornata']:<12} {r['righe']:>12,} "
                   f"{r['quota_con_orario']:>10.1%} {r['trip_nel_feed']:>14,} "
                   f"{r['quota_trip_riconosciuti']:>12.1%}{avviso}")
