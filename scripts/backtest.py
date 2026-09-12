@@ -122,6 +122,16 @@ class Esito:
     recuperi: int
     partenza_persa: bool
     candidati: int
+    coppie_esaminate: int
+    """Coppie OD con almeno due candidati sull'orario, prima del filtro sul dato."""
+    coppie_scartate: int
+    """Quante di quelle sono cadute perche' i candidati non erano interamente
+    osservati. Il rapporto fra le due dice su quale parte della rete il risultato
+    valga, ed era finora un numero che esisteva solo nel log dell'esecuzione."""
+    copertura_orario: float
+    """Quota di righe della giornata che hanno trovato il proprio orario
+    programmato: una giornata mal coperta produce poche coppie rigiocabili, ed e'
+    successo (voce 64)."""
 
 
 def ritardi_osservati(percorso: Path,
@@ -263,6 +273,9 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
                 finestra=provenienza["finestra"],
                 coppie_richieste=provenienza["coppie_richieste"],
                 seme=provenienza["seme"],
+                coppie_esaminate=provenienza["coppie_esaminate"],
+                coppie_scartate=provenienza["coppie_scartate"],
+                copertura_orario=provenienza["copertura_orario"],
                 origine=origine, destinazione=destinazione, margine=margine,
                 strategia=nome,
                 probabilita_attesa=float(probabilita[candidati.index(candidato)]),
@@ -390,6 +403,23 @@ def riepiloga(righe: list[dict], scarta_magre: bool = True) -> pd.DataFrame:
                          istanze_divergenti=("istanze", "sum"))
                     .reset_index())
         riepilogo = riepilogo.merge(aggiunta, on=chiave, how="left")
+    if "coppie_esaminate" in tabella.columns:
+        # Una riga per giornata, poi la media fra giornate: le colonne sono costanti
+        # dentro una giornata, e mediarle sulle istanze le peserebbe per quante
+        # istanze quella giornata ha prodotto, che e' il contrario di cio' che serve.
+        per_giorno = (tabella.groupby(["citta", "bordi", "giornata"])
+                      .agg(esaminate=("coppie_esaminate", "first"),
+                           scartate=("coppie_scartate", "first"),
+                           copertura=("copertura_orario", "first"))
+                      .reset_index())
+        per_giorno["quota_rigiocabili"] = (
+            1 - per_giorno["scartate"] / per_giorno["esaminate"].clip(lower=1))
+        quote = (per_giorno.groupby(["citta", "bordi"])
+                 .agg(quota_rigiocabili=("quota_rigiocabili", "mean"),
+                      deviazione_rigiocabili=("quota_rigiocabili", "std"),
+                      copertura_orario_minima=("copertura", "min"))
+                 .reset_index())
+        riepilogo = riepilogo.merge(quote, on=["citta", "bordi"], how="left")
     return riepilogo
 
 
@@ -509,6 +539,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                       f"({esaminate} esaminate)")
                 continue
             quota = 1 - scartate / max(1, esaminate)
+            # La provenienza porta gia' finestra, coppie richieste e seme: qui si
+            # aggiunge cio' che dice **su quale parte della rete** il numero valga.
+            provenienza["coppie_esaminate"] = esaminate
+            provenienza["coppie_scartate"] = scartate
+            provenienza["copertura_orario"] = copertura
             quante, nuove = 0, []
             for etichetta, (modello, _) in modelli.items():
                 if (nome_citta, etichetta, giornata) in fatte:
