@@ -64,12 +64,41 @@ def trip_dell_archivio(percorso: Path) -> set[str]:
     return set(trips["trip_id"])
 
 
+def linee_per_tipo(percorso: Path) -> pd.DataFrame:
+    """Linea e tipo di veicolo dichiarati dall'archivio, da ``routes.txt``."""
+    with zipfile.ZipFile(percorso) as z:
+        return pd.read_csv(io.BytesIO(z.read("routes.txt")),
+                           usecols=["route_id", "route_type"], dtype=str)
+
+
+def copertura_modale(routes: pd.DataFrame, osservate: set[str]) -> str:
+    """Quante linee di ciascun tipo di veicolo compaiono nel feed, in forma compatta.
+
+    E' la misura di un limite dichiarato e mai quantificato: il real-time non copre
+    necessariamente tutta la rete che l'orario descrive. Su Roma, per esempio, il
+    feed porta i soli autobus, e ogni affermazione sul pianificatore romano vale per
+    quelli e non per la metropolitana - che nell'orario c'e' e nel tempo reale no.
+
+    La forma e' ``tipo:visti/dichiarati`` separati da spazi, perche' il numero di
+    tipi varia con la citta' e una colonna per tipo darebbe una tabella quasi tutta
+    vuota. I codici sono quelli di ``route_type`` della specifica GTFS: 0 tram,
+    1 metropolitana, 3 autobus, 7 funicolare.
+    """
+    presenti = routes.assign(visto=routes["route_id"].isin(osservate))
+    pezzi = []
+    for tipo, blocco in presenti.groupby("route_type", sort=True):
+        pezzi.append(f"{tipo}:{int(blocco['visto'].sum())}/{len(blocco)}")
+    return " ".join(pezzi)
+
+
 def esamina(citta: str, percorso: Path, cartella_gtfs: Path,
             indice: dict) -> dict | None:
     giornata = percorso.stem
-    tabella = pq.read_table(percorso, columns=["trip_id", "orario_programmato"])
+    tabella = pq.read_table(percorso, columns=["trip_id", "orario_programmato",
+                                               "route_id"])
     prog = tabella["orario_programmato"].to_numpy(zero_copy_only=False).astype("float64")
     osservati = set(tabella["trip_id"].to_pylist())
+    linee_viste = set(tabella["route_id"].to_pylist())
     con_orario = int(np.isfinite(prog).sum())
 
     versione = versione_valida(indice, giornata)
@@ -78,6 +107,7 @@ def esamina(citta: str, percorso: Path, cartella_gtfs: Path,
     nome = versione["file"]
     statici = trip_dell_archivio(cartella_gtfs / nome)
     comuni = len(osservati & statici)
+    routes = linee_per_tipo(cartella_gtfs / nome)
     return {
         "citta": citta, "giornata": giornata, "archivio": nome,
         "righe": int(prog.size), "righe_con_orario": con_orario,
@@ -85,6 +115,9 @@ def esamina(citta: str, percorso: Path, cartella_gtfs: Path,
         "trip_nel_feed": len(osservati), "trip_nell_archivio": len(statici),
         "trip_in_comune": comuni,
         "quota_trip_riconosciuti": comuni / max(1, len(osservati)),
+        "linee_nel_feed": len(linee_viste),
+        "linee_nell_archivio": len(routes),
+        "copertura_per_tipo": copertura_modale(routes, linee_viste),
     }
 
 
@@ -113,7 +146,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         finestra = giorni[-1].stem
         print(f"\n  === {citta} ({len(giorni)} giornate, fino al {finestra}) ===")
         print(f"  {'giornata':<12} {'righe':>12} {'con orario':>11} "
-              f"{'trip nel feed':>14} {'riconosciuti':>13}")
+              f"{'trip nel feed':>14} {'riconosciuti':>13}  copertura per tipo")
         for percorso in giorni:
             r = esamina(citta, percorso, cartella_gtfs, indice)
             if r is None:
@@ -125,7 +158,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                       if r["quota_con_orario"] < SOGLIA_COPERTURA_ORARIO else "")
             print(f"  {r['giornata']:<12} {r['righe']:>12,} "
                   f"{r['quota_con_orario']:>10.1%} {r['trip_nel_feed']:>14,} "
-                  f"{r['quota_trip_riconosciuti']:>12.1%}{avviso}")
+                  f"{r['quota_trip_riconosciuti']:>12.1%}  "
+                  f"{r['copertura_per_tipo']}{avviso}")
 
     if not righe:
         print("nessuna giornata utilizzabile")
@@ -139,6 +173,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     print("Una riga senza orario programmato non ha un ritardo, e una giornata che")
     print("ne ha molte contribuisce poche coppie rigiocabili al backtesting: non e'")
     print("un problema della raccolta ma dell'orario pubblicato quel giorno.")
+    print()
+    print("La copertura per tipo dice su quale rete i risultati valgano davvero:")
+    print("un tipo di veicolo che l'orario dichiara e il feed non porta non e' mai")
+    print("stato osservato, e nessuna affermazione sperimentale lo riguarda.")
     return 0
 
 
