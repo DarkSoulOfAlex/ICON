@@ -3341,22 +3341,39 @@ strategie scelgono itinerari con lo **stesso numero di cambi**:
 *Fonte: `results/backtest.csv`, bordi `ottili`, sole istanze in cui le due strategie
 scelgono itinerari con orario di arrivo teorico diverso; giornata magra esclusa.*
 
-La risposta e' diversa nelle due citta', e va detta cosi'. **Su Roma il vantaggio
-sulle coincidenze perse sparisce del tutto a parita' di cambi** - anzi cambia segno di
-tre centesimi, su trentotto istanze - quindi li' il meccanismo e' **interamente** la
-semplificazione dell'itinerario: il robusto non sceglie coincidenze migliori, sceglie
-itinerari che ne hanno meno. Su Torino il vantaggio si riduce di oltre la meta' ma
-**resta netto**, -0,2941 su cinquantuno istanze: li' una parte viene dalla
-semplificazione e una parte dal scegliere meglio a parita' di struttura.
+Il campione a parita' di cambi e' pero' piccolo - trentotto istanze su Roma e
+cinquantuno su Torino, cioe' cinque-undici per ciascuno dei sei margini - e riportarlo
+margine per margine darebbe celle che il caso muove a piacere. Aggregato in due soli
+gruppi di margini, che e' quanto il campione sostiene:
+
+| citta' | margini | istanze | perse, veloce | perse, robusto | differenza |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Roma | 0-10 min | 18 | 0,7222 | 0,7222 | **0,0000** |
+| Roma | 15-30 min | 20 | 0,3500 | 0,4000 | **+0,0500** |
+| Torino | 0-10 min | 19 | 0,3684 | 0,1053 | **-0,2632** |
+| Torino | 15-30 min | 32 | 0,4375 | 0,1250 | **-0,3125** |
+
+*Fonte: come sopra, sole istanze divergenti con lo stesso numero di cambi; i margini
+sono aggregati perche' le celle singole contengono da cinque a undici istanze.*
+
+La risposta e' diversa nelle due citta'. **Su Roma il vantaggio sulle coincidenze
+perse sparisce del tutto a parita' di cambi**, e in entrambi i gruppi di margini:
+zero esatto sotto i dieci minuti, cinque centesimi a sfavore sopra. Li' il meccanismo
+e' **interamente** la semplificazione dell'itinerario - il robusto non sceglie
+coincidenze migliori, sceglie itinerari che ne hanno meno. Su Torino il vantaggio si
+riduce ma **resta netto e coerente fra i due gruppi**, -0,26 e -0,31: li' una parte
+viene dalla semplificazione e una parte dallo scegliere meglio a parita' di struttura.
 
 Togliere un cambio e' un modo legittimo di essere robusti, ed e' esattamente cio' che
 un viaggiatore disposto ad arrivare piu' tardi comprerebbe; ma e' un meccanismo
 **diverso** da quello che il progetto si proponeva di dimostrare, che era scegliere
-coincidenze con margini piu' larghi. Sugli arrivi entro la scadenza, a parita' di
-cambi, il vantaggio resta positivo in entrambe le citta' - **+0,0263 su Roma e +0,0784
-su Torino** - ma su campioni di trentotto e cinquantuno istanze, troppo piccoli per
-reggere da soli una conclusione. Va letto come un indizio che qualcosa oltre la
-semplificazione ci sia, non come la sua dimostrazione.
+coincidenze con margini piu' larghi. Il nesso fra le due tabelle e' questo: il
+margine non viene speso per allargare le coincidenze che ci sono, ma per **eliminarne
+qualcuna**, e su Roma e' l'unico canale per cui passa il vantaggio. Sugli arrivi
+entro la scadenza, sempre a parita' di cambi, il vantaggio resta positivo in entrambe
+le citta' e in entrambi i gruppi di margini - da +0,05 a +0,09 - ma su diciotto-trenta
+istanze per cella: e' un indizio che qualcosa oltre la semplificazione ci sia, non la
+sua dimostrazione.
 
 **Dove le due strategie divergono davvero.** Le tabelle sopra mediano anche sulle
 istanze in cui le due scelgono lo stesso itinerario, dove la differenza e' nulla per
@@ -3507,8 +3524,28 @@ catena**, cioe' col numero di cambi. Non cresce:
 istanze.*
 
 Su Torino il divario e' piatto - fra +0,07 e +0,08 da uno a tre cambi - e su Roma non
-e' monotono. L'ipotesi non e' sostenuta: qualunque cosa produca il pessimismo, non
-scala con la lunghezza della catena composta.
+e' monotono. Il confronto grezzo e' pero' viziato: le catene lunghe ricevono
+probabilita' dichiarate piu' basse, e li' il divario e' gia' grande per altre ragioni.
+Ripetendolo **dentro tre bande di probabilita' dichiarata**, cioe' a parita' di quanto
+il modello si sbilanci, la correlazione fra numero di cambi e divario e':
+
+| banda di probabilita' | Roma | Torino |
+| --- | ---: | ---: |
+| sotto 0,35 | +0,271 (p = 0,002, n = 131) | +0,007 (p = 0,95, n = 98) |
+| 0,35 - 0,65 | +0,100 (p = 0,24, n = 143) | **-0,311** (p < 0,001, n = 155) |
+| sopra 0,65 | -0,012 (p = 0,85, n = 266) | **-0,162** (p < 0,001, n = 467) |
+
+*Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`; correlazione di
+Pearson fra `cambi` e lo scarto `entro_scadenza - probabilita_attesa`.*
+
+In una sola cella su sei il divario cresce col numero di cambi, e in due **cala in
+modo significativo**. L'ipotesi non e' quindi soltanto non sostenuta: e'
+**contraddetta**. Qualunque cosa produca il pessimismo, non si accumula lungo la
+catena, e il costo dell'approssimazione markoviana - reale e dichiarato nell'argomento
+precedente - non e' questo. E' un esito che vale la pena scrivere perche' era la
+spiegazione piu' attraente: avrebbe collegato una decisione di modellazione al suo
+prezzo a valle, ed era proprio per questo che andava messa alla prova invece che
+adottata.
 
 **Terza ipotesi: la selezione. Esclusa da un controllo diretto.** Se il divario venisse
 dal fatto che il criterio sceglie il proprio massimo, la strategia di riferimento -
@@ -3559,12 +3596,51 @@ con la media misurata - e' il candidato naturale, perche' e' l'unico punto in cu
 progetto mette una forma dove i dati non ne danno una; ma questa e' una congettura e
 non e' stata verificata, e non va scritta come se lo fosse.
 
-**Il pessimismo resta quindi un risultato senza causa accertata**, e con tre cause
-plausibili escluse. Non e' un difetto che invalida i confronti - il vantaggio del
-criterio probabilistico e' misurato sulla replica e non sulle probabilita' dichiarate,
-quindi non ne dipende - ma tocca cio' che il pianificatore puo' **promettere** a un
-utente: la probabilita' che stampa accanto a un itinerario e' conservativa, e lo e'
-tanto piu' quanto piu' e' bassa.
+**L'errore e' sistematico, e per questo si puo' scontare.** Un errore sempre nello
+stesso verso e' piu' utile di uno piccolo e imprevedibile, perche' una correzione a un
+parametro solo puo' toglierlo. Sostituendo alla probabilita' dichiarata `p` la
+quantita' `p^gamma` e cercando il `gamma` che minimizza lo scarto medio fra classi:
+
+| | scarto medio prima | gamma migliore | scarto medio dopo |
+| --- | ---: | ---: | ---: |
+| Roma | 0,1070 | 0,68 | **0,0304** |
+| Torino | 0,0645 | 0,60 | **0,0174** |
+| insieme | 0,0792 | 0,68 | **0,0178** |
+
+*Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`; scarto medio fra
+probabilita' media e frequenza osservata su cinque classi di ampiezza 0,2, pesato per
+numerosita'.*
+
+Un solo esponente porta il divario **sotto i tre punti** su entrambe le citta', da
+dieci e sei. E c'e' di piu': il `gamma` che pareggia le medie vale **0,64 su Roma e
+0,65 su Torino**, stimati indipendentemente su due reti, due produttori di dati e due
+popolazioni diverse. Un parametro che coincide alla seconda cifra su due campioni
+indipendenti non e' un accidente del campione: e' il segno che il difetto sta nel
+**metodo di composizione**, uguale nelle due citta', e non nei dati di ciascuna.
+
+Applicando `gamma = 0,65` a entrambe, il residuo resta sotto i cinque punti in sette
+classi su nove; le due eccezioni sono la classe piu' bassa di Roma (+0,18 su
+ventiquattro istanze) e la quarta (-0,06). La correzione **non e' stata adottata**, e
+per una ragione di metodo: e' stata stimata sulle stesse istanze su cui la si
+misurerebbe, quindi il suo effetto qui e' per costruzione ottimistico, e adottarla
+richiederebbe di tararla su giornate diverse da quelle di verifica. E' registrata come
+estensione, non come risultato.
+
+**Che cosa resta accertato, e che cosa no.** Accertato: il modello e' pessimista di
+sei-dieci punti in media e fino a ventisette nelle classi basse; il segno e' costante;
+il difetto non viene dal tetto sui recuperi, non viene dalla selezione, non si accumula
+lungo la catena; ed e' riassumibile in un esponente che le due citta' concordano nel
+fissare a 0,65. Non accertato: da dove venga. L'unico candidato che sopravvive alle tre
+prove e' l'assunzione di **massima entropia dentro i bin**, perche' e' applicata a ogni
+tratta indipendentemente dalla lunghezza della catena e quindi non produrrebbe la
+crescita che i dati escludono - ma non e' stata messa alla prova, e va letta come
+congettura.
+
+Il difetto non invalida i confronti fra strategie: il vantaggio del criterio
+probabilistico e' misurato sulla replica e non sulle probabilita' dichiarate, quindi
+non ne dipende. Tocca cio' che il pianificatore puo' **promettere** a un utente: la
+probabilita' stampata accanto a un itinerario e' conservativa, e lo e' tanto piu'
+quanto piu' e' bassa.
 
 **Che cosa questa valutazione non dice, e i limiti da tenere insieme.** Il vantaggio
 del criterio probabilistico esiste ed e' misurato, ma va letto con cinque cautele che
