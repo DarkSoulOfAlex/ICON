@@ -2077,8 +2077,49 @@ meno passaggi con un ritardo calcolabile e quindi meno coppie rigiocabili. Sulle
 quattro giornate che il backtesting usa il legame e' senza eccezioni - l'unica con la
 copertura crollata e' l'unica con le coppie crollate - e quattro giornate sarebbero
 poche per affermarlo, se la catena causale non fosse nota passo per passo. La misura
-entra fra i controlli permanenti: una giornata sotto il 90% di righe con orario va
-guardata **prima** di essere usata, non dopo.
+entra fra i controlli permanenti: `SOGLIA_COPERTURA_ORARIO` vale 0,90 e vive in
+`src/delays/contesto.py`, e sia la stima sia il backtesting stampano un avviso a
+ogni giornata che vi scenda sotto. Il controllo **avvisa e non scarta**, per una
+ragione che e' anche il limite dichiarato qui sotto.
+
+**Le due giornate mal coperte sono dentro i campioni di questo capitolo, e non sono
+state tolte: e' il limite piu' serio dei dati qui usati.** Le due cadono in due
+insiemi diversi, e le conseguenze non sono le stesse.
+
+| | insieme | coppie constatate | quota del proprio insieme |
+| --- | --- | ---: | ---: |
+| Roma, 2026-08-31 | addestramento | 62.403 | 5,3% delle 1.169.608 di stima |
+| **Roma, 2026-09-07** | **verifica** | 117.065 | **21,5% delle 543.922 di verifica** |
+
+*Fonte: conteggi per giornata stampati da `scripts/stima_rete.py --fino-a
+2026-09-09`; i totali coincidono con `coppie_stima` di `results/stima_rete.csv` e
+con `coppie` di `results/correlazione_rete.csv`.*
+
+Il 31 agosto pesa un ventesimo del campione di stima: sposta la matrice di poco, e
+nella direzione di chi ha meno dati, cioe' verso i livelli piu' grossolani della
+scala. Il 7 settembre e' piu' delicato, perche' sta **nella verifica**: e' una delle
+quattro giornate su cui perdita, calibrazione e correlazione sono misurate, e nella
+media fra giornate pesa un quarto a prescindere dalla sua numerosita'. La sua
+popolazione e' per giunta **distorta**, non solo ridotta: il 30% delle sue coppie
+supera il criterio di constatazione contro il 14-20% delle altre giornate, perche' le
+righe sopravvissute al join sono per costruzione quelle pubblicate piu' in la' nel
+passato. Le medie del capitolo contengono quindi, per un quarto, una giornata la cui
+popolazione non e' la stessa delle altre tre.
+
+Quanto questo sposti i numeri **non e' misurato**: `results/stima_rete.csv` riporta
+media e deviazione fra giornate ma non le quattro perdite separate, quindi la
+giornata non e' isolabile dai file esistenti. E' il controllo che manca, e si fa
+aggiungendo le perdite per giornata al CSV e rieseguendo.
+
+Non le si toglie ora, per due ragioni. La prima e' che le righe sopravvissute non
+sono **sbagliate**: hanno trovato il proprio orario e il loro ritardo e' calcolato
+come sempre; sono poche e selezionate, non false. La seconda e' metodologica: la
+copertura e' stata scoperta **dopo** che tutti i numeri del capitolo erano stati
+misurati, e ritoccare il campione dopo aver visto i risultati e' esattamente il
+difetto che la separazione fra banco, taratura e verifica esiste per impedire. La
+correzione giusta e' escluderle con una regola fissata **prima**, alla prossima
+raccolta, e rimisurare tutto; l'attesa e' che la stima si muova poco e la verifica di
+piu', ma finche' non e' misurato resta un'attesa e non un risultato.
 
 **Le constatazioni vengono prima nella scala, e non e' una ponderazione.** Su Roma il
 **22,70%** delle transizioni fra previsioni consecutive e' l'identita' al secondo,
