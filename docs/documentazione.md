@@ -44,9 +44,27 @@ disposizione.
 
 La domanda di ricerca e' percio' questa: **un itinerario scelto massimizzando
 P(arrivo <= T) perde meno coincidenze di un itinerario scelto minimizzando
-l'orario teorico, a parita' di tempo di viaggio nominale?** Il progetto e'
-costruito su due citta' con reti e caratteristiche diverse, Roma e Torino, i cui
-dati aperti sono raccolti in continuo da un sistema installato per lo scopo.
+l'orario teorico?** Il progetto e' costruito su due citta' con reti e
+caratteristiche diverse, Roma e Torino, i cui dati aperti sono raccolti in continuo
+da un sistema installato per lo scopo.
+
+**Una clausola della formulazione iniziale e' caduta, ed e' bene dirlo subito.** La
+domanda era stata posta "a parita' di tempo di viaggio nominale", e quella clausola
+**non e' soddisfacibile**, per una ragione che non dipende dai dati ne' dal metodo:
+la strategia di riferimento e' definita come quella che minimizza l'orario teorico
+di arrivo, quindi qualunque altro itinerario arriva nominalmente **dopo**. Un
+insieme di itinerari a pari tempo nominale fra cui scegliere semplicemente non
+esiste, e chiederlo al confronto significa chiedergli un pasto gratis. La misura lo
+conferma senza eccezioni: nelle 337 istanze in cui le due strategie scelgono
+itinerari diversi, il robusto e' **sempre** nominalmente piu' lento.
+
+Cio' che il progetto misura davvero e' percio' uno **scambio**: il criterio
+probabilistico compra affidabilita' pagando tempo nominale, entro il margine che il
+viaggiatore ha dichiarato accettando una scadenza. La domanda diventa allora
+**quanto ne paghi, e se lo scambio convenga**, ed e' una domanda piu' forte della
+prima perche' il prezzo e' misurabile e il lettore puo' giudicarlo invece di doverlo
+credere. Il prezzo e il beneficio sono riportati fianco a fianco nella sezione sul
+backtesting.
 
 # Sommario
 
@@ -101,7 +119,8 @@ leggibili anche separatamente.
 grafo statico - la base di conoscenza, la costruzione del grafo, la ricerca, il
 soddisfacimento di vincoli - sono calcolate sull'archivio GTFS in vigore il **26
 agosto 2026**, e ogni file in `results/` ne porta la colonna `archivio`. I tempi di
-esecuzione vengono tutti dalla stessa macchina, **Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7**, e i CSV
+esecuzione vengono tutti dalla stessa macchina, **Intel64 Family 6 Model 158
+Stepping 10 | Windows 11 | Python 3.14.7**, e i CSV
 che li riportano ne portano la colonna `macchina`: un tempo senza l'hardware su cui
 e' stato preso non e' confrontabile con nessun altro, ed e' il motivo per cui le
 due colonne esistono invece di essere sottintese. Le misure sui dati raccolti sul
@@ -595,7 +614,16 @@ tempi la differenza e' pratica prima che teorica: 0,910 secondi contro 5,707 per
 istanziare la stessa dimensione di problema. I trasbordi derivati crescono anche
 qui quasi linearmente, 4.498 e poi 9.542.
 
-![**Figura 1.** Costo della base di conoscenza al crescere del numero di fermate, in scala doppio logaritmica, per le due citta'. I pannelli (a), (b) e (c) riportano rispettivamente gli atomi generati, il tempo di grounding e il tempo di solving, come media su tre ripetizioni indipendenti con barre di deviazione standard; sugli atomi le barre sono nulle per costruzione, trattandosi di una grandezza deterministica. Il pannello (d) confronta la variante con indice spaziale, a linea continua, con quella che confronta tutte le coppie di fermate, a linea tratteggiata, eseguita solo fino a quattrocento fermate perche' oltre quella soglia il suo costo quadratico non aggiunge informazione. Dati grezzi in `results/complessita_kb.csv`.](../results/complessita_kb.png)
+![**Figura 1.** Costo della base di conoscenza al crescere del numero di fermate, in
+scala doppio logaritmica, per le due citta'. I pannelli (a), (b) e (c) riportano
+rispettivamente gli atomi generati, il tempo di grounding e il tempo di solving,
+come media su tre ripetizioni indipendenti con barre di deviazione standard; sugli
+atomi le barre sono nulle per costruzione, trattandosi di una grandezza
+deterministica. Il pannello (d) confronta la variante con indice spaziale, a linea
+continua, con quella che confronta tutte le coppie di fermate, a linea tratteggiata,
+eseguita solo fino a quattrocento fermate perche' oltre quella soglia il suo costo
+quadratico non aggiunge informazione. Dati grezzi in
+`results/complessita_kb.csv`.](../results/complessita_kb.png)
 
 **Da dove nasce la crescita.** La pendenza delle curve in scala doppio logaritmica
 e' l'esponente di crescita. Su tutto l'intervallo misurato gli atomi crescono come
@@ -1174,7 +1202,19 @@ ricerca del progetto: se l'itinerario ottimo fosse unico, massimizzare la
 probabilita' di arrivo entro un orario si ridurrebbe a un problema di
 riordinamento, e non ci sarebbe nulla da scegliere.
 
-![**Figura 2.** Costo del grafo ed effetto dell'euristica, su cinquanta coppie origine-destinazione per citta' con partenza alle 08:00 e finestra di 120 minuti. Il pannello (a) riporta la crescita del grafo con l'orizzonte temporale, in scala doppio logaritmica. Il pannello (b) confronta gli stati espansi da A* ammissibile con quelli di Dijkstra sulle stesse interrogazioni: la nuvola aderisce alla bisettrice, che e' la rappresentazione visiva del risparmio quasi nullo. Il pannello (c) confronta la distribuzione del risparmio per le due varianti; **le scatole tratteggiate corrispondono all'euristica NON ammissibile**, che non garantisce l'ottimo e non produce alcun risultato ufficiale del progetto. Il pannello (d) mostra il costo dei cambi nello stato: la variante proiettata espande circa un terzo degli stati, ma sbaglia l'itinerario su nove interrogazioni su 79. Dati grezzi in `results/ricerca_astar.csv`, `results/grafo_finestra.csv` e `results/velocita_archi.csv`.](../results/ricerca_astar.png)
+![**Figura 2.** Costo del grafo ed effetto dell'euristica, su cinquanta coppie
+origine-destinazione per citta' con partenza alle 08:00 e finestra di 120 minuti. Il
+pannello (a) riporta la crescita del grafo con l'orizzonte temporale, in scala
+doppio logaritmica. Il pannello (b) confronta gli stati espansi da A* ammissibile
+con quelli di Dijkstra sulle stesse interrogazioni: la nuvola aderisce alla
+bisettrice, che e' la rappresentazione visiva del risparmio quasi nullo. Il pannello
+(c) confronta la distribuzione del risparmio per le due varianti; **le scatole
+tratteggiate corrispondono all'euristica NON ammissibile**, che non garantisce
+l'ottimo e non produce alcun risultato ufficiale del progetto. Il pannello (d)
+mostra il costo dei cambi nello stato: la variante proiettata espande circa un terzo
+degli stati, ma sbaglia l'itinerario su nove interrogazioni su 79. Dati grezzi in
+`results/ricerca_astar.csv`, `results/grafo_finestra.csv` e
+`results/velocita_archi.csv`.](../results/ricerca_astar.png)
 
 Nessuno dei risultati riportati in questa sezione dipende da un modello dei
 ritardi: sono tutti calcolati sull'orario programmato pubblicato dalle due
@@ -1200,6 +1240,35 @@ gli itinerari non dominati prodotti dalla ricerca multi-criterio descritta
 nell'argomento precedente — mediamente fra cinque e sei per ogni coppia
 origine-destinazione — e come modello dei ritardi una distribuzione condizionata
 alla linea, alla posizione lungo la corsa e al ritardo osservato a monte.
+
+**Su quale rete valgano i risultati di questo argomento, e da dove cambia.** I
+numeri riportati qui sotto sono calcolati su **ritardi sintetici**, che coprono
+l'intera rete descritta dall'orario: metropolitana compresa. Dal momento in cui il
+modulo lavora sui ritardi appresi dai dati - cioe' dall'argomento sull'apprendimento
+in avanti, e soprattutto nel backtesting - quella copertura si restringe, perche' il
+tempo reale non descrive la stessa rete dell'orario.
+
+| | tram | metropolitana | autobus | funicolare |
+| --- | ---: | ---: | ---: | ---: |
+| Roma | 0 su 1-4 | **0 su 4** | 310-405 su 423-426 | — |
+| Torino | 8 su 9 | **0 su 1** | 65-100 su 213-215 | 0 su 1 |
+
+*Fonte: `results/copertura_orario.csv`, colonna `copertura_per_tipo`, sedici
+giornate per citta' nella finestra `2026-09-09`; gli intervalli sono i valori minimo
+e massimo fra le giornate, e i denominatori variano perche' l'orario cambia. I
+codici sono i `route_type` della specifica GTFS [5].*
+
+La lettura giusta non e' che i due feed siano **incompleti**, ma che descrivano una
+**rete diversa** da quella dell'orario, e in modo diverso l'uno dall'altro. Roma
+pubblica il tempo reale dei soli **autobus di superficie**, quasi tutti, e non
+pubblica nulla della metropolitana: nelle sedici giornate osservate le sue quattro
+linee metropolitane non compaiono **mai**. Torino fa l'opposto sul ferro e sulla
+gomma: porta otto tram su nove ma **meno della meta' degli autobus**, e neanche lei
+la metropolitana. Ne segue che ogni affermazione sperimentale sul pianificatore
+romano fondata su dati reali riguarda i soli autobus, e che il confronto fra le due
+citta' e' fra due sottoreti scelte dai produttori e non da noi. E' un limite dei
+dati disponibili, non una scelta di progetto, e nessun accorgimento nel nostro
+codice puo' rimuoverlo.
 
 **Perche' l'obiettivo probabilistico non e' una penalizzazione del tempo.** La
 tentazione naturale, di fronte al problema, e' evitare la probabilita' e
@@ -1419,8 +1488,13 @@ di arrivo dell'itinerario piu' veloce piu' un margine, e il margine varia su una
 griglia di **0, 5, 10, 15, 20 e 30 minuti**. *Alternativa scartata:* una scadenza
 assoluta, per esempio l'orario di un appuntamento. *Perche' no:* introdurrebbe una
 scelta arbitraria sull'appuntamento, e i risultati dipenderebbero da quella invece
-che dal metodo. *Perche' la definizione relativa:* aderisce alla domanda di
-ricerca, che parla di confronto "a parita' di tempo di viaggio nominale".
+che dal metodo. *Perche' la definizione relativa:* non rende uguale il
+tempo nominale delle due scelte - nessuna definizione potrebbe, perche' la
+strategia di riferimento prende per costruzione l'arrivo nominale minimo - ma
+**mette un tetto a quanto tempo nominale il criterio probabilistico possa
+comprare**, ed e' questo che rende lo scambio governabile dal viaggiatore invece
+che dal metodo. Il margine e' il prezzo massimo che si e' disposti a pagare, e la
+misura riporta quanto se ne paghi davvero.
 *Perche' una griglia e non un valore:* le tre grandezze in funzione del margine
 sono la dimostrazione empirica di non riducibilita', e un valore solo non
 mostrerebbe alcuna dipendenza da T. *Perche' il margine zero e' incluso benche'
@@ -1536,7 +1610,13 @@ trasformerebbe in una scelta irriproducibile, che e' un difetto peggiore di tre
 millesimi di errore. Il campionamento e' percio' relegato al ruolo di verifica,
 dove la sua accuratezza superiore serve davvero e il suo rumore non decide nulla.
 
-![**Figura 3.** Accuratezza e costo dei due metodi di calcolo, su distribuzioni sintetiche. Nel pannello (a) l'asse orizzontale porta il parametro di ciascun metodo, che ha significato diverso per i due: passo della griglia in secondi per la convoluzione, numero di campioni per il Monte Carlo. Il pannello (b) e' quello che conta: mette accuratezza e costo sugli stessi assi, e mostra che la curva del Monte Carlo giace interamente in basso a sinistra rispetto a quella della convoluzione. Dati grezzi in `results/conv_vs_montecarlo.csv`.](../results/conv_vs_montecarlo.png)
+![**Figura 3.** Accuratezza e costo dei due metodi di calcolo, su distribuzioni
+sintetiche. Nel pannello (a) l'asse orizzontale porta il parametro di ciascun
+metodo, che ha significato diverso per i due: passo della griglia in secondi per la
+convoluzione, numero di campioni per il Monte Carlo. Il pannello (b) e' quello che
+conta: mette accuratezza e costo sugli stessi assi, e mostra che la curva del Monte
+Carlo giace interamente in basso a sinistra rispetto a quella della convoluzione.
+Dati grezzi in `results/conv_vs_montecarlo.csv`.](../results/conv_vs_montecarlo.png)
 
 **La griglia della scadenza, e la dimostrazione empirica di non riducibilita'.**
 
@@ -1608,7 +1688,16 @@ abbastanza stretta da rendere il fallimento possibile e abbastanza larga da
 rendere il successo raggiungibile. Fuori da quell'intervallo la risposta non
 dipende dal criterio, e un modello dei ritardi non ripaga la propria complessita'.
 
-![**Figura 4.** Le tre grandezze in funzione del margine sulla scadenza, su quaranta coppie per citta' e con modello dei ritardi sintetico. Il pannello (b) e' la dimostrazione di non riducibilita': la coincidenza fra scelta robusta e scelta piu' veloce scende al crescere del margine, quindi l'ordinamento fra itinerari dipende dalla scadenza. Il pannello (c) mostra la forma a campana del guadagno. Le barre di deviazione standard del pannello (c) scendono sotto lo zero, ma si tratta di un artefatto: la deviazione standard e' simmetrica mentre la distribuzione non lo e', e la differenza per singola coppia non e' **mai** negativa, in nessuna delle 480 combinazioni esaminate. Dati grezzi in `results/robusto_griglia_T.csv`.](../results/robusto_griglia_T.png)
+![**Figura 4.** Le tre grandezze in funzione del margine sulla scadenza, su quaranta
+coppie per citta' e con modello dei ritardi sintetico. Il pannello (b) e' la
+dimostrazione di non riducibilita': la coincidenza fra scelta robusta e scelta piu'
+veloce scende al crescere del margine, quindi l'ordinamento fra itinerari dipende
+dalla scadenza. Il pannello (c) mostra la forma a campana del guadagno. Le barre di
+deviazione standard del pannello (c) scendono sotto lo zero, ma si tratta di un
+artefatto: la deviazione standard e' simmetrica mentre la distribuzione non lo e', e
+la differenza per singola coppia non e' **mai** negativa, in nessuna delle 480
+combinazioni esaminate. Dati grezzi in
+`results/robusto_griglia_T.csv`.](../results/robusto_griglia_T.png)
 
 **Il confronto con le strategie di riferimento.** Le tre baseline non sono
 avversari di comodo: rappresentano cio' che si fa realmente in assenza di un
@@ -3179,8 +3268,12 @@ coincidenza persa e' limitato a due, e sulle valutazioni della griglia il 9,2%
 della massa di probabilita' esaurisce quel tetto: e' abbastanza da meritare una
 menzione, e un valore piu' alto renderebbe il risultato piu' dipendente dal tetto
 che dal modello. La scadenza e' definita in modo relativo all'itinerario piu'
-veloce, scelta che aderisce alla domanda di ricerca ma che e' severa verso il
-criterio probabilistico e che rende il vantaggio misurato un limite inferiore.
+veloce: e' la scelta che mette un tetto al tempo nominale che il criterio
+probabilistico puo' comprare, ed e' severa verso di esso, tanto che rende il
+vantaggio misurato un limite inferiore. Non rende pero' uguale il tempo nominale
+delle due scelte, e la clausola "a parita' di tempo di viaggio nominale" della
+formulazione iniziale e' stata percio' abbandonata in favore di uno scambio
+misurato: vedere il sommario e la sezione sul backtesting.
 L'insieme dei candidati e' la frontiera di Pareto, che collassa fra loro gli
 itinerari differenti solo per il margine sulle coincidenze; la misura ha mostrato
 che la frontiera e' comunque abbastanza ricca, con un'ampiezza media di 0,44, ma
