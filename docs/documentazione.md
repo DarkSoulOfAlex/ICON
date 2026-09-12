@@ -129,7 +129,7 @@ discussa dove serve.
 
 # Elenco argomenti di interesse
 
-Gli argomenti trattati sono quattro, tratti da sezioni diverse del programma e qui
+Gli argomenti trattati sono cinque, tratti da sezioni diverse del programma e qui
 indicati esplicitamente con il riferimento al capitolo corrispondente del testo
 adottato nel corso [1].
 
@@ -179,6 +179,12 @@ due budget globali sul numero di cambi e sui minuti a piedi. La valutazione
 verifica, prima di ogni altra cosa, che il problema non sia risolubile tappa per
 tappa senza tornare indietro: e' la condizione perche' la formulazione a vincoli
 sia giustificata invece che decorativa.
+
+Alle cinque sezioni degli argomenti ne segue una sesta, sul **backtesting**, che non
+introduce un formalismo nuovo e non e' percio' un argomento del programma: mette
+insieme i moduli gia' descritti e li mette alla prova sui ritardi realmente osservati.
+E' li' che il progetto risponde alla propria domanda di ricerca, e le altre sezioni
+vanno lette sapendo che quella misura esiste e le giudica.
 
 # Sezione Argomento 1 — Rappresentazione e ragionamento relazionale
 
@@ -3069,13 +3075,381 @@ direbbe meno delle tabelle. Dati grezzi in `results/csp_greedy.csv`, 364 righe.
 Nessun risultato di questo argomento dipende da un modello dei ritardi: sono tutti
 calcolati sull'orario programmato pubblicato dalle due aziende.
 
+# Sezione Backtesting — La risposta alla domanda di ricerca
+
+## Sommario
+
+Le quattro sezioni precedenti hanno misurato ciascuna una parte del sistema: quanto
+costi derivare i trasbordi, quanto costi cercare gli itinerari, quanto bene si
+compongano le probabilita' lungo la catena delle coincidenze, quanto bene il modello
+dei ritardi descriva i ritardi. Nessuna di quelle misure dice se un viaggiatore che
+segua il consiglio del pianificatore arrivi puntuale piu' spesso. Questa sezione fa
+quella misura, ed e' la sola che risponde alla domanda da cui il progetto e' nato.
+
+**Che cosa il backtesting fa.** Per ciascuna coppia origine-destinazione e per
+ciascuna scadenza si calcolano **due** itinerari sulla stessa frontiera di Pareto:
+quello che minimizza l'orario teorico di arrivo, e quello che massimizza
+`P(arrivo <= T)` secondo il modello appreso. Entrambi vengono poi **rigiocati sui
+ritardi che quel giorno sono stati osservati davvero**, fermata per fermata: si parte
+all'orario previsto, si applica a ogni passaggio il ritardo registrato nel feed, si
+verifica se la coincidenza successiva sia ancora prendibile, e se non lo e' si prende
+la corsa seguente della stessa linea. Alla fine si guarda l'orologio.
+
+**Perche' non si puo' rispondere confrontando le probabilita' che il modello
+attribuisce.** Sarebbe la misura piu' semplice - il robusto dichiara una probabilita'
+piu' alta del piu' veloce, e la differenza sembrerebbe il vantaggio - ed e' priva di
+valore: la probabilita' che il modello attribuisce alla propria scelta e' **per
+costruzione la piu' alta fra i candidati**, perche' e' quella che l'ha fatta
+scegliere. Il modello sarebbe insieme giudice e imputato, e un modello sistematicamente
+ottimista risulterebbe tanto migliore quanto piu' sbaglia. Solo la replica su dati
+osservati puo' contraddirlo, ed e' l'unica ragione per cui questa sezione esiste.
+
+**Una clausola della domanda di ricerca e' caduta, e va detto qui.** La domanda era
+stata posta "a parita' di tempo di viaggio nominale". Quella clausola non e'
+soddisfacibile, e non per un limite dei dati: la strategia di riferimento e' definita
+come quella che **minimizza** l'orario teorico di arrivo, quindi qualunque altro
+itinerario arriva nominalmente dopo, e un insieme di alternative a pari tempo nominale
+fra cui scegliere non esiste sulla frontiera. La misura lo conferma senza eccezioni:
+nelle **337 istanze** in cui le due strategie scelgono itinerari diversi, il robusto e'
+nominalmente piu' lento **337 volte su 337**, mai uguale e mai piu' veloce.
+
+Cio' che il backtesting misura e' percio' uno **scambio**, e la riformulazione onesta
+della domanda e' questa:
+
+> il criterio probabilistico compra affidabilita' pagando tempo nominale, entro il
+> margine che il viaggiatore ha dichiarato accettando una scadenza. Quanto ne paga, e
+> lo scambio conviene?
+
+E' una domanda piu' forte della prima, perche' la prima chiedeva un pasto gratis e
+questa chiede un prezzo: il prezzo e' misurato e riportato accanto al beneficio, e il
+lettore puo' giudicare lo scambio invece di doverlo credere.
+
+**Le giornate, le coppie, le istanze.** La replica usa le **quattro giornate di
+verifica**, dal 6 al 9 settembre 2026, cioe' le stesse che il modello non ha mai
+visto: un backtesting su giornate di addestramento misurerebbe la memoria del modello
+e non la sua utilita'. Per ogni giornata si estraggono **trenta coppie**
+origine-destinazione, con seme fisso, fra quelle i cui candidati sono interamente
+osservati; per ciascuna coppia si valutano **sei margini** - 0, 5, 10, 15, 20 e 30
+minuti - e **due strategie**, e l'intero esperimento e' ripetuto su **due insiemi di
+bordi dei bin**, `ottili` e `decisione`, per verificare che la scelta discussa
+nell'argomento precedente non decida i risultati. In tutto **5.208 istanze**, di cui
+2.328 romane e 2.880 torinesi.
+
+**Su quale parte della rete la misura valga.** Non ogni itinerario e' rigiocabile:
+servono i ritardi osservati di tutte le sue tratte, e il tempo reale non copre tutta
+la rete che l'orario descrive. Delle coppie esaminate ne sopravvive il **53,80% +/-
+4,37% su Roma** e il **48,69% +/- 12,01% su Torino**. E' una selezione **non casuale**,
+che favorisce le linee frequenti e ben coperte, e va sommata al limite piu' grave
+dichiarato nell'argomento sulla ricerca: su Roma il feed real-time porta i soli
+autobus di superficie e **nessuna** delle quattro linee di metropolitana, su Torino
+otto tram su nove ma meno della meta' degli autobus. I risultati che seguono valgono
+per quelle sottoreti, scelte dai produttori dei dati e non da noi.
+
+## Strumenti utilizzati
+
+Non c'e' letteratura nuova da citare: il backtesting non impiega alcun formalismo che
+le sezioni precedenti non abbiano gia' introdotto. Usa il pianificatore
+multi-criterio dell'argomento sulla ricerca per produrre la frontiera di Pareto, il
+calcolo di `P(arrivo <= T)` dell'argomento sull'incertezza per sceglierne un elemento,
+e la tabella stimata nell'argomento sull'apprendimento come modello dei ritardi,
+tradotta nel contratto di Fase 2 da `src/delays/bayesiano.py`. Il calcolo e' in
+**NumPy** [10] e **pandas** [6], la lettura dei dati colonnari in **pyarrow**.
+
+La sola cosa che vale la pena dichiarare e' **come la replica e' costruita**, perche'
+e' scritta per questo progetto e ogni sua scelta e' una decisione di misura. La
+replica e' una funzione pura in `src/eval/replica.py`: riceve un itinerario e una
+tabella `(corsa, fermata) -> ritardo osservato`, e restituisce l'orario reale di
+arrivo, quante coincidenze sono state perse, quanti recuperi sono riusciti e se il
+viaggio si sia interrotto. Non legge file, non conosce il modello e non sa quale
+strategia abbia prodotto l'itinerario che sta rigiocando: e' cio' che la rende
+collaudabile su casi di esito noto e cio' che impedisce al modello di influenzare il
+proprio giudizio.
+
+Il fenomeno che solo la replica vede, e per il quale ha un test dedicato, e' che **un
+mezzo in anticipo fa perdere la coincidenza esattamente come uno in ritardo**. Se la
+corsa successiva parte novanta secondi prima del previsto e il viaggiatore arriva
+puntuale, la coincidenza e' persa; nessun confronto condotto sull'orario programmato
+puo' accorgersene, e nessuna misura basata sul solo ritardo medio lo prevede.
+
+## Decisioni di Progetto
+
+**Il confronto si fa rigiocando, non chiedendo al modello di giudicare se stesso.**
+*Alternativa scartata:* confrontare la probabilita' attesa delle due scelte, che e'
+cio' che l'esperimento sulla griglia della scadenza misura in Fase 4. E' una misura
+legittima di quanto la frontiera sia varia, ma non risponde alla domanda di ricerca,
+per la ragione detta nel sommario. *Il prezzo della scelta:* rigiocare costa molto di
+piu' - ogni giornata richiede di ricostruire il grafo, cercare le frontiere e
+replicare ogni itinerario - e limita il numero di istanze a qualche migliaio invece
+che a centinaia di migliaia. E' un prezzo che si paga volentieri, perche' la misura
+piu' economica avrebbe risposto a un'altra domanda.
+
+**I recuperi contano come coincidenze perse, non come fallimenti.** Ogni tappa porta
+con se' le corse successive della stessa linea: se quella pianificata sfugge si prende
+la seguente e si arriva piu' tardi. *Alternativa scartata:* trattare la coincidenza
+persa come fallimento del viaggio. *Perche' no:* sopravvaluterebbe la differenza fra
+le strategie, perche' in una rete urbana una linea ripassa, e il danno vero di una
+coincidenza persa e' il tempo, non l'impossibilita' di arrivare. *Il tetto, e il suo
+costo:* i recuperi consecutivi sono limitati a due, e va dichiarato perche' oltre quel
+punto la replica smette di seguire il viaggio.
+
+**Un viaggio interrotto non e' arrivato entro la scadenza.** *Alternative scartate:*
+escluderlo dal conto, oppure contarlo riuscito. *Perche' no:* entrambe premierebbero
+la strategia che si caccia piu' spesso nei guai, che e' esattamente il contrario di
+cio' che si vuole misurare. Sui dati raccolti i viaggi che non arrivano sono fra il
+3,3% e il 7,8% a seconda della citta' e della strategia, quindi non e' un dettaglio
+contabile.
+
+**Una tratta non osservata ferma la replica, e non viene sostituita con l'orario
+teorico.** *Perche':* sostituirla dichiarerebbe puntuale cio' che non si e' visto, e lo
+farebbe **proprio nei casi in cui il dato manca** - cioe' sulle linee peggio coperte,
+che sono verosimilmente anche le meno affidabili. Sarebbe un errore orientato, non
+rumore. *La conseguenza, da dichiarare:* si tengono solo le coppie con almeno due
+candidati interamente osservati, e la quota che sopravvive e' riportata accanto ai
+risultati invece di restare implicita.
+
+**Le giornate magre non entrano nelle medie, e ora si sa perche' una lo era.** Una
+giornata che contribuisca meno della meta' delle coppie richieste viene esclusa: la
+media fra giornate le pesa tutte uguali - ed e' la scelta giusta, perche' le istanze
+di uno stesso giorno condividono il traffico di quel giorno e non sono indipendenti -
+ma ne segue che sette coppie conterebbero quanto trenta. La soglia e' a meta' ed e'
+stata fissata **prima** di guardare quale risultato producesse. Sui dati raccolti
+esclude una sola giornata, Roma 2026-09-07, e la causa e' ora misurata: quel giorno il
+**46,6% dei `trip_id` del feed romano non esiste nell'archivio statico in vigore**,
+quindi meno di quattro righe su dieci hanno un ritardo calcolabile e quasi nessuna
+coppia e' interamente osservata. Non era un difetto della raccolta, che quel giorno ha
+letto 1.433 dump e scritto 18,4 milioni di righe come sempre.
+
+**Su Torino il dato contro cui si verifica non e' un transito osservato.** Il feed
+torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita, quindi
+l'ultima riga disponibile di ciascun passaggio e' l'ultima **stima** del produttore e
+non una constatazione. Quanto quell'ultima stima sia vicina al fatto e' misurato:
+**25 +/- 12 secondi** di anticipo mediano sul transito atteso, con il primo quartile
+sotto lo zero - cioe' un quarto delle righe e' pubblicato **dopo** il transito atteso -
+e il terzo intorno ai due minuti. La limitazione e' quindi molto piu' lieve di quanto
+la parola "previsione" lasci pensare, ma resta: i risultati torinesi misurano quanto
+il pianificatore regga contro l'ultima stima del produttore, non contro un orologio.
+
+**I due insiemi di bordi si rigiocano entrambi, ed e' la chiusura di una questione
+lasciata aperta.** L'argomento precedente aveva scelto gli `ottili` con una regola che
+su quei dati si e' ridotta al criterio del guadagno, e aveva rimesso a questa sezione
+la verifica che la scelta non cambiasse i risultati. L'esperimento e' ripetuto per
+intero su entrambi, e la risposta e' nella valutazione.
+
+## Valutazione
+
+**Le grandezze, prima di usarle.** La **quota di viaggi arrivati entro la scadenza** e'
+la frazione di istanze in cui l'orario reale di arrivo, ottenuto dalla replica, non
+supera `T`; un viaggio interrotto conta come non arrivato. Le **coincidenze perse**
+sono il numero medio di cambi in cui la corsa pianificata era gia' partita all'arrivo
+del viaggiatore, contando anche le partenze anticipate. Il **costo in tempo nominale**
+e' la differenza fra l'orario teorico di arrivo dell'itinerario robusto e quello del
+piu' veloce, calcolata sulle sole istanze in cui le due strategie scelgono
+diversamente. La **quota di divergenza** e' la frazione di istanze in cui le due
+scelgono diversamente: dove scelgono lo stesso itinerario la differenza e' zero **per
+costruzione**, e mediare su quelle diluisce l'effetto verso lo zero per quanto il
+modello sia bravo. Tutte le medie e le deviazioni sono prese **fra giornate**, tre su
+Roma e quattro su Torino, per la stessa ragione per cui la giornata magra e' esclusa.
+
+**Il beneficio: viaggi arrivati entro la scadenza.**
+
+| margine | Roma, piu' veloce | Roma, robusto | Roma, differenza | Torino, piu' veloce | Torino, robusto | Torino, differenza |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 min | 0,3778 +/- 0,1171 | 0,3889 +/- 0,1347 | +0,0111 | 0,5000 +/- 0,0817 | 0,4917 +/- 0,0918 | **-0,0083** |
+| 5 min | 0,5111 +/- 0,0839 | 0,5444 +/- 0,0192 | +0,0333 | 0,7250 +/- 0,0788 | 0,7333 +/- 0,1277 | +0,0083 |
+| 10 min | 0,6222 +/- 0,0694 | 0,6556 +/- 0,0192 | +0,0333 | 0,8250 +/- 0,0569 | 0,8500 +/- 0,0793 | +0,0250 |
+| **15 min** | 0,6778 +/- 0,0694 | **0,7778 +/- 0,0192** | **+0,1000** | 0,8583 +/- 0,0319 | 0,8583 +/- 0,0918 | **0,0000** |
+| **20 min** | 0,7222 +/- 0,0509 | **0,8667 +/- 0,0577** | **+0,1444** | 0,8750 +/- 0,0319 | 0,9167 +/- 0,0793 | +0,0417 |
+| 30 min | 0,8000 +/- 0,0882 | 0,9000 +/- 0,0577 | +0,1000 | 0,9250 +/- 0,0319 | 0,9583 +/- 0,0319 | +0,0333 |
+
+*Fonte: `results/backtest_riepilogo.csv`, bordi `ottili`, colonne `quota_entro` e
+`deviazione_entro`; media e deviazione su 3 giornate (Roma) e 4 (Torino), 90 e 120
+istanze per riga.*
+
+**Il prezzo: tempo nominale che il robusto paga.** La stessa tabella, sulle sole
+istanze in cui le due strategie scelgono diversamente.
+
+| margine | Roma, divergenti | Roma, costo mediano | Roma, massimo | Torino, divergenti | Torino, costo mediano | Torino, massimo |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 min | 13 su 90 | 64 s | 186 s | 9 su 120 | 125 s | 300 s |
+| 5 min | 19 su 90 | 146 s | 448 s | 22 su 120 | 129 s | 379 s |
+| 10 min | 27 su 90 | 186 s | 832 s | 30 su 120 | 152 s | 608 s |
+| 15 min | 30 su 90 | 251 s | 888 s | 35 su 120 | 218 s | 900 s |
+| 20 min | 34 su 90 | 354 s | 1.260 s | 36 su 120 | 229 s | 1.080 s |
+| 30 min | 40 su 90 | 444 s | 1.260 s | 42 su 120 | 293 s | 1.320 s |
+
+*Fonte: `results/backtest.csv`, bordi `ottili`, differenza di `arrivo_programmato`
+fra le due strategie sulle istanze in cui differisce; giornata magra esclusa.*
+
+Le due tabelle vanno lette insieme, ed e' questo il risultato. A **quindici e venti
+minuti di margine su Roma** il criterio probabilistico porta **dieci e quattordici
+punti percentuali** in piu' di viaggi arrivati entro la scadenza, e li paga con
+**quattro e sei minuti** di tempo teorico mediano su un terzo delle istanze. Su Torino
+il beneficio e' molto piu' piccolo - fra zero e quattro punti - e il prezzo comparabile,
+fra due e cinque minuti. Lo scambio conviene su Roma nella fascia centrale dei margini,
+e su Torino e' vicino all'indifferenza.
+
+**Il costo e' quasi sempre dentro il margine dichiarato, e le eccezioni dicono una
+cosa.** Su 315 istanze divergenti a margine non nullo, il robusto sceglie un itinerario
+il cui arrivo teorico supera la scadenza in **nove casi**. Non e' un errore: e' una
+scommessa esplicita su un mezzo in anticipo, resa possibile dal fatto che i ritardi
+osservati sono negativi molto piu' spesso di quanto l'intuizione suggerisca. In quei
+nove casi il modello giudica piu' probabile arrivare entro `T` con un itinerario che
+nominalmente arriva dopo, e la replica gli da' ragione o torto caso per caso. A
+margine zero, invece, ogni istanza divergente supera il margine per definizione,
+perche' il margine e' zero: e' aritmetica, non un comportamento.
+
+**Le coincidenze perse, che sono la grandezza nominata nella domanda di ricerca.**
+
+| margine | Roma, piu' veloce | Roma, robusto | Torino, piu' veloce | Torino, robusto |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 min | 0,4222 | 0,3556 | 0,3417 | 0,3250 |
+| 5 min | 0,4222 | 0,3667 | 0,3417 | 0,2583 |
+| 10 min | 0,4222 | 0,3556 | 0,3417 | 0,2250 |
+| 15 min | 0,4222 | 0,3222 | 0,3417 | 0,1667 |
+| 20 min | 0,4222 | **0,2000** | 0,3417 | 0,1583 |
+| 30 min | 0,4222 | **0,1889** | 0,3417 | **0,1167** |
+
+*Fonte: `results/backtest_riepilogo.csv`, colonna `coincidenze_perse`, bordi `ottili`.
+La strategia piu' veloce non dipende dal margine, quindi la sua colonna e' costante:
+e' la scadenza a cambiare, non l'itinerario che minimizza l'orario teorico.*
+
+Su questa grandezza il vantaggio e' piu' netto che sugli arrivi, e cresce in modo
+monotono col margine su entrambe le citta': a trenta minuti il robusto perde **meno
+della meta'** delle coincidenze del piu' veloce su Roma (0,1889 contro 0,4222) e **un
+terzo** su Torino (0,1167 contro 0,3417). E' coerente con il meccanismo: il margine
+piu' ampio consente di scegliere itinerari con coincidenze meno tese, e sono
+esattamente quelle che non si perdono. Il numero medio di cambi scende con esso, da
+2,68 a 2,29 su Roma e da 2,18 a 1,88 su Torino: parte del vantaggio viene dal
+prendere itinerari con **un cambio in meno**, il che e' un modo legittimo di essere
+robusti e va detto invece di lasciarlo scoprire.
+
+**Dove le due strategie divergono davvero.** Le tabelle sopra mediano anche sulle
+istanze in cui le due scelgono lo stesso itinerario, dove la differenza e' nulla per
+costruzione. Restringendo alle sole divergenti:
+
+| margine | Roma, divergenti | piu' veloce | robusto | Torino, divergenti | piu' veloce | robusto |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 min | 13 | 0,1310 | 0,2619 | 9 | 0,4583 | 0,3958 |
+| 5 min | 19 | 0,3889 | 0,4722 | 22 | 0,6146 | 0,6771 |
+| 10 min | 27 | 0,5142 | 0,5839 | 30 | 0,6257 | 0,7785 |
+| 15 min | 30 | 0,5502 | **0,8387** | 35 | 0,7929 | 0,8295 |
+| 20 min | 34 | 0,5577 | **0,9394** | 36 | 0,7837 | **0,9722** |
+| 30 min | 40 | 0,6996 | 0,9302 | 42 | 0,8708 | **1,0000** |
+
+*Fonte: `results/backtest_riepilogo.csv`, colonne `quota_entro_divergenti` e
+`istanze_divergenti`, bordi `ottili`.*
+
+Qui il vantaggio e' molto piu' grande - a venti minuti su Roma il robusto porta a
+destinazione entro la scadenza il 94% delle istanze contro il 56% del piu' veloce - e
+questo e' il numero che descrive **quanto il modello sposti l'esito quando sposta la
+scelta**. Non e' pero' il numero che descrive quanto serva un pianificatore robusto a
+un utente qualsiasi, perche' quell'utente incontra anche le istanze in cui le due
+strategie coincidono, che sono fra il 56% e il 93%. Le due letture rispondono a due
+domande diverse e vanno tenute separate.
+
+**Quante giornate hanno segno positivo.** E' la verifica che il risultato non venga da
+una giornata sola. Sulla quota di arrivi entro la scadenza, per margine:
+
+| margine | Roma (3 giornate) | Torino (4 giornate) |
+| ---: | --- | --- |
+| 0 min | 1 positiva, 2 nulle | 3 nulle, 1 negativa |
+| 5 min | 2 positive, 1 negativa | 2 positive, 1 nulla, 1 negativa |
+| 10 min | 2 positive, 1 negativa | 2 positive, 1 nulla, 1 negativa |
+| **15 min** | **3 positive** | 2 positive, 2 negative |
+| **20 min** | **3 positive** | 3 positive, 1 negativa |
+| 30 min | **3 positive** | 3 positive, 1 nulla |
+
+*Fonte: `results/backtest.csv`, differenza fra le medie giornaliere di
+`entro_scadenza`, bordi `ottili`.*
+
+Su Roma, dai quindici minuti in su, **tutte** le giornate hanno segno positivo: il
+vantaggio non viene da un giorno fortunato. Su Torino no, mai: a ogni margine c'e'
+almeno una giornata in cui il robusto fa peggio, e a quindici minuti sono due su
+quattro. E' il modo piu' diretto di dire che **il risultato torinese non e' stabile**,
+e concorda con le deviazioni della prima tabella, che su Torino sono spesso piu' grandi
+della differenza che accompagnano.
+
+**La scelta dei bordi dei bin non arriva ai risultati.** L'intero esperimento e'
+ripetuto con `decisione` al posto di `ottili`. A quindici e trenta minuti su Roma i due
+insiemi danno lo stesso identico risultato, +10,0 punti; lo scarto massimo fra i due
+su tutti i dodici confronti e' di **1,11 punti percentuali**, a venti minuti su Roma
+(+13,3 con `decisione` contro +14,4 con `ottili`), ben dentro le deviazioni fra
+giornate. Su Torino lo scarto non supera gli 0,83 punti a nessun margine. La
+questione lasciata aperta nell'argomento precedente si chiude qui: **si adottano gli
+`ottili` e si dichiara che `decisione` avrebbe dato gli stessi risultati**.
+
+**La taratura del priore non arriva ai risultati, e la prova e' piu' forte.** Fra due
+esecuzioni del backtesting la griglia delle concentrazioni e' stata allargata da un
+milione a cento milioni, e la taratura ne ha approfittato: **quattro dei venti gradini
+tarati stanno ora a cento milioni**, un valore che la griglia precedente non poteva
+nemmeno esprimere, quindi su quei quattro la configurazione e' cambiata di sicuro. Su
+**5.208 istanze una sola scelta cambia**: Torino, 9 settembre, coppia 9, margine dieci
+minuti, fra due itinerari le cui probabilita' distano venticinque milionesimi;
+l'esito - fuori scadenza, una coincidenza persa - e' identico. Tutte le altre 5.207
+istanze scelgono lo stesso itinerario, arrivano allo stesso secondo e perdono le
+stesse coincidenze. La non identificabilita' di `alfa` misurata nell'argomento
+precedente **non si ferma alla perdita logaritmica: arriva fino ai viaggi, e li' non
+si vede affatto**.
+
+*I valori "prima" di questo confronto non stanno in `results/`, per la stessa ragione
+per cui non vi stanno quelli della griglia stretta nell'argomento precedente: i file
+portano lo stato corrente, e conservarne due versioni per un confronto transitorio
+moltiplicherebbe le fonti. Il confronto si rifa' riportando `CANDIDATI` di
+`src/delays/rete.py` al valore del commit `a59f0b9` e rieseguendo
+`scripts/backtest.py --fino-a 2026-09-09`. Le concentrazioni della corsa attuale sono
+stampate a ogni esecuzione e valgono `100000 100000 250 25000 50` e
+`1000 1e+08 250 1e+06 50` su Roma, `5000 1e+08 250 1e+08 250` e
+`250 100 250 1e+08 250` su Torino, per i bordi `ottili` e `decisione`
+rispettivamente.*
+
+**La probabilita' dichiarata contro la frequenza osservata.** Il modello, quando
+sceglie,
+stampa accanto all'itinerario la probabilita' che gli attribuisce. Nel backtesting si
+puo' confrontarla con la frequenza con cui quei viaggi sono poi arrivati.
+
+| margine | Roma, dichiarata | Roma, osservata | Torino, dichiarata | Torino, osservata |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 min | 0,3378 | 0,3889 | 0,3758 | 0,4917 |
+| 5 min | 0,4821 | 0,5444 | 0,6460 | 0,7333 |
+| 10 min | 0,5496 | 0,6556 | 0,7446 | 0,8500 |
+| 15 min | 0,6286 | 0,7778 | 0,8224 | 0,8583 |
+| 20 min | 0,7219 | 0,8667 | 0,8865 | 0,9167 |
+| 30 min | 0,8188 | 0,9000 | 0,9472 | 0,9583 |
+
+*Fonte: `results/backtest_riepilogo.csv`, colonne `probabilita_attesa` e
+`quota_entro`, strategia `robusto`, bordi `ottili`.*
+
+Il modello e' **pessimista** a ogni margine e in entrambe le citta': i viaggi arrivano
+piu' spesso di quanto prometta, fino a quindici punti su Roma a quindici minuti. E'
+l'opposto dell'errore che ci si aspetterebbe da un modello che sceglie il proprio
+massimo, e ha una spiegazione plausibile nel tetto sui recuperi - la replica ne
+concede due, il calcolo della probabilita' ne assume meno - ma non e' stata misurata e
+resta un'ipotesi. Va dichiarata cosi': il pessimismo e' un fatto, la sua causa no.
+
+**Che cosa questa valutazione non dice, e i limiti da tenere insieme.** Il vantaggio
+del criterio probabilistico esiste ed e' misurato, ma va letto con quattro cautele che
+non si elidono a vicenda. **A margine zero non c'e'**, ed e' atteso: senza margine non
+c'e' nulla da comprare, e su Torino il segno e' persino negativo. **Su Torino e'
+piccolo** - fra zero e quattro punti sugli arrivi - e non e' stabile fra le giornate,
+mentre sulle coincidenze perse e' netto anche li'. **Poggia su quattro giornate**, tre
+su Roma dopo l'esclusione della giornata mal coperta, che sono poche e tutte della
+stessa settimana di settembre. E **riguarda una sottorete**: gli autobus di superficie
+su Roma, tram e una parte degli autobus su Torino, sulle sole coppie i cui candidati
+erano interamente osservati, cioe' circa la meta'. Il risultato che regge tutte e
+quattro le cautele e' quello centrale: **su Roma, con margini fra quindici e trenta
+minuti, il criterio probabilistico perde dal 24% al 55% di coincidenze in meno del
+riferimento, e porta dieci punti percentuali o piu' di viaggi entro la scadenza, su
+tutte le giornate e con un costo mediano fra quattro e sette minuti di orario
+teorico**.
+
 # Conclusioni
 
 Il sistema realizzato deriva da dati aperti una relazione che quei dati non
 contengono, cerca su di essa gli itinerari non dominati fra tre criteri, e sceglie
 fra questi quello che massimizza la probabilita' di arrivare entro una scadenza.
-Le tre parti sono state misurate separatamente, e ciascuna ha prodotto un
-risultato che vale la pena riassumere.
+Le parti sono state misurate separatamente e poi insieme, rigiocando le scelte sui
+ritardi realmente osservati, e ciascuna ha prodotto un risultato che vale la pena
+riassumere.
 
 La base di conoscenza si e' rivelata sostenibile a piena scala — undici secondi e
 mezzo per istanziare l'intera rete di Roma, 4,5 milioni di atomi — e la misura ha
@@ -3119,6 +3493,32 @@ rischio sbagliato. Questi numeri sono pero' calcolati su distribuzioni di ritard
 sintetiche, e qualificano il metodo, non il trasporto pubblico di Roma o di
 Torino.
 
+**La domanda da cui il progetto e' nato ha una risposta, ed e' uno scambio.** Il
+backtesting ha rigiocato 5.208 volte due itinerari sulla stessa coppia e la stessa
+scadenza, usando i ritardi realmente osservati nelle quattro giornate che il modello
+non aveva mai visto. Su Roma, con margini fra quindici e trenta minuti, l'itinerario
+scelto massimizzando `P(arrivo <= T)` perde **dal 24% al 55% di coincidenze in meno**
+del riferimento e porta **dieci punti percentuali o piu'** di viaggi arrivati entro la
+scadenza, su tutte le giornate. Su Torino il vantaggio sulle coincidenze perse e'
+altrettanto netto - **un terzo** di quelle del riferimento a trenta minuti - mentre
+sugli arrivi e' piccolo e non stabile fra le giornate.
+
+Il risultato non e' gratuito, e la clausola con cui la domanda era stata posta - "a
+parita' di tempo di viaggio nominale" - si e' rivelata **non soddisfacibile per
+costruzione**, perche' la strategia di riferimento prende per definizione l'arrivo
+nominale minimo e ogni altra scelta arriva dopo. Nelle 337 istanze in cui le due
+divergono il robusto e' nominalmente piu' lento **337 volte su 337**, con un costo
+mediano di quattro-sette minuti su Roma nella fascia dove il vantaggio e' massimo. La
+lettura corretta e' percio' che il criterio probabilistico **compra affidabilita'
+pagando tempo nominale, entro il margine che il viaggiatore ha dichiarato**: il
+prezzo e' misurato e sta accanto al beneficio, e lo scambio conviene su Roma nella
+fascia centrale dei margini mentre su Torino e' vicino all'indifferenza.
+
+A margine nullo il vantaggio non c'e', ed e' atteso: senza margine non c'e' nulla da
+comprare. I numeri valgono inoltre per le sottoreti che i feed real-time descrivono -
+i soli autobus di superficie su Roma, dove la metropolitana non compare mai - e sulle
+sole coppie interamente osservate, circa la meta' di quelle esaminate.
+
 Il viaggio con piu' tappe obbligate si e' rivelato un problema di soddisfacimento
 di vincoli anche nei fatti, e non solo nella formulazione. La verifica era la
 condizione perche' l'argomento avesse diritto di esistere ed e' stata fatta per
@@ -3138,11 +3538,15 @@ Le lacune che seguono sono dichiarate per esteso, perche' un elenco preciso di
 cio' che manca e' piu' utile di una sezione che lo nasconda, e perche' ciascuna di
 esse e' un punto da cui un altro gruppo potrebbe ripartire.
 
-**La risposta alla domanda di ricerca non c'e' ancora.** E' la lacuna piu'
-importante. Il vantaggio del criterio probabilistico e' stato misurato su ritardi
-inventati; se si conservi sui ritardi reali e' esattamente cio' che resta da
-verificare. La raccolta e' funzionante e prosegue, ma la stima delle
-distribuzioni e il conseguente backtesting non sono stati eseguiti.
+**La risposta alla domanda di ricerca c'e', e poggia su quattro giornate.** Era la
+lacuna piu' importante ed e' stata colmata: il modello e' stato stimato sui dati
+raccolti e il backtesting ha rigiocato entrambe le strategie sui ritardi osservati.
+Cio' che resta aperto non e' piu' l'esistenza della misura ma la sua **base**: tre
+giornate su Roma e quattro su Torino, tutte della stessa settimana di settembre,
+sono poche per una conclusione stabile, e infatti su Torino il segno non e' costante
+fra le giornate. La raccolta e' progettata per continuare, e l'estensione naturale
+non richiede alcuna idea nuova: rieseguire su una finestra piu' lunga, con la regola
+di esclusione delle giornate mal coperte fissata prima di guardare i risultati.
 
 **Una strada considerata e scartata, con la ragione: i Knowledge Graph e le
 ontologie.** L'ipotesi e' stata valutata concretamente — pubblicare la base di
