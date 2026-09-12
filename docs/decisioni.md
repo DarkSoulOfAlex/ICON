@@ -2342,13 +2342,16 @@ ritardo massimo fra le constatazioni romane: il primo era il massimo su quattord
 giornate invece che su sedici, il secondo era il valore dell'ultima giornata e non il
 massimo fra le giornate.*
 
-**Due giornate romane fuori riga, da guardare altrove.** Il 31 agosto e il 7
+**Due giornate romane fuori riga, e la loro spiegazione.** Il 31 agosto e il 7
 settembre il novantanovesimo percentile romano sale a **31.720 e 36.526 secondi**
 contro i circa duemila di tutte le altre, e la quota di righe che superano il
-criterio passa dal 2,5% abituale al **17,4% e al 26,2%**. Non tocca questa voce, il
-cui verdetto riguarda Torino, ma e' un comportamento del feed romano che nessuna
-spiegazione copre, e il 7 settembre e' la stessa giornata che il backtesting della
-Fase 5 esclude perche' magra. Va ripreso li'.
+criterio passa dal 2,5% abituale al **17,4% e al 26,2%**. Non tocca il verdetto di
+questa voce, che riguarda Torino, ed e' un **sintomo** e non una causa: quei due
+giorni Roma riconosce solo il 43,5% e il 46,6% dei `trip_id` del proprio feed
+nell'archivio che ha pubblicato, quindi le righe che si uniscono all'orario sono un
+sottoinsieme distorto e le loro statistiche lo riflettono. Sono gli unici due lunedi'
+della finestra. La misura sta in `results/copertura_orario.csv`, e la conseguenza
+pratica - la giornata magra del backtesting - e' nella voce 64.
 
 **Che cosa questo invalida.** Ogni numero torinese che porti il nome
 "constatazioni" descrive quella coda negativa e non la realta' dei ritardi: la
@@ -2567,17 +2570,24 @@ due insiemi danno **+10,0 punti entrambi**, e le deviazioni si stringono da +/-3
 dentro, `results/backtest_riepilogo.csv` per quelli senza; il flag che li separa e'
 `--tieni-giornate-magre`.*
 
-**Una correzione a questa voce: la causa dichiarata era sbagliata.** La prima
-stesura attribuiva le sette coppie a un consolidamento parziale di quella giornata.
-Non e' cosi': `results/consolidamento.csv` le assegna **1.433 dump e 18,4 milioni di
-righe**, esattamente come alle giornate vicine. Perche' ne siano risultate rigiocabili
-solo sette non e' accertato. L'unica anomalia nota di quel giorno sta altrove:
-e' una delle due giornate romane in cui il feed pubblica molto piu' passato del
-solito (voce 63), col novantanovesimo percentile di
-`timestamp_feed - orario_programmato` a 36.526 secondi contro i circa duemila delle
-altre. Puo' essere la causa e puo' essere una coincidenza; finche' non e' misurata
-non va scritta come spiegazione. La regola di esclusione non ne dipende: conta
-quante coppie una giornata contribuisce, non perche'.
+**Una correzione a questa voce, e la causa vera.** La prima stesura attribuiva le
+sette coppie a un consolidamento parziale di quella giornata. Non e' cosi':
+`results/consolidamento.csv` le assegna **1.433 dump e 18,4 milioni di righe**,
+esattamente come alle giornate vicine. La causa e' un'altra, ed e' misurata: quel
+giorno **il 46,6% dei `trip_id` pubblicati dal feed romano non esiste nell'archivio
+statico in vigore**, contro il 99,8-100% di ogni altra giornata, e solo il 39,5%
+delle righe trova il proprio orario programmato. Senza orario non c'e' ritardo, senza
+ritardo la tratta non e' osservata, e una coppia i cui candidati non sono interamente
+osservati non e' rigiocabile.
+
+Il fenomeno tocca **due sole giornate su sedici**, il 31 agosto e il 7 settembre, che
+sono **gli unici due lunedi' della finestra**, e non e' un episodio: la quota di righe
+pubblicate molto dopo l'orario programmato cresce dal 5% del mattino al 35% della
+notte invece di concentrarsi in una fascia oraria. E' un disallineamento fra
+l'archivio che Roma pubblica quel giorno e le corse che il suo feed sta facendo
+circolare. La regola di esclusione resta indipendente dalla causa - conta quante
+coppie una giornata contribuisce, non perche' - ma ora la causa e' scritta e
+rifacibile: `scripts/copertura_orario.py`, `results/copertura_orario.csv`.
 
 | margine | `decisione` | `ottili` |
 | ---: | ---: | ---: |
@@ -2617,7 +2627,7 @@ Cambia anche il nome di cio' che si stima, e va scritto come si legge:
 
 > su Torino il ritardo non e' mai osservato come fatto compiuto. Il dato e'
 > l'**ultima stima del produttore** prima che la fermata sparisca dal feed, emessa
-> con una mediana di circa due minuti di anticipo.
+> con una mediana di **25 +/- 12 secondi** di anticipo sul transito atteso.
 
 Su Roma la scala a due dimensioni resta, perche' li' la distinzione fra fatto e
 previsione e' reale.
@@ -2653,7 +2663,20 @@ misurate sui due produttori - e' la tabella di riferimento per questa voce e per
 paragrafo del documento che descrive Torino: in particolare la sesta riga, "fin dove
 nel passato arriva il feed" (Roma 70.229 s, Torino **4 s**), e' quella che fonda la
 dichiarazione con cui ogni numero torinese va letto, cioe' che li si verifica contro la
-stima del produttore a circa due minuti e non contro un transito osservato.
+stima del produttore a circa venticinque secondi dal transito atteso, e non contro un
+transito osservato.
+
+*Correzione, 12 settembre 2026.* La prima stesura diceva "circa due minuti". Quel
+valore non era la mediana dell'anticipo ma un altro numero: la mediana di
+`timestamp_feed - orario_programmato` su **tutte** le righe vale -318...-354 s, ed e'
+dominata dalle previsioni lontane che il feed ripubblica di continuo. La grandezza che
+regge la limitazione e' un'altra - `orario_previsto - timestamp_feed` sulla sola
+**ultima revisione** di ciascun passaggio - e vale **25 +/- 12 s** fra le sedici
+giornate, con quartili a -10 e +126 s circa. La limitazione ne esce **piu' lieve**,
+non piu' grave: il dato torinese e' molto piu' vicino a un transito osservato di
+quanto si fosse dichiarato, e per circa un terzo dei passaggi il transito atteso era
+gia' trascorso. La misura e' in `results/anticipo_ultima_revisione.csv`
+(`scripts/anticipo_ultima_revisione.py`).
 
 **Come si potrebbe verificare.** La scelta e' fatta dal codice sui dati, non
 scritta a mano: `Citta.scale` guarda il massimo di `timestamp_feed -
