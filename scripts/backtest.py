@@ -147,15 +147,19 @@ def ritardi_osservati(percorso: Path,
                                                "orario_programmato"])
     dati = tabella.to_pandas()
     del tabella
-    dati = dati[dati["service_date"] == giornata]
-    if dati.empty:
-        return {}, 1.0
     # Una giornata in cui gran parte delle corse non esiste nell'archivio in vigore
     # produce poche tratte osservate e quindi poche coppie rigiocabili: e' successo
     # su Roma il 31 agosto e il 7 settembre, e la conseguenza si e' manifestata
     # altrove e senza spiegazione. Si misura qui e si dichiara, non si esclude.
+    #
+    # Si misura **prima** del filtro sulla data di servizio, come in
+    # ``scripts/copertura_orario.py``: la stessa grandezza deve avere lo stesso
+    # valore ovunque la si legga, altrimenti non e' la stessa grandezza.
     copertura = copertura_orario(
         dati["orario_programmato"].to_numpy(dtype="float64", na_value=np.nan))
+    dati = dati[dati["service_date"] == giornata]
+    if dati.empty:
+        return {}, copertura
     # Un ritardo assente non e' uno zero: e' una riga di cui non si sa nulla, e
     # tenerla convertendola dichiarerebbe puntuale cio' che non si e' visto. Si
     # scarta, con la stessa regola per cui una tratta non osservata ferma la replica.

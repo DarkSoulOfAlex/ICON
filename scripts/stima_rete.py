@@ -206,6 +206,15 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
     testo_linea = tabella.column("route_id").to_pandas().to_numpy()
     del tabella
 
+    # La copertura si misura **qui**, sulle righe come il consolidamento le ha
+    # scritte, prima di qualunque filtro: piu' avanti ``prog`` viene ristretto ai
+    # salti di giorno tolti e alle ultime revisioni, e la stessa formula darebbe un
+    # numero piu' alto - 41,6% invece di 36,9% sul 31 agosto - cioe' la stessa
+    # grandezza con due valori a seconda di dove la si calcola. Deve coincidere con
+    # ``results/copertura_orario.csv``, altrimenti il documento e lo strumento
+    # direbbero cose diverse chiamandole con lo stesso nome.
+    copertura = copertura_orario(prog)
+
     for nome in pd.unique(testo_linea):
         indice_linea.setdefault(str(nome), len(indice_linea))
     linea = np.fromiter((indice_linea[str(x)] for x in testo_linea), dtype=np.int64, count=n)
@@ -261,10 +270,7 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
         "secondi_monte": rit[:-1][valida].astype(np.float32),
         "secondi_valle": rit[1:][valida].astype(np.float32),
         "massimo_feed_meno_programmato": massimo_feed,
-        # La copertura si calcola **prima** di qualunque filtro, sulle righe come
-        # sono state consolidate: e' una proprieta' del dato pubblicato quel giorno,
-        # non di cio' che questa funzione decide di tenere.
-        "copertura_orario": copertura_orario(prog),
+        "copertura_orario": copertura,
     }, scartate, n
 
 
