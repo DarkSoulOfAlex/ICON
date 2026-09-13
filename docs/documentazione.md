@@ -584,10 +584,10 @@ Tabella 1 — Roma, media e deviazione standard su tre ripetizioni.
 | Fermate | Atomi | Grounding (s) | Solving (s) | Trasbordi derivati |
 | ---: | ---: | ---: | ---: | ---: |
 | 50 | 7.334 ± 0 | 0,012 ± 0,001 | 0,0006 ± 0,0001 | 436 |
-| 150 | 24.463 ± 0 | 0,048 ± 0,006 | 0,0015 ± 0,0001 | 1.096 |
-| 400 | 70.612 ± 0 | 0,160 ± 0,048 | 0,0039 ± 0,0003 | 2.738 |
-| 1000 | 724.410 ± 0 | 1,692 ± 0,139 | 0,0150 ± 0,0003 | 7.232 |
-| 2000 | 2.358.444 ± 0 | 5,707 ± 0,753 | 0,0380 ± 0,0008 | 13.938 |
+| 150 | 24.463 ± 0 | 0,041 ± 0,003 | 0,0014 ± 0,0001 | 1.096 |
+| 400 | 70.612 ± 0 | 0,122 ± 0,005 | 0,0041 ± 0,0010 | 2.738 |
+| 1000 | 724.410 ± 0 | 1,593 ± 0,094 | 0,0152 ± 0,0012 | 7.232 |
+| 2000 | 2.358.444 ± 0 | 5,593 ± 0,158 | 0,0375 ± 0,0004 | 13.938 |
 
 La tabella va letta per righe, perche' il salto e' fra la terza e la quarta. Fino
 a quattrocento fermate la crescita e' quasi lineare nel numero di fermate: da 50 a
@@ -599,24 +599,24 @@ un semplice raddoppio delle fermate, gli atomi triplicano. I trasbordi derivati,
 nel frattempo, continuano a crescere quasi linearmente — 7.232 e poi 13.938,
 esattamente un raddoppio — il che localizza il fenomeno: non sono i trasbordi a
 esplodere, ma qualcos'altro che li usa. Il tempo di grounding segue gli atomi
-fedelmente, da 0,012 a 5,707 secondi, mentre il solving resta tre ordini di
-grandezza sotto, da 0,0006 a 0,0380 secondi.
+fedelmente, da 0,012 a 5,593 secondi, mentre il solving resta tre ordini di
+grandezza sotto, da 0,0006 a 0,0375 secondi.
 
 Tabella 2 — Torino, media e deviazione standard su tre ripetizioni.
 
 | Fermate | Atomi | Grounding (s) | Solving (s) | Trasbordi derivati |
 | ---: | ---: | ---: | ---: | ---: |
-| 50 | 3.141 ± 0 | 0,005 ± 0,000 | 0,0003 ± 0,0000 | 164 |
-| 150 | 13.862 ± 0 | 0,021 ± 0,000 | 0,0010 ± 0,0000 | 688 |
-| 400 | 34.018 ± 0 | 0,052 ± 0,006 | 0,0024 ± 0,0002 | 1.616 |
-| 1000 | 136.729 ± 0 | 0,245 ± 0,012 | 0,0072 ± 0,0008 | 4.498 |
-| 2000 | 438.374 ± 0 | 0,910 ± 0,042 | 0,0190 ± 0,0029 | 9.542 |
+| 50 | 3.141 ± 0 | 0,006 ± 0,000 | 0,0003 ± 0,0000 | 164 |
+| 150 | 13.862 ± 0 | 0,022 ± 0,001 | 0,0010 ± 0,0000 | 688 |
+| 400 | 34.018 ± 0 | 0,052 ± 0,001 | 0,0024 ± 0,0001 | 1.616 |
+| 1000 | 136.729 ± 0 | 0,240 ± 0,005 | 0,0074 ± 0,0009 | 4.498 |
+| 2000 | 438.374 ± 0 | 0,916 ± 0,023 | 0,0179 ± 0,0008 | 9.542 |
 
 Torino mostra la stessa forma ma spostata. Il salto da 400 a 1000 c'e' anche qui,
 136.729 atomi contro 34.018, cioe' quattro volte, ma e' meno violento del
 decuplicarsi di Roma; e a duemila fermate Torino si ferma a 438.374 atomi contro i
 2.358.444 di Roma, un fattore 5,4 a parita' di numero di fermate. Sul piano dei
-tempi la differenza e' pratica prima che teorica: 0,910 secondi contro 5,707 per
+tempi la differenza e' pratica prima che teorica: 0,916 secondi contro 5,593 per
 istanziare la stessa dimensione di problema. I trasbordi derivati crescono anche
 qui quasi linearmente, 4.498 e poi 9.542.
 
@@ -748,7 +748,7 @@ Le righe vanno lette a coppie. **Fermate e fatti in ingresso** dicono che i due
 problemi sono di taglia paragonabile: 8.301 contro 7.073 fermate, 55.894 contro
 44.187 fatti, un rapporto di circa 1,25. **Atomi e tempo di grounding** dicono che
 i due costi non lo sono affatto: 4,5 milioni contro 959 mila atomi, un rapporto di
-4,7, e 11,3 contro 2,1 secondi, un rapporto di 5,4. Il fattore quattro di
+4,7, e 12,12 contro 2,36 secondi, un rapporto di 5,1. Il fattore quattro di
 differenza fra il rapporto degli ingressi e quello dei costi e' l'effetto della
 densita' gia' discusso. **Il tempo di solving** conferma per l'ultima volta la
 sproporzione: 0,09 secondi su Roma, cioe' meno di un centesimo del tempo speso a
@@ -760,7 +760,7 @@ tre trasbordi su cinque portano davvero a una linea nuova, quindi la regola di
 utilita' scarta i due quinti restanti prima che diventino archi del grafo. **Di
 cui accessibili**, 0 e 7.382, e' la riga che merita una discussione a parte.
 
-L'intera base di conoscenza di Roma si istanzia in undici secondi e mezzo, costo
+L'intera base di conoscenza di Roma si istanzia in dodici secondi, costo
 pienamente sostenibile per un'elaborazione da eseguire una volta al giorno, quando
 l'orario statico cambia. Va segnalato che il numero di atomi sulla rete intera di
 Roma, 4,5 milioni, e' **inferiore** ai 26 milioni che l'esponente `n^1,70` misurato
@@ -1062,21 +1062,23 @@ linee a bassa frequenza. Non sono state escluse dal campione: la loro percentual
 e' essa stessa un risultato, e delimita la generalita' di tutto cio' che segue
 alle coppie collegate entro due ore.
 
-**La relazione di dominanza vale due ordini di grandezza.** La misura che ha fatto
-scoprire il fenomeno riguarda un'interrogazione di Torino, su cui la formulazione
-con l'istante nella chiave espandeva **6,4 milioni di stati in 224 secondi**,
-mentre quella con la chiave ridotta ne espande **45 mila in 0,7 secondi**,
-restituendo lo stesso orario di arrivo. Poiche' quella prima interrogazione non
-era stata estratta con un seme dichiarato, l'esperimento e' stato ripetuto in
-forma riproducibile sulla prima coppia risolta del campione di Torino, la
+**La relazione di dominanza vale due ordini di grandezza.** Il fenomeno fu scoperto
+su un'interrogazione di Torino in cui la formulazione con l'istante nella chiave
+espandeva **6,4 milioni di stati in 224 secondi** contro **45 mila in 0,7**
+(*misura una tantum del 27 agosto 2026: quell'interrogazione non era stata estratta
+con un seme dichiarato e non e' piu' identificabile*). L'esperimento e' stato percio'
+ripetuto in forma riproducibile sulla prima coppia risolta del campione di Torino, la
 3176 → 3492 estratta con il seme 20260826.
 
 | Formulazione dello stato a terra | Stati espansi | Secondi |
 | --- | ---: | ---: |
-| `(fermata, istante, cambi)` | 1.464.312 | 60,39 |
-| `(fermata, cambi)` | 23.597 | 0,61 |
+| `(fermata, istante, cambi)` | 1.464.312 | 57,10 |
+| `(fermata, cambi)` | 23.597 | 0,57 |
 
-Su questa coppia il rapporto e' di 62 volte sugli stati e di 99 volte sul tempo,
+*Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocita' massima
+139,12 m/s misurata da `results/velocita_archi.csv`.*
+
+Su questa coppia il rapporto e' di 62 volte sugli stati e di 100 volte sul tempo,
 con lo stesso identico orario di arrivo. Che il rapporto sul tempo superi quello
 sugli stati non e' un'anomalia: la coda di priorita' cresce con il numero di stati
 aperti, quindi ogni singola estrazione costa di piu' quando gli stati sono
@@ -1084,8 +1086,9 @@ milioni. La coincidenza degli orari di arrivo prima e dopo conferma
 sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di
 progetto. Vale la pena osservare che senza questa riformulazione l'intera campagna
 sperimentale finale, che prevede migliaia di interrogazioni, non sarebbe
-eseguibile: a duecento secondi per interrogazione, mille interrogazioni
-richiederebbero due giorni e mezzo di calcolo.
+eseguibile: a cinquantasette secondi per interrogazione, mille interrogazioni
+richiederebbero sedici ore di calcolo, e il campione della Fase 5 ne conta
+migliaia.
 
 **L'euristica geografica: un risultato negativo.**
 
@@ -1097,18 +1100,18 @@ stima sbagliata.
 
 | Citta' | Variante | V (m/s) | Stati espansi | Secondi | Risparmio | Non ottime |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Roma | Dijkstra | - | 37.156 ± 32.062 | 0,514 ± 0,398 | - | 0 / 43 |
-| Roma | A* ammissibile | 82,5 | 34.391 ± 29.851 | 0,743 ± 0,540 | 7,7% ± 2,6% | 0 / 43 |
-| Roma | A* p99,9 *(non amm.)* | 15,3 | 23.771 ± 21.376 | 0,586 ± 0,441 | 35,8% ± 9,8% | 0 / 43 |
-| Torino | Dijkstra | - | 13.783 ± 10.348 | 0,201 ± 0,142 | - | 0 / 39 |
-| Torino | A* ammissibile | 139,1 | 13.301 ± 10.034 | 0,311 ± 0,191 | 3,8% ± 1,6% | 0 / 39 |
-| Torino | A* p99,9 *(non amm.)* | 22,8 | 11.070 ± 8.532 | 0,286 ± 0,178 | 20,6% ± 6,8% | 0 / 39 |
+| Roma | Dijkstra | - | 37.156 ± 32.062 | 0,484 ± 0,370 | - | 0 / 43 |
+| Roma | A* ammissibile | 82,5 | 34.391 ± 29.851 | 0,724 ± 0,520 | 7,7% ± 2,6% | 0 / 43 |
+| Roma | A* p99,9 *(non amm.)* | 15,3 | 23.771 ± 21.376 | 0,574 ± 0,429 | 35,8% ± 9,8% | 0 / 43 |
+| Torino | Dijkstra | - | 13.783 ± 10.348 | 0,188 ± 0,127 | - | 0 / 39 |
+| Torino | A* ammissibile | 139,1 | 13.301 ± 10.034 | 0,300 ± 0,181 | 3,8% ± 1,6% | 0 / 39 |
+| Torino | A* p99,9 *(non amm.)* | 22,8 | 11.070 ± 8.532 | 0,264 ± 0,170 | 20,6% ± 6,8% | 0 / 39 |
 
 Le righe vanno confrontate a gruppi di tre. Su **Roma**, Dijkstra espande 37.156
-stati in 0,514 secondi; A* ammissibile ne espande 34.391, cioe' il 7,7% in meno,
-ma impiega 0,743 secondi, cioe' il 44% in **piu'**. Su **Torino** il quadro e'
-identico e piu' netto: 13.783 stati contro 13.301, un risparmio del 3,8%, e 0,201
-secondi contro 0,311, cioe' il 55% in piu'. Il risultato principale e' dunque
+stati in 0,484 secondi; A* ammissibile ne espande 34.391, cioe' il 7,7% in meno,
+ma impiega 0,724 secondi, cioe' il 49% in **piu'**. Su **Torino** il quadro e'
+identico e piu' netto: 13.783 stati contro 13.301, un risparmio del 3,8%, e 0,188
+secondi contro 0,300, cioe' il 59% in piu'. Il risultato principale e' dunque
 negativo, e conviene enunciarlo senza attenuazioni: **l'euristica ammissibile
 risparmia meno del dieci per cento degli stati e fa impiegare ad A\* piu' tempo di
 Dijkstra**. Calcolare l'euristica costa piu' dei nodi che fa evitare.
@@ -1156,7 +1159,7 @@ che funziona correttamente su dati imperfetti.
 
 La variante non ammissibile, tarata sul p99,9, risparmia il 35,8% e il 20,6% degli
 stati, da quattro a cinque volte piu' dell'ammissibile, e su Roma riesce anche a
-essere piu' rapida di A* ammissibile, 0,586 secondi contro 0,743, pur restando
+essere piu' rapida di A* ammissibile, 0,574 secondi contro 0,724, pur restando
 sopra Dijkstra. Il dato piu' interessante e' pero' nell'ultima colonna: **su
 nessuna delle 82 interrogazioni risolte la variante non ammissibile ha restituito
 un orario di arrivo diverso dall'ottimo**. La garanzia formale e la sua violazione
