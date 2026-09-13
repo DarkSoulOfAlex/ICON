@@ -5,12 +5,12 @@ lang: it
 
 Gruppo di lavoro
 
-- `<Nome Cognome 1>`, `<matricola 1>`, `<username1>@studenti.uniba.it`
-- `<Nome Cognome 2>`, `<matricola 2>`, `<username2>@studenti.uniba.it`
+- `Alex Lorenzo Girone`, `798695`, `a.girone18@studenti.uniba.it`
+- `Michele Boccasile`, `797919`, `m.boccasile3@studenti.uniba.it`
 
-`<URL_REPOSITORY>`
+`https://github.com/DarkSoulOfAlex/ICON`
 
-AA `<anno accademico>`
+AA `2025-2026`
 
 # Introduzione
 
