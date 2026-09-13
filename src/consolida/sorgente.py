@@ -48,10 +48,6 @@ class SorgenteDump:
             return f"archivio {NOME_ARCHIVIO}"
         return "assente"
 
-    @property
-    def compressa(self) -> bool:
-        return self._da_tar
-
     def disponibile(self) -> bool:
         return self.cartella.is_dir() or self._da_tar
 

@@ -101,10 +101,6 @@ class EsitoRicerca:
     tempo_secondi: float
     cammino: list[Stato] = field(default_factory=list)
 
-    @property
-    def durata_minuti(self) -> float | None:
-        return None if self.orario_arrivo is None else self.orario_arrivo / 60.0
-
 
 def _chiave(grafo: Grafo, stato: Stato, con_cambi: bool, con_istante: bool = False) -> tuple:
     """Chiave con cui uno stato viene considerato gia' visitato.

@@ -156,18 +156,3 @@ def oltre_la_mezzanotte(secondi: int | None) -> bool:
     """Vero se l'orario appartiene al giorno di calendario successivo."""
     return secondi is not None and int(secondi) >= SECONDI_IN_UN_GIORNO
 
-
-def riepiloga_calendario(archivio: ArchivioGTFS, giorno: date) -> dict[str, int]:
-    """Numeri di controllo su una giornata, per accorgersi di un calendario vuoto.
-
-    Un archivio interpretato male non lancia eccezioni: restituisce zero corse.
-    Questo riepilogo esiste per rendere quel silenzio visibile.
-    """
-    servizi = servizi_attivi(archivio.calendar, archivio.calendar_dates, giorno)
-    corse = corse_attive(archivio, giorno)
-    return {
-        "servizi_attivi": len(servizi),
-        "corse_attive": len(corse),
-        "servizi_totali": int(archivio.trips["service_id"].nunique()),
-        "corse_totali": len(archivio.trips),
-    }

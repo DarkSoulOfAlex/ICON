@@ -254,10 +254,6 @@ class RisultatoKB:
     # calcolo stesso.
     raggiungibili: frozenset[tuple[str, str]] = frozenset()
 
-    @property
-    def tempo_totale(self) -> float:
-        return self.tempo_grounding + self.tempo_solving
-
 
 def esegui(
     fatti: Fatti,
