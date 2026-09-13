@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.eval.replica import (ErroreReplica, margine_piu_stretto, replica,
-                              rigiocabile)
+from src.eval.replica import (ErroreReplica, EsitoCoincidenza,
+                              margine_piu_stretto, replica, rigiocabile)
 from src.planner.robust import Itinerario, Salita, Tappa
 
 ORA = 8 * 3600
@@ -205,3 +205,42 @@ def test_i_recuperi_non_entrano_nel_margine_critico():
                           ("t2b", ORA + 1800, ORA + 2400)], trasbordo=60),
     ])
     assert margine_piu_stretto(stretto) == 40
+
+
+def test_la_replica_registra_ogni_cambio_col_suo_respiro():
+    """Il respiro reale si misura sulla corsa pianificata, anche quando e' persa."""
+    itinerario = _itinerario([
+        _tappa("A", "B", [("t1", ORA, ORA + 600)], trasbordo=60),
+        _tappa("B", "C", [("t2", ORA + 900, ORA + 1500),
+                          ("t2b", ORA + 1800, ORA + 2400)], trasbordo=60),
+    ])
+    # t1 arriva 300 s tardi: si e' pronti a ORA+960, t2 parte a ORA+900: persa.
+    esito = replica(itinerario, _ritardi({("t1", "A"): 0, ("t1", "B"): 300,
+                                          ("t2", "B"): 0, ("t2", "C"): 0,
+                                          ("t2b", "B"): 0, ("t2b", "C"): 0}))
+    assert len(esito.coincidenze) == 1
+    c = esito.coincidenze[0]
+    assert c.indice == 1
+    assert c.respiro_nominale == 240          # 900 - 600 - 60
+    assert c.respiro_reale == -60             # 900 - 900 - 60, col ritardo di t1
+    assert c.tenuta is False
+    assert esito.coincidenze_perse == 1
+
+
+def test_una_coincidenza_tenuta_ha_respiro_reale_positivo():
+    itinerario = _itinerario([
+        _tappa("A", "B", [("t1", ORA, ORA + 600)], trasbordo=60),
+        _tappa("B", "C", [("t2", ORA + 900, ORA + 1500)], trasbordo=60),
+    ])
+    esito = replica(itinerario, _ritardi({("t1", "A"): 0, ("t1", "B"): 0,
+                                          ("t2", "B"): 0, ("t2", "C"): 0}))
+    c = esito.coincidenze[0]
+    assert c.tenuta is True
+    assert c.respiro_reale == 240
+    assert c.respiro_reale == c.respiro_nominale
+
+
+def test_un_itinerario_senza_cambi_non_registra_coincidenze():
+    itinerario = _itinerario([_tappa("A", "B", [("t1", ORA, ORA + 600)])])
+    esito = replica(itinerario, _ritardi({("t1", "A"): 0, ("t1", "B"): 0}))
+    assert esito.coincidenze == ()

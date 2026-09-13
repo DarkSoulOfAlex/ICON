@@ -20,6 +20,7 @@ from src.planner.robust import (
     Salita,
     Tappa,
     pianifica_robusto,
+    probabilita_coincidenze,
     probabilita_convoluzione,
     probabilita_montecarlo,
 )
@@ -290,3 +291,37 @@ def test_tratta_e_immutable_con_sequenza_a_monte() -> None:
     t = Tratta("roma", "L1", "T1", "S1", 10, BASE, sequenza_a_monte=5)
     with pytest.raises(Exception):
         t.sequenza_a_monte = 6
+
+
+def test_le_probabilita_per_coincidenza_sono_una_per_cambio() -> None:
+    """Un itinerario a due tappe ha un cambio, e quindi una probabilita' sola."""
+    modello = ModelloSintetico(correlazione=0.0)
+    itinerario = Itinerario(
+        "prova", BASE,
+        (_tappa(BASE, BASE + 1500), _tappa(BASE + 1800, BASE + 3000, minimo=180,
+                                           linea="L2", seq=3)),
+    )
+    p = probabilita_coincidenze(itinerario, modello)
+    assert len(p) == 1
+    assert 0.0 <= p[0] <= 1.0
+
+
+def test_un_itinerario_senza_cambi_non_ha_probabilita_di_coincidenza() -> None:
+    modello = ModelloSintetico(correlazione=0.0)
+    assert probabilita_coincidenze(_una_tappa(BASE + 3600, BASE + 5400), modello) == ()
+
+
+def test_piu_respiro_rende_la_coincidenza_piu_probabile() -> None:
+    """Controllo di monotonia: senza, la funzione potrebbe restituire un numero
+    qualsiasi fra zero e uno e i due test sopra passerebbero lo stesso."""
+    modello = ModelloSintetico(correlazione=0.0)
+    probabilita = []
+    for respiro in (0, 600, 1800):
+        itinerario = Itinerario(
+            "prova", BASE,
+            (_tappa(BASE, BASE + 1500),
+             _tappa(BASE + 1500 + 180 + respiro, BASE + 3600, minimo=180,
+                    linea="L2", seq=3)),
+        )
+        probabilita.append(probabilita_coincidenze(itinerario, modello)[0])
+    assert probabilita[0] < probabilita[1] < probabilita[2]

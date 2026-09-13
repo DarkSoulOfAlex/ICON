@@ -48,6 +48,25 @@ class ErroreReplica(Exception):
 
 
 @dataclass(frozen=True)
+class EsitoCoincidenza:
+    """Com'e' andato un singolo cambio, sull'orario e sui ritardi osservati.
+
+    Il respiro **nominale** e' quello che il pianificatore vedeva; quello **reale**
+    e' quello che il viaggiatore ha incontrato. Il secondo e' il solo che possa
+    spiegare un errore del modello sui ritardi, perche' il modello sbaglia li' e non
+    sull'orario: in un viaggio che slitta di dieci minuti i due non si somigliano.
+    """
+
+    indice: int
+    """Quale cambio, a partire da 1."""
+    respiro_nominale: int
+    respiro_reale: int | None
+    """``None`` se la tappa precedente non e' stata osservata e il viaggio si e' fermato."""
+    tenuta: bool
+    """La corsa pianificata e' stata presa."""
+
+
+@dataclass(frozen=True)
 class EsitoReplica:
     """Che cosa e' successo davvero a chi ha seguito quell'itinerario."""
 
@@ -61,6 +80,12 @@ class EsitoReplica:
     """Tappe percorse prima di arrivare o di fermarsi."""
     partenza_persa: bool = False
     """La prima corsa era gia' partita: non e' una coincidenza, e' un ritardo proprio."""
+    coincidenze: tuple[EsitoCoincidenza, ...] = ()
+    """Un record per cambio incontrato, per poter misurare la singola coincidenza.
+
+    Il conteggio aggregato ``coincidenze_perse`` dice quante ne sono saltate ma non
+    quali ne' con quanto respiro: senza questi record, un errore locale alla
+    coincidenza e uno che nasce dal comporle restano indistinguibili."""
 
     @property
     def completato(self) -> bool:
@@ -96,9 +121,11 @@ def replica(itinerario: Itinerario, ritardo: RitardoOsservato) -> EsitoReplica:
     arrivo_precedente: int | None = None
     perse = recuperi = 0
     partenza_persa = False
+    cambi: list[EsitoCoincidenza] = []
 
     for indice, tappa in enumerate(itinerario.tappe):
         pronto = _pronto_per(tappa, arrivo_precedente, itinerario.partenza_richiesta)
+        pianificata = tappa.alternative[0]
         presa = None
         for posizione, corsa in enumerate(tappa.alternative):
             alla_salita = ritardo(corsa.trip_id, tappa.fermata_salita)
@@ -112,8 +139,26 @@ def replica(itinerario: Itinerario, ritardo: RitardoOsservato) -> EsitoReplica:
             presa = (posizione, corsa.arrivo_programmato + alla_discesa)
             break
 
+        if indice > 0:
+            # Il respiro reale si misura sulla corsa PIANIFICATA anche quando e'
+            # stata persa: dice di quanto la si e' mancata, che e' l'informazione
+            # che serve. Sulla corsa di riserva direbbe quanto fosse comodo il
+            # piano B.
+            ritardo_pianificata = ritardo(pianificata.trip_id, tappa.fermata_salita)
+            reale = (None if ritardo_pianificata is None or arrivo_precedente is None
+                     else pianificata.partenza_programmata + ritardo_pianificata
+                     - arrivo_precedente - tappa.tempo_minimo_trasbordo)
+            cambi.append(EsitoCoincidenza(
+                indice=indice,
+                respiro_nominale=(pianificata.partenza_programmata
+                                  - itinerario.tappe[indice - 1].alternative[0].arrivo_programmato
+                                  - tappa.tempo_minimo_trasbordo),
+                respiro_reale=reale,
+                tenuta=presa is not None and presa[0] == 0))
+
         if presa is None:
-            return EsitoReplica(None, perse, recuperi, indice, partenza_persa)
+            return EsitoReplica(None, perse, recuperi, indice, partenza_persa,
+                                tuple(cambi))
         posizione, arrivo_precedente = presa
         if posizione > 0:
             # La corsa pianificata era gia' partita, o non era osservata: in
@@ -125,7 +170,7 @@ def replica(itinerario: Itinerario, ritardo: RitardoOsservato) -> EsitoReplica:
             recuperi += 1
 
     return EsitoReplica(arrivo_precedente + itinerario.coda_a_piedi, perse, recuperi,
-                        len(itinerario.tappe), partenza_persa)
+                        len(itinerario.tappe), partenza_persa, tuple(cambi))
 
 
 def rigiocabile(itinerario: Itinerario, ritardo: RitardoOsservato) -> bool:

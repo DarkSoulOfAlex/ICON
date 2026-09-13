@@ -204,6 +204,56 @@ def _tratta(itinerario: Itinerario, tappa: Tappa, salita: Salita, alla_discesa: 
     )
 
 
+def probabilita_coincidenze(itinerario: Itinerario,
+                            modello: ModelloRitardo) -> tuple[float, ...]:
+    """Per ogni cambio, la probabilita' che il modello attribuisce al tenerlo.
+
+    Il viaggiatore tiene la coincidenza se arriva alla fermata di scambio in tempo
+    per la corsa pianificata, cioe' se
+
+        ritardo all'arrivo - ritardo alla partenza <= respiro nominale
+
+    dove il respiro e' ``partenza_programmata - arrivo_programmato - trasbordo``. Le
+    due distribuzioni vengono dal modello e si compongono per convoluzione, sotto
+    l'ipotesi che siano indipendenti: e' la stessa ipotesi che il pianificatore fa
+    attraversando un cambio, dove il ritardo si azzera perche' il veicolo e' un altro.
+
+    **A che cosa serve, visto che il pianificatore non ne ha bisogno.** Il
+    pianificatore compone tutto in un colpo e produce una probabilita' per l'intero
+    viaggio; questa funzione la scompone nei suoi fattori, e permette di confrontare
+    la stima del modello con la frequenza osservata **una coincidenza alla volta**.
+    E' la misura che distingue un errore locale alla singola coincidenza da un errore
+    che nasce nel comporle: senza, le due restano indistinguibili.
+
+    Si usa il ritardo a monte marginalizzato, cioe' quello che il modello userebbe
+    non sapendo nulla del viaggio precedente. La probabilita' che ne esce non e'
+    quindi identica a quella che il pianificatore ha usato dentro la propria
+    composizione, dove il condizionamento c'e': e' la stima che il modello darebbe di
+    quella singola coincidenza presa da sola, che e' esattamente cio' che si vuole
+    mettere alla prova.
+    """
+    if len(itinerario.tappe) < 2:
+        return ()
+    griglia = _griglia_ritardi()
+    probabilita = []
+    for precedente, tappa in zip(itinerario.tappe, itinerario.tappe[1:]):
+        arrivo = precedente.alternative[0]
+        partenza = tappa.alternative[0]
+        respiro = (partenza.partenza_programmata - arrivo.arrivo_programmato
+                   - tappa.tempo_minimo_trasbordo)
+        massa_arrivo = _pmf_da_distribuzione(
+            modello.distribuzione(_tratta(itinerario, precedente, arrivo, True)), griglia)
+        massa_partenza = _pmf_da_distribuzione(
+            modello.distribuzione(_tratta(itinerario, tappa, partenza, False)), griglia)
+        # P(a - p <= respiro) sommando sulle coppie: la griglia e' di poche centinaia
+        # di punti, quindi il prodotto esterno costa meno di una convoluzione scritta
+        # a mano e non ha da gestire l'allineamento degli indici.
+        differenza = griglia[:, None] - griglia[None, :]
+        peso = massa_arrivo[:, None] * massa_partenza[None, :]
+        probabilita.append(float(peso[differenza <= respiro].sum()))
+    return tuple(probabilita)
+
+
 # =============================================================================
 # Metodo 1: convoluzione numerica
 # =============================================================================

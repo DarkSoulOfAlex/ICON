@@ -57,7 +57,8 @@ from src.eval.replica import (                               # noqa: E402
 from src.graph.search import cerca_frontiera_pareto          # noqa: E402
 from src.graph.time_expanded import costruisci               # noqa: E402
 from src.gtfs.loader import carica_archivio                  # noqa: E402
-from src.planner.robust import candidati_da_frontiera, pianifica_robusto  # noqa: E402
+from src.planner.robust import (                             # noqa: E402
+    candidati_da_frontiera, pianifica_robusto, probabilita_coincidenze)
 
 from ricerca_confronto import coppie_casuali                 # noqa: E402
 from stima_rete import (                                     # noqa: E402
@@ -264,8 +265,16 @@ def istanze_del_giorno(citta: str, giornata: str, ritardo, quante: int):
 
 def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
                   origine: str, destinazione: str, candidati, modello,
-                  ritardo, provenienza: dict) -> list[Esito]:
-    """Le due strategie sulla stessa coppia, per ogni margine, rigiocate."""
+                  ritardo, provenienza: dict,
+                  coincidenze: list[dict] | None = None) -> list[Esito]:
+    """Le due strategie sulla stessa coppia, per ogni margine, rigiocate.
+
+    ``coincidenze``, se dato, riceve una riga per ciascun cambio di ciascun
+    itinerario scelto: la probabilita' che il modello gli attribuisce, il respiro
+    nominale e reale, e se sia stato tenuto. Serve a confrontare la stima del
+    modello con la frequenza osservata **una coincidenza alla volta**, che e' la
+    misura che distingue un errore locale da uno che nasce nella composizione.
+    """
     righe: list[Esito] = []
     piu_rapido = min(c.orario_arrivo for c in candidati)
     for margine in MARGINI:
@@ -298,6 +307,23 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
                 recuperi=esito.recuperi_riusciti,
                 partenza_persa=esito.partenza_persa, candidati=len(candidati),
                 margine_critico=margine_piu_stretto(candidato.itinerario)))
+            if coincidenze is None:
+                continue
+            # Le probabilita' per coincidenza non dipendono dalla scadenza, ma
+            # l'itinerario scelto si': si ricalcolano a ogni margine perche' a
+            # margini diversi corrispondono itinerari diversi.
+            attese = probabilita_coincidenze(candidato.itinerario, modello)
+            for cambio, attesa in zip(esito.coincidenze, attese):
+                coincidenze.append({
+                    "citta": citta, "giornata": giornata, "bordi": etichetta,
+                    "finestra": provenienza["finestra"], "coppia": indice,
+                    "margine": margine, "strategia": nome,
+                    "cambio": cambio.indice,
+                    "probabilita_attesa": attesa,
+                    "respiro_nominale": cambio.respiro_nominale,
+                    "respiro_reale": cambio.respiro_reale,
+                    "tenuta": int(cambio.tenuta),
+                })
     return righe
 
 
@@ -470,6 +496,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # righe prodotte con altri parametri.
     fatte: set[tuple[str, str, str]] = set()
     tutte: list[dict] = []
+    per_coincidenza: list[dict] = []
     if argomenti.solo_riepilogo:
         if not dettaglio.is_file():
             print(f"  {dettaglio} non esiste: nulla da riepilogare")
@@ -565,7 +592,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for indice, (o, d, candidati) in enumerate(istanze, 1):
                     righe.extend(valuta_coppia(nome_citta, giornata, etichetta, indice,
                                                o, d, candidati, modello, ritardo,
-                                               provenienza))
+                                               provenienza, per_coincidenza))
                 nuove.extend(vars(r) for r in righe)
                 quante += len(righe)
             tutte.extend(nuove)
@@ -582,11 +609,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                   f"ignote, {d['tratte_senza_ritardo_a_monte']:,} tratte senza ritardo "
                   f"a monte su {d['tratte_servite']:,}")
 
-    return riferisci(tutte, risultati, dettaglio)
+    return riferisci(tutte, risultati, dettaglio,
+                     per_coincidenza=per_coincidenza)
 
 
 def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path,
-              scarta_magre: bool = True) -> int:
+              scarta_magre: bool = True,
+              per_coincidenza: list[dict] | None = None) -> int:
     """Riepiloga, scrive e stampa.
 
     Separato dal ciclo che rigioca per poterlo rifare senza ricalcolare nulla: la
@@ -608,6 +637,10 @@ def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path,
     # Il dettaglio non si scrive qui: viene aggiunto a ogni giornata conclusa,
     # perche' un'interruzione non porti via ore di replica. Qui si dice soltanto
     # quante righe lo compongono, che e' cio' su cui il riepilogo e' calcolato.
+    if per_coincidenza:
+        destinazione = risultati / "coincidenze.csv"
+        pd.DataFrame(per_coincidenza).to_csv(destinazione, index=False)
+        print(f"scritto {destinazione} ({len(per_coincidenza)} righe)")
     print(f"\n{dettaglio} contiene {len(tutte)} righe")
     print(f"scritto {destinazione} ({len(riepilogo)} righe)")
 
