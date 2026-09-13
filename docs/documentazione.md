@@ -210,8 +210,9 @@ coincidenza sia da considerarsi persa.
 Lo standard GTFS [5] prevede un file facoltativo, `transfers.txt`, in cui
 un'azienda puo' dichiarare quali cambi siano possibili e con quale tempo minimo.
 Il contenuto degli archivi di entrambe le aziende del progetto e' stato
-verificato: ne' Roma Mobilita' ne' GTT di Torino lo pubblica. L'archivio di Roma
-contiene `agency.txt`, `calendar_dates.txt`, `routes.txt`, `shapes.txt`,
+verificato: ne' Roma Mobilita' [14] ne' GTT di Torino [15] lo pubblica.
+L'archivio di Roma contiene `agency.txt`, `calendar_dates.txt`, `routes.txt`,
+`shapes.txt`,
 `stop_times.txt`, `stops.txt` e `trips.txt`; quello di Torino aggiunge alcuni file
 non standard sulle tariffe e sui quadri orari, ma neppure lui contiene i
 trasbordi. L'intera relazione va dunque derivata da cio' che i dati contengono
