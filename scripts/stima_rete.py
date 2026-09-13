@@ -102,7 +102,7 @@ SCALE: dict[str, tuple[tuple[int, str], ...]] = {
 SCALA_PRINCIPALE = "constatazioni sole"
 
 # Dove il feed non pubblica le fermate gia' passate esiste una popolazione sola, e
-# la scala perde la dimensione del tipo di dato: vedere Citta.scale e la voce 63.
+# la scala perde la dimensione del tipo di dato: vedere Citta.scale.
 SCALE_POPOLAZIONE_UNICA: dict[str, tuple[tuple[int, str], ...]] = {
     "popolazione unica": ((0, U), (1, U), (2, U), (3, U), (4, U)),
     "solo livello fine": ((4, U),),
@@ -291,7 +291,7 @@ def bordi_candidati(secondi: np.ndarray,
     discretizzazione piu' grossolana.
 
     I bordi devono essere **gli stessi per le due citta'**, altrimenti le loro
-    perdite non sono confrontabili e il paragone della voce 59 perde il suo termine
+    perdite non sono confrontabili e il paragone perde il suo termine
     di riferimento. I candidati che dipendono dai dati si calcolano quindi sulle
     giornate di addestramento delle due citta' messe insieme.
 
@@ -305,7 +305,7 @@ def bordi_candidati(secondi: np.ndarray,
       difetto degli attuali sia di sola posizione.
     - ``misti``: meta' dei tagli nell'anticipo e meta' nel ritardo, per quantili
       dentro ciascun lato. I percentili (25/55/85 sotto, 40/70/90 sopra) sono una
-      scelta dichiarata, non il risultato di una ricerca: la voce 64 riporta che il
+      scelta dichiarata, non il risultato di una ricerca: il
       confronto non dipende da loro entro la variabilita' misurata.
     - ``decisione``: costruito dal problema e non dai dati, vedi il commento sotto.
     """
@@ -661,7 +661,7 @@ def confronto_sulla_correlazione(modello, gradini: tuple[tuple[int, str], ...],
             if popolazione != U:
                 # Riga di raffronto sulla popolazione "tutte" della stessa citta':
                 # le perdite fra Roma e Torino non sono a confronto se ciascuna sta
-                # su una domanda diversa (voce 59). Le colonne "raffronto_" danno la
+                # su una domanda diversa. Le colonne "raffronto_" danno la
                 # lettura omogenea, senza sostituire quella principale.
                 mt = (dati["giornata"] == g) & maschera_popolazione(dati, U)
                 if fascia is not None:
@@ -734,7 +734,7 @@ class Citta:
     forza_due_dimensioni: bool = False
     """Tiene la scala a due dimensioni anche dove le constatazioni non esistono.
 
-    Serve solo a riprodurre i numeri precedenti alla scoperta della voce 63, per
+    Serve solo a riprodurre i numeri precedenti a quella scoperta, per
     poter dire di quanto una correzione alla volta abbia spostato le cose. Non e'
     una configurazione: e' uno strumento di confronto, e chi lo attiva sta
     chiedendo di misurare su una popolazione che porta un nome sbagliato.
@@ -923,7 +923,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     fa con tutte le altre. In questa fase alfa e' tarato sulle stesse giornate della
     valutazione: una lettura assoluta ottimistica per tutti i candidati in igual
     modo, mentre il **confronto** fra loro resta equo - cosa da dichiarare, ed e'
-    dichiarata qui e nella voce 64.
+    dichiarata qui.
 
     **La soglia di indistinguibilita' viene dal candidato di riferimento**, non dal
     massimo su chi e' in gara: ``attuali`` e' lo stato dell'arte precedente, la sua
@@ -1083,7 +1083,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
     # Righe di **raffronto**, non risultati: valutare la stima anche sulla
     # popolazione "tutte" serve a rendere confrontabili le perdite delle due citta',
     # che altrimenti non stanno nella stessa domanda - Roma stima sulle
-    # constatazioni, Torino su tutto quello che il feed pubblica (voce 59). La riga
+    # constatazioni, Torino su tutto quello che il feed pubblica. La riga
     # di Roma qui prodotta e' quella di raffronto; la principale resta quella sulla
     # sua popolazione.
     m_verifica_tutte = np.isin(dati["giornata"], c.verifica) & maschera_popolazione(
@@ -1251,7 +1251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         default="automatica",
                         help="'due-dimensioni' tiene constatazioni e previsioni "
                              "separate anche dove le prime non esistono, per "
-                             "riprodurre i numeri anteriori alla voce 63")
+                             "riprodurre i numeri anteriori a quella scoperta")
     parser.add_argument("--radice", type=Path, default=RADICE)
     argomenti = parser.parse_args(argv)
 

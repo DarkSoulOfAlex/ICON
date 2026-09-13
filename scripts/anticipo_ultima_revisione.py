@@ -1,7 +1,7 @@
 """Con quanto anticipo sul transito atteso e' emessa l'ULTIMA stima di un passaggio.
 
 E' il numero che regge una limitazione dichiarata del progetto: su Torino il feed
-toglie la fermata dal ``trip_updates`` appena il mezzo vi transita (voce 63), quindi
+toglie la fermata dal ``trip_updates`` appena il mezzo vi transita, quindi
 il dato su cui il modello si stima e il backtesting verifica **non e' un ritardo
 osservato** ma l'ultima previsione pubblicata prima della sparizione. Quanto valga
 quell'"ultima" decide quanto la limitazione sia severa: a dieci secondi dal transito
@@ -67,7 +67,7 @@ def anticipi_di_un_giorno(percorso: Path) -> np.ndarray:
     anticipo = osservato[ultima] - feed[ultima]
     # Una riga senza orario programmato non ha un transito atteso: il ritardo che il
     # feed dichiara resta valido, ma l'anticipo no, e va tolto invece di contare come
-    # zero (voce 63: le statistiche di contorno smascherano le popolazioni mal definite).
+    # zero: le statistiche di contorno smascherano le popolazioni mal definite.
     return anticipo[np.isfinite(anticipo)]
 
 

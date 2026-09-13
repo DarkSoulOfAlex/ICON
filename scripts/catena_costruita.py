@@ -14,7 +14,7 @@ a tavolino, di cui si conosce la risposta:
 
 I numeri stavano finora soltanto dentro ``tests/test_markov.py``, che li vincola con
 delle soglie ma non li scrive da nessuna parte: chi legge il documento trovava
-0,01174 bit e non aveva modo di rifarlo. E' il difetto della voce 70 applicato al
+0,01174 bit e non aveva modo di rifarlo. E' lo stesso difetto applicato al
 passaggio piu' importante del capitolo, e questo script lo chiude scrivendo
 ``results/catena_costruita.csv``.
 

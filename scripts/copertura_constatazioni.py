@@ -1,7 +1,7 @@
 """Quante celle della matrice di transizione le constatazioni riescono a coprire.
 
 E' la misura che decide l'ordine della scala di risalita, e va fatta prima di
-stimare qualunque cosa. La voce 61 stabilisce che le constatazioni vengono prima
+stimare qualunque cosa. E' stabilito che le constatazioni vengono prima
 delle previsioni, perche' su Roma il 23% delle transizioni fra previsioni e'
 l'identita' - valori non ricalcolati, quindi copie e non informazione - contro il
 4,7% fra constatazioni. Resta da sapere **fin dove** le constatazioni arrivino: se

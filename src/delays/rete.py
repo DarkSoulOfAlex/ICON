@@ -34,7 +34,7 @@ prudenti dove i dati scarseggiano e fiduciosi dove abbondano.
 **La scala ha due dimensioni.** Oltre al contesto, dal piu' grossolano al piu'
 fine, c'e' il tipo di dato: le constatazioni prima e le previsioni poi, perche' su
 Roma il 23% delle transizioni fra previsioni e' l'identita' - valori non
-ricalcolati, quindi copie - contro il 4,7% fra constatazioni (voce 61). Ne segue
+ricalcolati, quindi copie - contro il 4,7% fra constatazioni. Ne segue
 che ogni gradino ha **le proprie osservazioni**, non una diversa partizione delle
 stesse: il gradino "previsioni al contesto fine" vede righe che il gradino
 "constatazioni al contesto fine" non vede affatto. Da qui la firma di ``Livello``,
@@ -318,7 +318,7 @@ def tara(
     Il campione di verifica deve contenere **solo constatazioni**: se contenesse
     anche previsioni, fra le quali su Roma quasi un quarto delle transizioni e'
     l'identita', la concentrazione verrebbe scelta per predire bene le ripetizioni,
-    che e' il contrario di cio' che serve (voce 61).
+    che e' il contrario di cio' che serve.
 
     Provare tutte le combinazioni costerebbe ``len(candidati) ** len(livelli)``
     stime; si procede invece per discesa lungo le coordinate, un gradino alla volta

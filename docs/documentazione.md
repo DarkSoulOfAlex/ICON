@@ -4108,7 +4108,7 @@ rimasto.
 
 Sono la parte del lavoro che sopravvive ai numeri, perche' i numeri valgono per la
 finestra in cui sono stati raccolti e queste no. Vengono tutte da errori commessi e
-scoperti, e ciascuna e' registrata in `docs/decisioni.md` col caso che l'ha prodotta.
+scoperti, e ciascuna e' riportata qui sotto col caso che l'ha prodotta.
 
 **Una misura di verifica scelta dopo la correzione conferma sempre.** Un difetto nella
 chiave di deduplica era stato corretto e poi "verificato" con una statistica scelta a

@@ -10,7 +10,7 @@ cambiare la risposta.
 
 **Perche' questo programma esiste, e perche' cosi' tardi.** Il numero era stato
 misurato una volta e riportato nel documento, ma non lo produceva nessuno script:
-viveva nel log di una sessione. E' lo stesso difetto della voce 70 - un numero vero
+viveva nel log di una sessione. E' lo stesso difetto - un numero vero
 quando fu scritto e non piu' verificabile - e qui costa un minuto rimediarlo,
 perche' la macchina per farlo c'era gia': ``cerca_primo_arrivo`` accetta
 ``istante_nella_chiave``.

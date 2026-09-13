@@ -8,7 +8,7 @@ e' la misura reale, non l'estrapolazione della curva di complessita'.
 **Perche' scrive un CSV e non solo a schermo.** Fino alla verifica del 11 settembre
 questi numeri esistevano soltanto nel log di un'esecuzione: erano veri quando furono
 scritti nel documento e non erano piu' verificabili da nessuno, che e' esattamente il
-difetto della voce 70. Undici secondi di grounding non sono un costo che giustifichi
+difetto da evitare. Undici secondi di grounding non sono un costo che giustifichi
 di non rifare la misura: mancava lo sbocco, non il tempo.
 
 Uso:

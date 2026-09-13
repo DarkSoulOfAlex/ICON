@@ -14,8 +14,7 @@ misura l'artefatto della discretizzazione, che il primo riferimento non vede
 affatto: condizionare sul bin non e' condizionare sulla variabile, e su una catena
 markoviana per costruzione l'eccesso risulta dodici volte il riferimento per
 permutazione. Il criterio e' il verso della scala: se l'eccesso cala verso zero al
-raffinarsi dei bin e' discretizzazione, se resta o cresce e' struttura. La voce 60
-del registro riporta il ragionamento per esteso.
+raffinarsi dei bin e' discretizzazione, se resta o cresce e' struttura.
 
 **Le tre popolazioni, e perche' la terza e' quella conclusiva.** Il ritardo che i
 feed pubblicano e' in larga parte una **previsione**, emessa in media con quindici
@@ -27,7 +26,7 @@ passate** al momento dell'emissione, che sono constatazioni. Se la dipendenza
 sparisse fra le seconde e restasse fra le prime, sarebbe un artefatto del
 produttore e non un fatto sul traffico.
 
-**Le due citta' restano separate**, per il vincolo della voce 59: le loro colonne
+**Le due citta' restano separate**, per un vincolo dichiarato: le loro colonne
 ``ritardo_secondi`` non descrivono la stessa grandezza con la stessa
 affidabilita'. Se una soddisfacesse l'assunzione e l'altra no, e' gia' un
 risultato.
@@ -141,7 +140,7 @@ def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> No
     sd = pd.factorize(tabella.column("service_date").to_pandas(), sort=False)[0]
     trip = pd.factorize(tabella.column("trip_id").to_pandas(), sort=False)[0]
     # Chiave unica di corsa-giorno: la data fa parte della chiave, per la stessa
-    # ragione della voce 58, cioe' che una cartella puo' contenere due giorni di
+    # ragione gia' detta, cioe' che una cartella puo' contenere due giorni di
     # servizio e la stessa corsa vi ricorre.
     codice = sd.astype(np.int64) * (int(trip.max()) + 1) + trip
     seq = tabella.column("stop_sequence").to_numpy().astype(np.int64)
@@ -405,7 +404,7 @@ def costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazion
             # Le osservazioni per cella sono la CAUSA del capovolgimento di segno
             # fra i due regimi, e finora esistevano solo nel log di questa
             # esecuzione: un numero citato nel documento e non rifacibile da
-            # nessuno e' esattamente il difetto della voce 70.
+            # nessuno e' esattamente quel difetto.
             "celle_senza": c.celle_senza, "celle_con": c.celle_con,
             "osservazioni_per_cella_con": c.terne_addestramento / c.celle_con,
             "osservazioni_per_cella_senza": c.terne_addestramento / c.celle_senza,
@@ -551,8 +550,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         pd.DataFrame(tutte).to_csv(destinazione, index=False)
         print(f"\nscritto {destinazione} ({len(tutte)} righe)")
     print("\n" + "=" * 78)
-    print("Il verdetto si legge sulla scala, non sul valore assoluto: la voce 60")
-    print("del registro spiega perche' il riferimento per permutazione non basta.")
+    print("Il verdetto si legge sulla scala, non sul valore assoluto: il")
+    print("riferimento per permutazione, da solo, non basta.")
     print("=" * 78)
     return 0
 

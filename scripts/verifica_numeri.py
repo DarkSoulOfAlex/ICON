@@ -379,7 +379,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print()
     print("A COSA SERVE, e a cosa no. La difesa principale del documento non e' questo")
     print("programma ma la riga di fonte sotto ogni tabella, che dice da quale CSV e con")
-    print("quale aggregazione il numero viene (voce 71): quella rende il numero rifacibile")
+    print("quale aggregazione il numero viene: quella rende il numero rifacibile")
     print("e obbliga chi scrive a riaprire il file invece di citare a memoria.")
     print()
     print("Qui si pescano i numeri in PROSA, che nessuna riga di fonte copre, e quelli che")

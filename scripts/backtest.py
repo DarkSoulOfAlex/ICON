@@ -18,7 +18,7 @@ l'unico disponibile e' cio' che i mezzi hanno fatto.
 
 **Le giornate della replica sono quelle di verifica**, cioe' quelle che il modello
 non ha visto in nessuna fase: la stima usa addestramento e taratura, la scelta dei
-bordi usa il banco dentro l'addestramento (voce 64). Il modello arriva alla replica
+bordi usa il banco dentro l'addestramento. Il modello arriva alla replica
 senza avere mai guardato quel giorno.
 
 **Che cosa si esclude, e va detto.** Solo una parte delle corse dell'orario compare
@@ -133,7 +133,7 @@ class Esito:
     copertura_orario: float
     """Quota di righe della giornata che hanno trovato il proprio orario
     programmato: una giornata mal coperta produce poche coppie rigiocabili, ed e'
-    successo (voce 64)."""
+    successo."""
     margine_critico: int | None
     """Secondi di respiro della coincidenza piu' tesa dell'itinerario scelto.
 
@@ -629,7 +629,7 @@ def riferisci(tutte: list[dict], risultati: Path, dettaglio: Path,
     riepilogo = riepiloga(tutte, scarta_magre)
     # Il riepilogo con le giornate magre dentro non sostituisce quello principale:
     # sta accanto, perche' la differenza fra i due E' il risultato che giustifica
-    # la regola (voce 64), e senza un file quel confronto sarebbe un numero scritto
+    # la regola, e senza un file quel confronto sarebbe un numero scritto
     # a memoria.
     destinazione = risultati / ("backtest_riepilogo.csv" if scarta_magre
                                 else "backtest_riepilogo_con_magre.csv")

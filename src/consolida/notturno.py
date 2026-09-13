@@ -31,8 +31,8 @@ sapere. La stessa logica vale per il ``route_id``, che si potrebbe in teoria
 ricavare dai ``vehicle_positions``, ma richiederebbe un accoppiamento temporale
 fra due feed con timestamp diversi mentre ``trips.txt`` lo dice in modo esatto.
 
-**La deduplica conserva l'evoluzione della previsione.** Vedere la voce 41 del
-registro delle decisioni e la classe :class:`Politica`.
+**La deduplica conserva l'evoluzione della previsione.** Vedere la classe
+:class:`Politica`.
 """
 
 from __future__ import annotations

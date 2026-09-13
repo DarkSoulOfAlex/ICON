@@ -6,7 +6,8 @@ Un pianificatore di viaggi che non minimizza l'orario teorico di arrivo ma
 massimizza la **probabilita' di arrivare entro un orario dato**, usando la
 distribuzione reale dei ritardi appresa da dati raccolti sul campo.
 
-Le scelte tecniche e il perche' sono in [docs/decisioni.md](docs/decisioni.md).
+Le scelte tecniche e il perche' sono discusse in
+[docs/documentazione.md](docs/documentazione.md), una sottosezione per argomento.
 
 ---
 

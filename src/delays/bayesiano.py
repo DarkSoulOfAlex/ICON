@@ -17,8 +17,8 @@ cioe' quella che aggiunge meno informazione di quanta i dati ne diano:
   ritardo medio misurato dentro quel bin, e la massima entropia su una semiretta
   con media assegnata e' l'esponenziale.
 
-Nessuno di questi parametri e' scelto: gli estremi vengono dai bordi tarati nella
-voce 64, le medie sono misurate sulle stesse giornate su cui si stima. L'alternativa
+Nessuno di questi parametri e' scelto: gli estremi vengono dai bordi tarati a parte,
+le medie sono misurate sulle stesse giornate su cui si stima. L'alternativa
 che si e' scartata era mettere tutta la massa di un bin nel suo valore medio: la
 ripartizione diventerebbe una scala a gradini, e ``P(arrivo <= T)`` salterebbe di
 colpo al variare di T di un secondo, il che non e' un difetto di precisione ma un

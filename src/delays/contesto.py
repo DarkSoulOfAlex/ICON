@@ -134,7 +134,7 @@ Serve a decidere se su un feed le constatazioni **esistano**. Se il produttore
 togliesse la fermata dal `trip_updates` appena il mezzo vi transita, nessun
 passaggio avvenuto sarebbe mai osservabile, e il criterio di ``constatazione``
 selezionerebbe soltanto le previsioni piu' anticipate - una selezione sistematica
-che restituisce la coda negativa della distribuzione. Vedere la voce 63.
+che restituisce la coda negativa della distribuzione.
 
 Un minuto e' una soglia larga di proposito: distingue "pubblica il passato" da
 "non lo pubblica affatto", non misura quanto lo pubblichi. Sui dati raccolti la

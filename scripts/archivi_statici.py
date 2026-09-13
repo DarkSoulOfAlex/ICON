@@ -15,8 +15,7 @@ sia - i file stanno su disco - e questo script li scrive in
 riprendera': ogni giornata nuova puo' aggiungere una revisione, e allora tutte le
 righe di questo CSV cambiano. Senza la data del conteggio, due esecuzioni a
 distanza di un mese darebbero numeri diversi senza che nulla dicesse perche'. E'
-lo stesso motivo per cui esistono le colonne ``finestra`` e ``archivio`` altrove
-(voce 73).
+lo stesso motivo per cui esistono le colonne ``finestra`` e ``archivio`` altrove.
 
 **Che cosa conta come revisione.** Un file ``.zip`` nella cartella della citta',
 il cui nome e' la data in cui e' stato scaricato. Il collector lo scrive **solo
