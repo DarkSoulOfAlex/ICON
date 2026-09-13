@@ -114,18 +114,19 @@ va cercata un'altra citta'.
 
 ### 2.3 Stato attuale della configurazione
 
-[config.yaml](config.yaml) contiene gia' due citta' verificate:
+[config.yaml](config.yaml) contiene le due citta' verificate su cui poggiano tutti
+gli esperimenti del progetto:
 
 | Citta' | trip_updates | vehicle_positions | orario statico |
 | --- | --- | --- | --- |
 | **roma** (Roma Mobilita') | OK, ritardi espliciti nel campo `delay` | OK | OK, con `.md5` |
-| **torino** (GTT) | OK, ritardi espliciti nel campo `delay` | OK | **MANCANTE** |
+| **torino** (GTT) | OK, ritardi espliciti nel campo `delay` | OK | OK, senza `.md5` |
 
-**Resta da trovare l'orario statico di Torino.** Finche' manca, i dump real-time
-di Torino vengono raccolti ma non saranno interpretabili in Fase 3, perche' non
-si potra' risalire agli orari programmati. Cercarlo sul portale open data del
-Comune di Torino o di GTT (voce "GTFS" o "orario programmato") e incollarlo in
-`url_gtfs_statico` sotto `torino`.
+La differenza nell'ultima colonna non e' una lacuna ma un metodo diverso. GTT non
+pubblica un file `.md5` accanto all'archivio, quindi per accorgersi che l'orario
+e' cambiato il collector lo scarica e ne calcola l'impronta, invece di leggere
+quella dichiarata: costa piu' banda di quanto ne costi per Roma e porta allo
+stesso risultato.
 
 Dopo ogni modifica alla configurazione:
 
