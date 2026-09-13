@@ -2,7 +2,7 @@
 # intervalli (>=). Motivo: la valutazione del progetto poggia su una campagna
 # sperimentale; un intervallo di versioni renderebbe i numeri riportati nella
 # documentazione non riproducibili da chi legge, perche' una risoluzione diversa
-# delle dipendenze puo' cambiare il comportamento di scikit-learn o di pandas.
+# delle dipendenze puo' cambiare il comportamento di scipy o di pandas.
 # Versioni verificate come installabili da wheel su Windows / CPython 3.14.6.
 #
 # Installare sempre con:  pip install --only-binary=:all: -r requirements.txt
@@ -17,8 +17,7 @@ pandas==3.0.5
 scipy==1.18.1
 pyarrow==25.0.1
 
-# --- Apprendimento e grafici --------------------------------------------------
-scikit-learn==1.9.0
+# --- Grafici ------------------------------------------------------------------
 matplotlib==3.11.1
 
 # --- Base di conoscenza (ASP) -------------------------------------------------

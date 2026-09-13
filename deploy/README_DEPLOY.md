@@ -10,8 +10,7 @@ sempre accesa risolve il problema alla radice.
 
 **Divisione dei ruoli.** La VM esegue **soltanto** la raccolta. Esperimenti,
 test e scrittura del documento restano sul PC, dove il progetto gira per intero.
-Sulla VM non vengono installati `clingo`, `scikit-learn`, `matplotlib`, `scipy`
-ne' `pytest`.
+Sulla VM non vengono installati `clingo`, `matplotlib`, `scipy` ne' `pytest`.
 
 Ogni blocco di comandi qui sotto e' etichettato con **dove** va eseguito.
 Sostituite `<IP_DELLA_VM>` e `<PERCORSO_CHIAVE>` con i vostri valori: non

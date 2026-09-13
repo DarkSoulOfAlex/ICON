@@ -917,7 +917,7 @@ multi-criterio e' una ricerca a etichette con potatura per dominanza, nella form
 abituale per i problemi di cammino multi-obiettivo [9]. La coda di priorita' e'
 quella della libreria standard di Python, `heapq`; il calcolo delle distanze e la
 manipolazione delle strutture del grafo usano **numpy** [10]; le figure sono
-prodotte con **matplotlib** [17].
+prodotte con **matplotlib** [16].
 
 Sono originali di questo progetto, e per questo esposti nel sommario e fra le
 decisioni di progetto anziche' qui, la dimostrazione di ammissibilita' e
@@ -1379,7 +1379,7 @@ Casella [11]. Le distribuzioni continue e le loro funzioni di ripartizione
 provengono da **scipy.stats** [12]; la propagazione sulla griglia e il
 campionamento usano **numpy** [10], con generatori pseudocasuali espliciti
 inizializzati da un seme dichiarato; le figure sono prodotte con **matplotlib**
-[17].
+[16].
 
 Sono originali di questo progetto, e per questo esposti nel sommario e fra le
 decisioni di progetto anziche' qui: l'argomentazione sulla non riducibilita'
@@ -1944,7 +1944,7 @@ matrici sparse di celle e a una ricorrenza fra livelli, e una libreria di
 apprendimento supervisionato non avrebbe nulla da offrirle: la lettura dei dati
 colonnari usa **pandas** [6] e **pyarrow**, e **scipy.stats** [12] fornisce la
 correlazione di rango usata nella valutazione. La raccolta che alimenta tutto questo
-usa **gtfs-realtime-bindings** [14] per il formato protobuf dei feed e la sola
+usa **gtfs-realtime-bindings** [13] per il formato protobuf dei feed e la sola
 libreria standard di Python per le richieste HTTP.
 
 Due costruzioni meritano invece di essere dichiarate, perche' non sono
@@ -1954,9 +1954,9 @@ esperti, ma una successione di stime in cui la posteriore di ciascun livello di
 contesto diventa la media del priore di Dirichlet del livello immediatamente piu'
 fine, con una concentrazione tarata separatamente per gradino. E' la struttura dei
 modelli gerarchici di Dirichlet usati nello smorzamento dei modelli linguistici
-[18, 19], trasportata qui dalla gerarchia delle n-uple di parole a quella dei
+[17, 18], trasportata qui dalla gerarchia delle n-uple di parole a quella dei
 contesti di linea, fascia e tipo di giorno. La seconda e' l'**assunzione di massima
-entropia dentro ciascun bin** [20], necessaria perche' il pianificatore chiede una
+entropia dentro ciascun bin** [19], necessaria perche' il pianificatore chiede una
 probabilita' su un istante mentre la tabella conosce solo un intervallo: dentro i
 bin limitati si assume una distribuzione uniforme, in quelli aperti verso l'infinito
 un'esponenziale con la media misurata dentro quel bin. E' l'unico punto in cui il
@@ -4222,29 +4222,26 @@ Springer, 2004.
 [12] P. Virtanen et al. *SciPy 1.0: fundamental algorithms for scientific
 computing in Python*. Nature Methods, 17:261-272, 2020.
 
-[13] F. Pedregosa et al. *Scikit-learn: Machine Learning in Python*. Journal of
-Machine Learning Research, 12:2825-2830, 2011.
-
-[14] *GTFS Realtime Reference*. <https://gtfs.org/realtime/reference/>.
+[13] *GTFS Realtime Reference*. <https://gtfs.org/realtime/reference/>.
 Associazione Python: `gtfs-realtime-bindings`.
 
-[15] Roma Mobilità. Dati aperti del trasporto pubblico di Roma: orario statico
+[14] Roma Mobilità. Dati aperti del trasporto pubblico di Roma: orario statico
 <https://romamobilita.it/sites/default/files/rome_static_gtfs.zip> e feed
 real-time `rome_rtgtfs_trip_updates_feed.pb` e
 `rome_rtgtfs_vehicle_positions_feed.pb` sullo stesso dominio.
 
-[16] Gruppo Torinese Trasporti. Dati aperti del trasporto pubblico di Torino:
+[15] Gruppo Torinese Trasporti. Dati aperti del trasporto pubblico di Torino:
 orario statico <https://www.gtt.to.it/open_data/gtt_gtfs.zip> e feed real-time
 <https://percorsieorari.gtt.to.it/das_gtfsrt/>.
 
-[17] J. D. Hunter. *Matplotlib: A 2D Graphics Environment*. Computing in Science &
+[16] J. D. Hunter. *Matplotlib: A 2D Graphics Environment*. Computing in Science &
 Engineering, 9(3):90-95, 2007.
 
-[18] D. J. C. MacKay, L. C. Bauman Peto. *A hierarchical Dirichlet language model*.
+[17] D. J. C. MacKay, L. C. Bauman Peto. *A hierarchical Dirichlet language model*.
 Natural Language Engineering, 1(3):289-308, 1995.
 
-[19] S. F. Chen, J. Goodman. *An empirical study of smoothing techniques for
+[18] S. F. Chen, J. Goodman. *An empirical study of smoothing techniques for
 language modeling*. Computer Speech & Language, 13(4):359-394, 1999.
 
-[20] E. T. Jaynes. *Information Theory and Statistical Mechanics*. Physical Review,
+[19] E. T. Jaynes. *Information Theory and Statistical Mechanics*. Physical Review,
 106(4):620-630, 1957.

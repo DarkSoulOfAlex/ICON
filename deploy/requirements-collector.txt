@@ -2,9 +2,9 @@
 #
 # Non e' il requirements.txt del progetto: la VM esegue soltanto il collector e
 # il consolidamento notturno, mentre esperimenti, test e scrittura del documento
-# restano sulla macchina di analisi. Qui mancano di proposito clingo,
-# scikit-learn, matplotlib, scipy e pytest, che sulla VM non servirebbero a nulla
-# e costerebbero tempo di installazione e spazio.
+# restano sulla macchina di analisi. Qui mancano di proposito clingo, matplotlib,
+# scipy e pytest, che sulla VM non servirebbero a nulla e costerebbero tempo di
+# installazione e spazio.
 #
 # Le versioni sono IDENTICHE a quelle di requirements.txt. E' stato verificato
 # che esistano tutte come wheel precompilate per CPython 3.12 su aarch64:

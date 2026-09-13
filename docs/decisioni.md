@@ -66,7 +66,7 @@ meglio e riducono i conflitti.
 **Motivo.** Il deliverable valutato di questo progetto e' una campagna
 sperimentale. Un intervallo di versioni renderebbe i numeri riportati nella
 documentazione non riproducibili da chi legge: una risoluzione diversa delle
-dipendenze puo' cambiare il comportamento di `scikit-learn` o di `pandas` fra una
+dipendenze puo' cambiare il comportamento di `scipy` o di `pandas` fra una
 minor e l'altra. Il flag `--only-binary` trasforma l'assenza di una wheel in un
 errore immediato invece che in una compilazione da sorgente di venti minuti
 destinata a fallire.
@@ -965,8 +965,8 @@ volontario, e avrebbe legato la campagna sperimentale all'abitudine di non
 spegnere il computer per due settimane.
 
 La divisione dei ruoli e' altrettanto deliberata. Duplicare l'ambiente completo
-sulla VM avrebbe significato installare `clingo`, `scikit-learn`, `matplotlib`,
-`scipy` e `pytest` su una macchina che non li usa, e soprattutto avrebbe creato
+sulla VM avrebbe significato installare `clingo`, `matplotlib`, `scipy` e
+`pytest` su una macchina che non li usa, e soprattutto avrebbe creato
 un secondo posto in cui gli esperimenti possono essere eseguiti, con il rischio
 di risultati prodotti su due macchine diverse e non confrontabili.
 
