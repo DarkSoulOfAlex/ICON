@@ -3776,93 +3776,108 @@ parita' di cambi ne sopravvive circa la meta'.
 
 # Conclusioni
 
-Il sistema realizzato deriva da dati aperti una relazione che quei dati non
-contengono, cerca su di essa gli itinerari non dominati fra tre criteri, e sceglie
-fra questi quello che massimizza la probabilita' di arrivare entro una scadenza.
-Le parti sono state misurate separatamente e poi insieme, rigiocando le scelte sui
-ritardi realmente osservati, e ciascuna ha prodotto un risultato che vale la pena
-riassumere.
+## Che cosa il progetto ha risposto
 
-La base di conoscenza si e' rivelata sostenibile a piena scala — undici secondi e
-mezzo per istanziare l'intera rete di Roma, 4,5 milioni di atomi — e la misura ha
-attribuito il costo a una regola precisa, la chiusura transitiva, che a duemila
-fermate genera da sola il 92,9% degli atomi. Poiche' quella relazione serve di
-rado al pianificatore, il costo si riduce di un ordine di grandezza
-disattivandola, e il fatto che la scelta si possa compiere a valle senza
-riformulare le regole e' una proprieta' della rappresentazione dichiarativa, non
-un accorgimento implementativo. Il confronto fra due citta' ha inoltre mostrato
-che a determinare il costo non e' la dimensione della rete ma la sua densita'
-locale: a parita' di fermate Roma costa 5,4 volte Torino.
+La domanda da cui il progetto e' nato chiedeva se un itinerario scelto massimizzando
+`P(arrivo <= T)` perdesse meno coincidenze di uno scelto minimizzando l'orario
+teorico. La risposta e' **si'**, con un prezzo che la formulazione iniziale non
+prevedeva e che costituisce meta' del risultato.
 
-La ricerca ha prodotto due risultati negativi, entrambi istruttivi. L'euristica
-geografica, benche' dimostrabilmente ammissibile, risparmia il 7,7% degli stati a
-Roma e il 3,8% a Torino e fa impiegare ad A* piu' tempo di Dijkstra, perche'
-l'ammissibilita' obbliga a tarare la velocita' massima su archi anomali
-dell'orario che dichiarano quattrocento metri percorsi in tre secondi: meno di un
-arco su cinquemila determina il valore di `V` e con esso l'efficacia dell'euristica
-su tutti gli altri. La misura del costo dei cambi nello stato ha invece mostrato
-che un'ottimizzazione apparentemente gratuita — proiettare via il conteggio dei
-cambi, che riduce di due terzi gli stati espansi — restituisce l'itinerario
-sbagliato su nove interrogazioni su settantanove, e la causa isolata
-sperimentalmente e' l'interazione con il tetto sul numero di cambi. In direzione
-opposta, la relazione di dominanza sugli stati a terra ha ridotto lo spazio di
-ricerca da 6,4 milioni di stati in 224 secondi a 45 mila in 0,7, senza alcuna
-perdita di ottimalita': e' la differenza fra una campagna sperimentale eseguibile
-e una che non lo e'.
+**Il prezzo, prima del beneficio.** La clausola "a parita' di tempo di viaggio
+nominale" e' caduta perche' non e' soddisfacibile: la strategia di riferimento prende
+per definizione l'arrivo nominale minimo, quindi ogni altra scelta arriva dopo, e nelle
+337 istanze in cui le due divergono il robusto e' nominalmente piu' lento 337 volte su
+337. Cio' che il progetto misura e' percio' uno **scambio**: il criterio probabilistico
+compra affidabilita' pagando tempo nominale, entro il margine che il viaggiatore ha
+dichiarato accettando una scadenza. Il prezzo mediano e' di **quattro-sette minuti** su
+Roma nella fascia in cui il vantaggio e' massimo, e di **tre-cinque** su Torino.
 
-Il ragionamento probabilistico ha mostrato di non essere riducibile a una
-penalizzazione del tempo di viaggio: al variare della sola scadenza, la scelta
-robusta si discosta da quella piu' veloce su una frazione crescente delle coppie,
-dal dodici-quindici per cento a margine nullo al trentotto-quarantacinque per
-cento a trenta minuti. Il guadagno ha una forma a campana con massimo fra i
-quindici e i venti minuti di margine, dove il criterio probabilistico guadagna fra
-otto e dieci punti percentuali di probabilita' di arrivo, ed e' quello il campo di
-applicabilita' del metodo. Un risultato inatteso e' che la strategia di riferimento
-piu' plausibile, quella che impone cinque minuti di margine su ogni coincidenza,
-risulta la peggiore delle tre: si difende dalle coincidenze perse senza guardare
-alla scadenza, e in un problema in cui la scadenza e' il vincolo si difende dal
-rischio sbagliato. Questi numeri sono pero' calcolati su distribuzioni di ritardo
-sintetiche, e qualificano il metodo, non il trasporto pubblico di Roma o di
-Torino.
+**Il beneficio sulle coincidenze perse, che e' la grandezza della domanda.** A trenta
+minuti di margine il robusto ne perde circa **la meta'** di quelle del riferimento su
+Roma e **un terzo** su Torino, e il vantaggio cresce in modo monotono col margine su
+entrambe le citta'. E' il risultato piu' solido del progetto, perche' e' netto, ha
+sempre lo stesso segno e non dipende dalla citta'.
 
-**La domanda da cui il progetto e' nato ha una risposta, ed e' uno scambio.** Il
-backtesting ha rigiocato 5.208 volte due itinerari sulla stessa coppia e la stessa
-scadenza, usando i ritardi realmente osservati nelle quattro giornate che il modello
-non aveva mai visto. Su Roma, con margini fra quindici e trenta minuti, l'itinerario
-scelto massimizzando `P(arrivo <= T)` perde **dal 24% al 55% di coincidenze in meno**
-del riferimento e porta **dieci punti percentuali o piu'** di viaggi arrivati entro la
-scadenza, su tutte le giornate. Su Torino il vantaggio sulle coincidenze perse e'
-altrettanto netto - **un terzo** di quelle del riferimento a trenta minuti - mentre
-sugli arrivi e' piccolo e non stabile fra le giornate.
+**Il beneficio sugli arrivi entro la scadenza, che e' piu' fragile.** Su Roma vale
+**dieci punti percentuali o piu'** fra i quindici e i trenta minuti, con tutte e tre le
+giornate di segno positivo. Su Torino resta **fra zero e quattro punti** e non e'
+stabile: a ogni margine almeno una giornata su quattro ha segno negativo, e le
+deviazioni fra giornate sono spesso piu' grandi della differenza che accompagnano.
 
-Il risultato non e' gratuito, e la clausola con cui la domanda era stata posta - "a
-parita' di tempo di viaggio nominale" - si e' rivelata **non soddisfacibile per
-costruzione**, perche' la strategia di riferimento prende per definizione l'arrivo
-nominale minimo e ogni altra scelta arriva dopo. Nelle 337 istanze in cui le due
-divergono il robusto e' nominalmente piu' lento **337 volte su 337**, con un costo
-mediano di quattro-sette minuti su Roma nella fascia dove il vantaggio e' massimo. La
-lettura corretta e' percio' che il criterio probabilistico **compra affidabilita'
-pagando tempo nominale, entro il margine che il viaggiatore ha dichiarato**: il
-prezzo e' misurato e sta accanto al beneficio, e lo scambio conviene su Roma nella
-fascia centrale dei margini mentre su Torino e' vicino all'indifferenza.
+**Dove non rende, detto per intero.** A **margine nullo** il vantaggio sugli arrivi
+non c'e': vale +1,1 punti su Roma, dentro una deviazione di dodici, ed e' **negativo**
+su Torino (-0,8 punti). E' atteso, perche' senza margine non c'e' nulla da comprare.
+Va pero' detto che **anche a margine nullo il robusto perde meno coincidenze** - 0,0667
+in meno su Roma e 0,0167 su Torino - quindi l'assenza di vantaggio riguarda gli arrivi,
+non le coincidenze.
 
-A margine nullo il vantaggio non c'e', ed e' atteso: senza margine non c'e' nulla da
-comprare. I numeri valgono inoltre per le sottoreti che i feed real-time descrivono -
-i soli autobus di superficie su Roma, dove la metropolitana non compare mai - e sulle
-sole coppie interamente osservate, circa la meta' di quelle esaminate.
+Va corretta anche una semplificazione che verrebbe naturale: **non e' vero che su
+Torino il metodo renda meno a tutti i livelli**. Sugli arrivi si', a tutti e sei i
+margini. Sulle coincidenze perse **no**: a cinque, dieci e quindici minuti Torino fa
+meglio di Roma (-0,0833 contro -0,0556, -0,1167 contro -0,0667, -0,1750 contro
+-0,1000), e solo a venti e trenta minuti il rapporto si inverte. Le due citta' non si
+ordinano, dipende da quale grandezza si guardi.
 
-Il viaggio con piu' tappe obbligate si e' rivelato un problema di soddisfacimento
-di vincoli anche nei fatti, e non solo nella formulazione. La verifica era la
-condizione perche' l'argomento avesse diritto di esistere ed e' stata fatta per
-prima: su 244 istanze risolubili ricavate dalla rete vera, la strategia
-sequenziale che sceglie a ogni tappa l'arrivo piu' precoce senza mai tornare
-indietro ne dichiara infattibili **45, cioe' il 18,4%**. La quota cresce in modo
-monotono su entrambe le citta' con il numero di tappe — dall'11,8% al 33,3% a
-Roma, dal 17,2% al 26,7% a Torino — e cala allentando il tetto sui cambi, che e'
-la conferma sperimentale di quale vincolo produca l'accoppiamento. Un
-sottoprodotto inatteso della misura riguarda il costo: il soddisfacimento dei
-vincoli e' gratuito, meno di un millesimo di secondo per istanza, e tutto il costo
-del modulo sta nel calcolare i domini.
+**E il meccanismo non e' quello atteso.** Su Roma il vantaggio sulle coincidenze perse
+passa **interamente** per la scelta di itinerari con meno coincidenze: restringendo
+alle istanze in cui le due strategie scelgono itinerari con lo stesso numero di
+tratte, il vantaggio svanisce. Su Torino ne sopravvive circa la meta'. Il margine non
+viene speso per allargare le coincidenze che ci sono, ma per eliminarne qualcuna: e' un
+modo legittimo di essere robusti, ed e' quello che un viaggiatore comprerebbe, ma e'
+diverso da quello che il progetto si proponeva di dimostrare.
+
+*Fonte di tutti i numeri di questa sezione: `results/backtest_riepilogo.csv` e
+`results/backtest.csv`, bordi `ottili`, quattro giornate di verifica su Torino e tre
+su Roma dopo l'esclusione della giornata mal coperta; le tabelle complete sono nella
+sezione sul backtesting.*
+
+## I cinque argomenti, e come si tengono insieme
+
+Il sistema non e' cinque moduli affiancati che risolvono cinque esercizi: e' una
+catena in cui l'uscita di ciascuno e' l'ingresso del successivo, e la prova che si
+parlino e' che **un difetto di uno si manifesta nella misura di un altro**.
+
+La base di conoscenza in ASP deriva dai dati grezzi una relazione che non vi esiste -
+quali cambi siano possibili, quanto costino, se siano accessibili - e la consegna al
+grafo tempo-espanso; la ricerca multi-criterio produce su quel grafo la frontiera delle
+soluzioni non dominate, e la consegna al modulo probabilistico; questo compone lungo la
+catena delle coincidenze le distribuzioni dei ritardi e sceglie l'itinerario che
+massimizza `P(arrivo <= T)`; le distribuzioni gliele fornisce il modulo di
+apprendimento, stimate dai dati raccolti sul campo; e il soddisfacimento di vincoli
+riusa la stessa frontiera per il viaggio a piu' tappe. Ogni interfaccia e' stretta e
+dichiarata, ed e' cio' che ha permesso di misurare i moduli separatamente prima di
+comporli.
+
+**La catena piu' forte e' quella fra l'apprendimento e il backtesting, ed e' anche il
+risultato piu' istruttivo del progetto.** Il modello dei ritardi e' stato stimato su
+milleseicentomila coppie di osservazioni reali e misurato con gli strumenti propri
+dell'apprendimento: perdita logaritmica fuori campione, calibrazione, correlazione
+implicita. Su quelle metriche il risultato e' ottimo - lo scarto medio di calibrazione
+sui bin vale **0,0035 su Roma e 0,0032 su Torino**, cioe' meno di mezzo punto
+percentuale. Un modello cosi' calibrato sembrerebbe non avere nulla da farsi perdonare.
+
+Poi quel modello alimenta una decisione, e la decisione viene verificata su viaggi
+veri. Li' emerge che sulla **singola coincidenza** - che e' l'evento su cui la scelta
+si gioca - il modello sbaglia di **cinque punti su Roma e nove su Torino**, in
+direzione ottimista; e sul **viaggio intero** sbaglia di dieci e sei punti nella
+direzione opposta. Nessuna delle misure interne al modello lo mostrava, e non perche'
+fossero fatte male: erano fatte su un altro evento.
+
+E' la lezione che vale la pena portare via dal progetto: **una metrica interna ben
+calibrata non garantisce che il modello sia calibrato sull'evento che la decisione
+usa**. Il bin del ritardo a una fermata e la tenuta di una coincidenza sono due eventi
+diversi, e la calibrazione sul primo non dice nulla sulla seconda. Per accorgersene
+serviva rigiocare le scelte su dati osservati, cioe' esattamente la misura che il
+backtesting fa e che nessuna metrica di apprendimento puo' sostituire.
+
+Lo stesso legame funziona anche nell'altro verso. L'argomento sull'incertezza aveva
+assunto per la correlazione lungo la corsa un valore scelto per buon senso, **0,70**,
+dichiarandolo un numero inventato in attesa della misura; quella misura, arrivata
+dall'argomento sull'apprendimento, vale **0,96 su Roma e 0,91 su Torino**. Gli
+esperimenti sintetici erano dunque stati condotti in un mondo in cui il ritardo si
+propaga molto meno che nella realta', cioe' proprio il mondo in cui un pianificatore
+che ignori la correlazione sbaglia di meno: il vantaggio misurato la' va letto come
+**prudente**, non come gonfiato.
 
 ## Problematiche non affrontate, e possibili estensioni
 
@@ -3870,15 +3885,72 @@ Le lacune che seguono sono dichiarate per esteso, perche' un elenco preciso di
 cio' che manca e' piu' utile di una sezione che lo nasconda, e perche' ciascuna di
 esse e' un punto da cui un altro gruppo potrebbe ripartire.
 
-**La risposta alla domanda di ricerca c'e', e poggia su quattro giornate.** Era la
-lacuna piu' importante ed e' stata colmata: il modello e' stato stimato sui dati
-raccolti e il backtesting ha rigiocato entrambe le strategie sui ritardi osservati.
-Cio' che resta aperto non e' piu' l'esistenza della misura ma la sua **base**: tre
-giornate su Roma e quattro su Torino, tutte della stessa settimana di settembre,
-sono poche per una conclusione stabile, e infatti su Torino il segno non e' costante
-fra le giornate. La raccolta e' progettata per continuare, e l'estensione naturale
-non richiede alcuna idea nuova: rieseguire su una finestra piu' lunga, con la regola
-di esclusione delle giornate mal coperte fissata prima di guardare i risultati.
+**Il modello e' calibrato sui bin e non sull'evento che la decisione usa.** E' la
+lacuna piu' importante emersa dal backtesting, ed e' descritta per intero nella sua
+sezione. In sintesi: sulla singola coincidenza il modello e' **ottimista di cinque
+punti su Roma e nove su Torino**, sul viaggio intero e' **pessimista di dieci e sei**,
+e la divergenza fra i due livelli cresce in modo monotono col numero di coincidenze
+composte - da quattro a ventisei punti su Roma, da due a trenta su Torino. L'errore
+nasce quindi **nella composizione**, non nella stima.
+
+Quattro ipotesi alternative sono state formulate e messe alla prova, e tutte e quattro
+sono cadute: il tetto sui recuperi, falsificato con il segno rovesciato; la selezione
+del proprio massimo, esclusa perche' la strategia che **non** guarda la probabilita'
+mostra lo stesso divario; il respiro nominale della coincidenza critica, che riceve
+appoggio in una cella su sei; e il respiro reale, che non e' utilizzabile perche' e' un
+esito della replica. Cio' che resta aperto e' **quale ingrediente** della composizione
+produca l'errore: ve ne sono almeno quattro - l'assunzione markoviana, l'indipendenza
+fra il ritardo d'arrivo di una tratta e quello di partenza della successiva, il tetto
+sui recuperi e la discretizzazione in bin con la massima entropia dentro ciascuno - e
+la misura li implica tutti insieme. Separarli richiede di rifare la composizione
+cambiandone uno alla volta, ed e' l'esperimento che chiude la questione.
+
+**Una correzione a un parametro esiste, ed e' stata lasciata fuori.** Sostituendo alla
+probabilita' dichiarata `p` la quantita' `p^gamma`, un solo esponente porta lo scarto
+medio da 0,1070 a 0,0304 su Roma e da 0,0645 a 0,0174 su Torino, e il valore che
+pareggia le medie vale **0,64 e 0,65** stimato indipendentemente sulle due citta'. Non
+e' stata adottata per due ragioni. La prima e' che `gamma` e' stato tarato e valutato
+**sulle stesse quattro giornate**, quindi descrive e non prevede; adottarla richiede
+giornate di taratura separate da quelle di verifica, come gia' si fa per la
+concentrazione del priore. La seconda e' che l'esponente **non e' una costante**:
+stimato dentro i sottogruppi varia di un fattore due col margine e di un fattore
+tre-cinque col numero di tratte, il che e' coerente con un errore che cresce coi
+fattori composti e conferma che una potenza unica ne sarebbe una descrizione grossolana.
+
+**La verifica poggia su quattro giornate, tre su Roma.** Sono poche e tutte della
+stessa settimana di settembre, e infatti su Torino il segno del vantaggio sugli arrivi
+non e' costante fra le giornate. La raccolta e' progettata per continuare e l'estensione
+non richiede alcuna idea nuova: rieseguire su una finestra piu' lunga, con la regola di
+esclusione delle giornate mal coperte fissata prima di guardare i risultati.
+
+**La finestra e' estiva, e il trasporto pubblico non lo e'.** Dal 25 agosto al 9
+settembre le due reti sono in orario ridotto e il traffico non e' quello di un
+novembre qualsiasi: le scuole aprono a meta' della finestra, e nessuna delle due
+aziende pubblica un calendario che dica quando l'orario invernale entri in vigore.
+Tutti i numeri del progetto valgono per quelle due settimane, ed e' verosimile - ma non
+misurato - che i ritardi di un mese di punta siano piu' grandi e piu' variabili, cioe'
+il regime in cui un pianificatore robusto dovrebbe rendere di piu'.
+
+**Su Torino il dato non e' un ritardo osservato.** Il feed torinese toglie la fermata
+dal `trip_updates` appena il mezzo vi transita, quindi l'ultima riga di ciascun
+passaggio e' l'ultima **stima** del produttore e non una constatazione. Quanto sia
+vicina al fatto e' misurato - **25 +/- 12 secondi** di anticipo mediano sul transito
+atteso, con un quarto delle righe pubblicato **dopo** il transito atteso - ed e' molto
+piu' vicina di quanto la parola "previsione" lasci pensare; ma resta che i risultati
+torinesi misurano il pianificatore contro l'ultima stima del produttore e non contro un
+orologio. La limitazione era stata dichiarata con un valore sbagliato, "circa due
+minuti", che era il terzo quartile di un'altra grandezza.
+
+**La concentrazione del priore non e' identificabile da questi dati.** Le
+concentrazioni della scala di risalita sono tarate per discesa coordinata, e
+configurazioni che differiscono di **sei ordini di grandezza** danno perdite che
+differiscono di cinque decimillesimi, contro una deviazione fra giornate di +/-0,064.
+Allargando la griglia da un milione a cento milioni la taratura sceglie configurazioni
+diverse su quattro gradini su venti, e sui viaggi **5.207 istanze su 5.208 scelgono lo
+stesso itinerario**. Ne segue che leggere un significato nel valore di un singolo
+`alfa` - "e' al massimo, dunque quel gradino non serve" - e' sovrainterpretare: cio'
+che resta leggibile non e' il parametro ma la **distanza fra le matrici**, che e' una
+misura diretta.
 
 **Una strada considerata e scartata, con la ragione: i Knowledge Graph e le
 ontologie.** L'ipotesi e' stata valutata concretamente — pubblicare la base di
@@ -4019,6 +4091,80 @@ misurato cresca. Infine il modello tratta la correlazione lungo la corsa con un
 solo parametro scalare, mentre nella realta' essa dipende verosimilmente dal tratto
 di percorso e dall'ora, e stimarla in forma condizionata e' parte del lavoro
 rimasto.
+
+## Le lezioni di metodo
+
+Sono la parte del lavoro che sopravvive ai numeri, perche' i numeri valgono per la
+finestra in cui sono stati raccolti e queste no. Vengono tutte da errori commessi e
+scoperti, e ciascuna e' registrata in `docs/decisioni.md` col caso che l'ha prodotta.
+
+**Una misura di verifica scelta dopo la correzione conferma sempre.** Un difetto nella
+chiave di deduplica era stato corretto e poi "verificato" con una statistica scelta a
+correzione avvenuta: confermava, e non poteva fare altro. La misura che decide va
+scelta **prima**, e va scelta in modo che possa smentire.
+
+**Non basta scegliere il criterio prima: bisogna provare che sappia distinguere.** Il
+test della proprieta' markoviana era stato progettato a tavolino e sembrava
+sufficiente; applicato a una catena markoviana **per costruzione**, dichiarava non
+markoviano un processo che lo era, con un eccesso di dodici volte il proprio
+riferimento. Il difetto e' emerso perche' il collaudo era stato scritto su casi **a
+risposta nota**. Un collaudo su dati veri non avrebbe potuto rivelarlo, perche' li' la
+risposta non si conosce e un eccesso di un centesimo di bit sarebbe sembrato un
+risultato.
+
+**Una misura va fatta nel regime in cui la decisione si applica.** Il guadagno di un
+arco nella rete bayesiana era stato misurato in abbondanza di dati, dove valeva fra il
++2% e il +5%; la decisione si applica pero' in scarsita', e li' lo stesso arco
+**peggiora** il modello. Nessun controllo sulla correttezza del calcolo avrebbe potuto
+rivelarlo: il calcolo era giusto, ed era fatto altrove.
+
+**Le statistiche di contorno vanno guardate anche quando non servono alla domanda.**
+Due difetti gravi sono emersi da quantita' chieste per altro. Il massimo del ritardo
+fra le "constatazioni" torinesi valeva esattamente zero, e un massimo esattamente zero
+non e' un dato ma una definizione chiusa su se stessa: la popolazione non esisteva. E
+una riga con zero osservazioni su 1.440 dump ha rivelato che il feed di Torino
+pubblicava da giorni un messaggio vuoto, mentre ogni indicatore di salute diceva che
+andava bene - perche' misuravano il **servizio** e non il **dato**.
+
+**Un numero scritto a memoria non fallisce nessun test.** Numeri veri quando furono
+scritti sono diventati falsi quando le corse che li sostenevano sono state rifatte, e
+nessuno se ne sarebbe accorto. La difesa non e' un verificatore automatico - ne e'
+stato costruito uno e se n'e' misurato il potere: il 60,8% delle percentuali inventate
+a un decimale trova comunque una corrispondenza - ma la **riga di fonte sotto ogni
+tabella**, che obbliga chi scrive a riaprire il file invece di citare a memoria.
+
+**Un parametro implicito perche' "tanto e' sempre l'ultimo" e' un parametro
+dimenticato.** L'archivio dell'orario e la finestra temporale erano scelti prendendo il
+piu' recente disponibile: due esecuzioni a giorni di distanza misuravano cose diverse
+senza che nulla lo segnalasse. Sono diventati parametri dichiarati, con la propria
+colonna nei CSV. Lo stesso vale per la provenienza dedotta: attribuire un numero a un
+archivio **dalla data del suo commit** sembra rigoroso ed e' sbagliato.
+
+**Committare prima di mutare.** La ricetta per collaudare un test - alterare il codice,
+contare i test rossi, ripristinare con `git checkout` - cancella tutto cio' che nel
+file non e' ancora committato. E' costato due volte in una giornata il lavoro in corso,
+e la seconda volta e' passata inosservata perche' cio' che spariva era **l'aggiunta**,
+non una rottura: la suite tornava verde.
+
+A queste se ne aggiungono due emerse proprio nell'ultima fase, e sono le piu' sottili.
+
+**Una correlazione aggregata puo' nascondere il fenomeno che cerca.** Il divario fra
+probabilita' dichiarata e frequenza osservata era stato cercato in funzione della
+lunghezza della catena, e non si trovava. Non perche' non ci fosse, ma perche' quel
+divario e' la **somma di due errori di segno opposto** che crescono entrambi: la loro
+somma non ha andamento leggibile. E' bastato scomporre i due livelli - la singola
+coincidenza e il viaggio intero - perche' la struttura comparisse, monotona su
+entrambe le citta'.
+
+**Una variabile misurata sul piano non e' la variabile su cui il modello sbaglia.** Lo
+stesso fenomeno era stato cercato contro il margine **nominale** delle coincidenze,
+cioe' quello che il pianificatore vedeva. Ma il modello sbaglia sui ritardi reali, e in
+un viaggio che slitta i margini reali non somigliano a quelli nominali. Il rovescio
+della medaglia e' pero' altrettanto istruttivo: il margine **reale** non si puo' usare
+per misurare la calibrazione, perche' e' un esito della replica, e correlarvi il
+divario produce una relazione positiva **per costruzione**. Fra le due, e' la variabile
+nota al momento della previsione quella che va usata - ed e' anche il motivo per cui
+l'errore iniziale era comprensibile.
 
 # Riferimenti Bibliografici
 
