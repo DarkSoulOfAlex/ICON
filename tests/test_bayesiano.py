@@ -1,6 +1,6 @@
 """Test del ponte fra la tabella stimata e il contratto del pianificatore.
 
-Qui non si collauda un modello ma una **traduzione**: da una massa sui bin a una
+Qui non si collauda un modello ma una traduzione: da una massa sui bin a una
 distribuzione continua. Un errore di traduzione non fa fallire nulla a valle, fa
 uscire probabilita' sbagliate che sembrano giuste, e per questo i test verificano
 le proprieta' che una distribuzione deve avere in quanto tale - ripartizione

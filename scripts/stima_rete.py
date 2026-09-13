@@ -5,7 +5,7 @@ ciascun gradino, la perdita fuori campione delle scale a confronto, la
 calibrazione, e la correlazione implicita da mettere accanto allo 0,7 inventato
 nella Fase 4.
 
-**Perche' tre insiemi di giornate e non due.** La concentrazione si sceglie
+Perche' tre insiemi di giornate e non due. La concentrazione si sceglie
 misurando una perdita fuori campione, quindi le giornate su cui la si sceglie sono
 gia' state usate: riportare su quelle stesse giornate darebbe un risultato
 ottimistico di quanto la scelta le ha inseguite. Le giornate sono divise in
@@ -18,7 +18,7 @@ scritto, e la ragione e' istruttiva.** Il piano chiedeva di confrontare "le
 constatazioni al contesto grossolano" contro "le previsioni al contesto fine" come
 due gradini da scambiare nella scala. In una scala a priori incatenati lo scambio
 non si puo' scrivere: ogni gradino usa come priore la stima del precedente, quindi
-ogni sua cella deve avere un genitore che la **contiene**. Il contesto puo' solo
+ogni sua cella deve avere un genitore che la contiene. Il contesto puo' solo
 infittirsi lungo la scala. Mettere "constatazioni grossolane" dopo "previsioni
 fini" chiederebbe a una cella grossolana di avere per genitore una cella fine, cioe'
 di essere contenuta in una sua parte.
@@ -29,7 +29,7 @@ sanno gia' dal livello grossolano?** Si risponde confrontando la scala di sole
 constatazioni con la stessa scala in cui il gradino delle previsioni fini e'
 inserito appena prima di quello finale. Se inserirlo migliora, le previsioni al
 contesto fine portano informazione che le constatazioni non hanno; se peggiora, no.
-Il confronto e' fatto **separatamente** sulle giornate di verifica ristrette alle
+Il confronto e' fatto separatamente sulle giornate di verifica ristrette alle
 constatazioni e su quelle ristrette alle previsioni, come il piano prescrive, e in
 caso di conflitto decide la perdita sulle constatazioni.
 
@@ -127,7 +127,7 @@ CORRELAZIONE_SINTETICA = 0.7
 class Dati:
     """Le coppie di una citta', accumulate giornata per giornata.
 
-    Si conservano i **fattori** e non i codici di cella: il numero di linee si
+    Si conservano i fattori e non i codici di cella: il numero di linee si
     conosce solo alla fine, e con esso la codifica. Conservare i codici
     obbligherebbe a fissare prima quel numero, cioe' a leggere due volte.
     """
@@ -183,7 +183,7 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
                         ) -> tuple[dict[str, np.ndarray] | None, int, int]:
     """Le transizioni fra fermate consecutive di una giornata, in secondi.
 
-    **Non** discretizza: i bordi dei bin sono a loro volta una scelta da misurare, e
+    Non discretizza: i bordi dei bin sono a loro volta una scelta da misurare, e
     misurarla richiede di ridiscretizzare lo stesso campione piu' volte. Fissarli
     qui obbligherebbe a rileggere i parquet per ogni insieme di bordi da provare.
 
@@ -206,7 +206,7 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
     testo_linea = tabella.column("route_id").to_pandas().to_numpy()
     del tabella
 
-    # La copertura si misura **qui**, sulle righe come il consolidamento le ha
+    # La copertura si misura qui, sulle righe come il consolidamento le ha
     # scritte, prima di qualunque filtro: piu' avanti ``prog`` viene ristretto ai
     # salti di giorno tolti e alle ultime revisioni, e la stessa formula darebbe un
     # numero piu' alto - 41,6% invece di 36,9% sul 31 agosto - cioe' la stessa
@@ -219,7 +219,7 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
         indice_linea.setdefault(str(nome), len(indice_linea))
     linea = np.fromiter((indice_linea[str(x)] for x in testo_linea), dtype=np.int64, count=n)
 
-    # I salti di giorno si tolgono **prima** di scegliere l'ultima revisione, non
+    # I salti di giorno si tolgono prima di scegliere l'ultima revisione, non
     # dopo: se l'ultima pubblicazione di un passaggio e' difettosa e una precedente
     # no, togliendo dopo si perderebbe il passaggio intero, mentre togliendo prima
     # si conserva l'ultima pubblicazione sana. La contiguita' richiesta piu' sotto
@@ -263,7 +263,7 @@ def coppie_di_un_giorno(percorso: Path, indice_linea: dict[str, int],
         "linea": linea[1:][valida].astype(np.int32),
         "fascia": fascia_oraria(quando.hour.to_numpy()).astype(np.int8),
         "giorno": tipo_di_giorno(quando.dayofweek.to_numpy()).astype(np.int8),
-        # Una coppia e' constatata quando **entrambe** le osservazioni lo sono: il
+        # Una coppia e' constatata quando entrambe le osservazioni lo sono: il
         # ritardo a monte indicizza la cella, e se fosse una previsione la riga
         # sarebbe classificata da una stima invece che da un fatto.
         "constatata": (gia_passato[:-1][valida] & gia_passato[1:][valida]).astype(np.int8),
@@ -290,7 +290,7 @@ def bordi_candidati(secondi: np.ndarray,
     con meno bin la perdita cala per costruzione, e vincerebbe sempre la
     discretizzazione piu' grossolana.
 
-    I bordi devono essere **gli stessi per le due citta'**, altrimenti le loro
+    I bordi devono essere gli stessi per le due citta', altrimenti le loro
     perdite non sono confrontabili e il paragone perde il suo termine
     di riferimento. I candidati che dipendono dai dati si calcolano quindi sulle
     giornate di addestramento delle due citta' messe insieme.
@@ -298,7 +298,7 @@ def bordi_candidati(secondi: np.ndarray,
     - ``attuali``: quelli scelti nella Fase 3 sulla popolazione intera, previsioni
       comprese. Sono il termine di paragone, non un candidato privilegiato.
     - ``ottili``: i quantili della popolazione di stima, cioe' bin a frequenza
-      uguale. Massimizzano l'entropia marginale e quindi **peggiorano** la perdita
+      uguale. Massimizzano l'entropia marginale e quindi peggiorano la perdita
       grezza: e' il candidato che un criterio sbagliato scarterebbe per primo.
     - ``centrati``: la stessa spaziatura degli attuali, traslata sulla mediana della
       popolazione di stima invece che sullo zero dell'orario teorico. Verifica se il
@@ -322,7 +322,7 @@ def bordi_candidati(secondi: np.ndarray,
     # I quantili seguono la massa, e la massa e' tutta nell'anticipo: su Roma gli
     # ottili cadrebbero tutti sotto i due minuti di ritardo, e il modello
     # risolverebbe finemente l'anticipo e per niente il ritardo. Ma la domanda a cui
-    # il modello serve e' P(arrivo <= T), che e' sensibile **solo** al lato del
+    # il modello serve e' P(arrivo <= T), che e' sensibile solo al lato del
     # ritardo: un mezzo in anticipo di tre minuti o di dieci fa perdere la stessa
     # coincidenza, cioe' nessuna. Da qui il quarto candidato, che spende meta' dei
     # bordi di qua e meta' di la' dallo zero, e li dispone per quantili dentro
@@ -334,7 +334,7 @@ def bordi_candidati(secondi: np.ndarray,
         sotto = np.percentile(negativi, [25.0, 55.0, 85.0])
         sopra = np.percentile(positivi, [40.0, 70.0, 90.0])
         misti = tuple(float(round(v)) for v in (*sotto, 0.0, *sopra))
-    # Il quinto candidato non viene dai dati: viene dal **problema**. I misti
+    # Il quinto candidato non viene dai dati: viene dal problema. I misti
     # tagliano il ritardo a 504 s, e sopra resta un bin solo con rappresentante di
     # quasi milleseicento secondi: il modello non distingue dieci minuti da
     # quaranta, che per un pianificatore con quindici minuti di margine sono la
@@ -359,7 +359,7 @@ def entropia_marginale(valori_dentro: np.ndarray, valori_fuori: np.ndarray,
     E' il termine da sottrarre per confrontare insiemi di bordi diversi. La perdita
     grezza da sola non lo permette: un insieme che ammucchia meta' della massa in un
     solo bin ha entropia marginale bassa, e quindi perdita bassa, per quanto male il
-    modello lavori. Sottraendola resta il **guadagno**, cioe' quanto il modello
+    modello lavori. Sottraendola resta il guadagno, cioe' quanto il modello
     aggiunga a chi non sa nulla, che e' la grandezza confrontabile fra bordi diversi.
     """
     conteggi = np.bincount(valori_dentro.astype(np.int64), minlength=n_bin)
@@ -388,7 +388,7 @@ def risoluzione(secondi: np.ndarray, valori: np.ndarray, n_bin: int,
 
     Al pianificatore serve distinguere differenze dell'ordine di un margine di
     coincidenza, cioe' qualche minuto. Si riporta quindi l'ampiezza fra primo e
-    novantanovesimo percentile del ritardo **dentro** i due bin aperti - dove il
+    novantanovesimo percentile del ritardo dentro i due bin aperti - dove il
     modello dichiara di non distinguere nulla - e la stessa ampiezza mediata su
     tutti i bin, pesata per quanti vi cadono. Sono secondi, non bit, e si confrontano
     col margine di coincidenza invece che con un'altra discretizzazione.
@@ -514,7 +514,7 @@ def valori_rappresentativi(dati: dict[str, np.ndarray], n_bin: int) -> np.ndarra
     """Il ritardo medio osservato dentro ciascun bin, in secondi.
 
     Serve per tradurre una distribuzione su bin in una correlazione fra numeri. I
-    valori sono **misurati**, non i punti medi degli intervalli: i due bin estremi
+    valori sono misurati, non i punti medi degli intervalli: i due bin estremi
     non hanno un punto medio, e attribuirgliene uno inventerebbe un dato.
     """
     secondi = np.concatenate([dati["secondi_monte"], dati["secondi_valle"]])
@@ -547,14 +547,14 @@ def correlazioni_empiriche(dati: dict[str, np.ndarray], m: np.ndarray,
     recuperarne una - e Pearson su code pesanti misura le code.
 
     Il secondo giro ha mostrato un difetto nel confronto stesso: mettere accanto un
-    Pearson ristretto e uno Spearman su tutto varia **due** cose insieme, la
+    Pearson ristretto e uno Spearman su tutto varia due cose insieme, la
     statistica e l'intervallo, e non permette di attribuire la differenza a
     nessuna delle due. Le combinazioni sono quindi quattro, Pearson e Spearman
     ciascuno su tutto e ciascuno dentro l'intervallo che i bin risolvono, piu' la
-    quota di coppie in cui i due ritardi sono **identici al secondo**, che distingue
+    quota di coppie in cui i due ritardi sono identici al secondo, che distingue
     una dipendenza da una copia.
 
-    ``bordi`` sono quelli **scelti**, non BORDI_OTTO: "dentro i bordi" ha senso solo
+    ``bordi`` sono quelli scelti, non BORDI_OTTO: "dentro i bordi" ha senso solo
     relative alla discretizzazione del modello che si sta giudicando, e con i bordi
     sbagliati la colonna di destra misurerebbe un intervallo che il modello non usa.
     """
@@ -902,12 +902,12 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
                     risultati: Path) -> str:
     """Sceglie i bordi dei bin misurando, e non sulla perdita grezza.
 
-    **La perdita fuori campione da sola non puo' decidere.** Un insieme di bordi che
+    La perdita fuori campione da sola non puo' decidere. Un insieme di bordi che
     ammucchia meta' della massa in un solo bin ha entropia marginale bassa, quindi
     perdita bassa, per quanto male il modello lavori: e' proprio cio' che rende i
     bordi attuali artificiosamente buoni sulle constatazioni romane, la cui mediana
     e' molto sotto il primo bordo. Il criterio equo sottrae il marginale e confronta
-    il **guadagno**, cioe' quanti bit il modello aggiunga a chi non sa nulla, a
+    il guadagno, cioe' quanti bit il modello aggiunga a chi non sa nulla, a
     parita' di numero di bin.
 
     Si riporta anche la massa nei due bin aperti verso l'infinito, dove il modello
@@ -915,17 +915,17 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     nessuna delle due perdite vede, perche' concentrare massa in un bin aperto rende
     il valore piu' prevedibile e il modello meno utile insieme.
 
-    **La scelta dei bordi non tocca la verifica.** I bordi sono un iperparametro
+    La scelta dei bordi non tocca la verifica. I bordi sono un iperparametro
     esattamente come alfa, e alfa si tara sulla taratura: valutarli anche sulle
     giornate di verifica renderebbe la selezione dentro campione e toglierebbe alla
     stima finale il suo test fuori campione. Le ultime due giornate di addestramento
     fanno da banco di prova dei bordi; la stima che le segue le usa come dati, come
     fa con tutte le altre. In questa fase alfa e' tarato sulle stesse giornate della
     valutazione: una lettura assoluta ottimistica per tutti i candidati in igual
-    modo, mentre il **confronto** fra loro resta equo - cosa da dichiarare, ed e'
+    modo, mentre il confronto fra loro resta equo - cosa da dichiarare, ed e'
     dichiarata qui.
 
-    **La soglia di indistinguibilita' viene dal candidato di riferimento**, non dal
+    La soglia di indistinguibilita' viene dal candidato di riferimento, non dal
     massimo su chi e' in gara: ``attuali`` e' lo stato dell'arte precedente, la sua
     variabilita' fra giornate e' una grandezza fissata prima di guardare gli altri
     candidati, e aggiungere un candidato pessimo non puo' allargarla.
@@ -1011,7 +1011,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     tavola = pd.DataFrame(righe)
     tavola.to_csv(risultati / "scelta_bordi.csv", index=False)
     print(f"\n  scritto {risultati / 'scelta_bordi.csv'} ({len(righe)} righe)")
-    # Si guarda il guadagno **minimo** fra le citta' e non la media: i bordi sono gli
+    # Si guarda il guadagno minimo fra le citta' e non la media: i bordi sono gli
     # stessi per entrambe, e un insieme che vada benissimo su una e male sull'altra
     # non e' un buon compromesso ma un buon risultato su una sola.
     per_bordi = tavola.groupby("bordi")["guadagno"].min()
@@ -1021,7 +1021,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     # Il guadagno da solo non decide: a numero di bin fisso i bin a frequenza uguale
     # alzano il tetto per costruzione, come la perdita grezza premia per costruzione
     # quelli concentrati. Sono due tautologie di verso opposto. Si usa quindi il
-    # guadagno per **escludere**, non per scegliere: i candidati che ne perdono meno
+    # guadagno per escludere, non per scegliere: i candidati che ne perdono meno
     # della variabilita' fra giornate sono indistinguibili, e fra loro decide quanti
     # secondi il modello confonde, che e' la grandezza che il pianificatore sente.
     riferimento = tavola[tavola["bordi"] == "attuali"]
@@ -1038,7 +1038,7 @@ def confronta_bordi(citta: list[Citta], candidati: dict[str, tuple[float, ...]],
     migliore = float(per_bordi.max())
     per_citta = {b: dict(zip(g["citta"], g["guadagno"]))
                  for b, g in tavola.groupby("bordi")}
-    # Un candidato e' ammesso se il suo guadagno, in **ciascuna** citta', non dista
+    # Un candidato e' ammesso se il suo guadagno, in ciascuna citta', non dista
     # dal migliore piu' della soglia di quella citta': i bordi valgono per entrambe,
     # e una bocciatura anche su una sola esclude.
     ammessi = [b for b in per_bordi.index
@@ -1080,7 +1080,7 @@ def valuta(c: Citta, bordi: tuple[float, ...], risultati: Path,
     in_addestramento = np.isin(dati["giornata"], c.addestramento)
     m_taratura = np.isin(dati["giornata"], c.taratura) & maschera_popolazione(
         dati, popolazione)
-    # Righe di **raffronto**, non risultati: valutare la stima anche sulla
+    # Righe di raffronto, non risultati: valutare la stima anche sulla
     # popolazione "tutte" serve a rendere confrontabili le perdite delle due citta',
     # che altrimenti non stanno nella stessa domanda - Roma stima sulle
     # constatazioni, Torino su tutto quello che il feed pubblica. La riga
@@ -1280,7 +1280,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     # I candidati che dipendono dai dati si calcolano sulle giornate di
-    # addestramento **meno il banco di prova dei bordi**, e solo della prima citta'.
+    # addestramento meno il banco di prova dei bordi, e solo della prima citta'.
     # Due ragioni, entrambe di separazione. Il banco non puo' entrare nei candidati
     # che si scelgono sui dati: sarebbe dentro campione rispetto alla misura che li
     # giudica. E usare una citta' sola per volta rende i candidati stabili al

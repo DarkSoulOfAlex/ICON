@@ -2,7 +2,7 @@
 
 Nasce da un'anomalia trovata nei parquet: mediana del ritardo negativa su
 entrambe le citta', deviazione standard di quasi due ore su Roma, e valori
-esattamente a -86.400 s. Le prime verifiche su una giornata **parziale** - 47
+esattamente a -86.400 s. Le prime verifiche su una giornata parziale - 47
 dump per 50 minuti - hanno escluso le spiegazioni meccaniche e smentito
 l'ipotesi che la negativita' venisse dall'ottimismo delle previsioni lontane. Ma
 in una finestra di cinquanta minuti l'ora programmata e l'anticipo della
@@ -15,37 +15,37 @@ divisi via via che la diagnosi distingueva fenomeni che all'inizio sembravano lo
 stesso: e' la ragione della numerazione con i suffissi, che si e' preferito
 conservare perche' i referti gia' prodotti vi fanno riferimento.
 
-1. **Il rollover**, cioe' i salti di giorno: quante righe, da quali corse, se
+1. Il rollover, cioe' i salti di giorno: quante righe, da quali corse, se
    quelle corse abbiano davvero orari statici oltre le 24 ore e in quale ora il
    feed le abbia emesse.
-1-bis. **Le righe senza orario programmato**, che entrano comunque nel parquet
+1-bis. Le righe senza orario programmato, che entrano comunque nel parquet
    perche' il ritardo dichiarato dal feed non ne ha bisogno, e la loro causa.
-1-ter. **I ritardi enormi che non sono salti di giorno**, separati dai primi con
+1-ter. I ritardi enormi che non sono salti di giorno, separati dai primi con
    il criterio del residuo.
-1-quater. **Il test dei turni**: se il veicolo trascini il ritardo sulla corsa
+1-quater. Il test dei turni: se il veicolo trascini il ritardo sulla corsa
    successiva del proprio turno, che distinguerebbe una corsa davvero in ritardo
    da un'etichetta sbagliata.
-1-quinquies. **La forma delle anomalie dentro la corsa**: se le fermate anomale
+1-quinquies. La forma delle anomalie dentro la corsa: se le fermate anomale
    siano contigue o sparse, e se il ritardo si addensi su valori ricorrenti.
-2. **Il collo della deduplica.** Quante coppie (corsa, fermata) compaiono con
+2. Il collo della deduplica. Quante coppie (corsa, fermata) compaiono con
    piu' di una data di servizio dentro la stessa cartella. La chiave di deduplica
    non contiene la data di servizio, quindi ogni collisione e' una riga soppressa
    in silenzio, e succede solo attorno alla mezzanotte.
-3. **Il ritardo per ora del giorno**, sull'intera giornata. Se la mediana fosse
-   negativa a **tutte** le ore, comprese la notte e le ore di morbida, sarebbe un
+3. Il ritardo per ora del giorno, sull'intera giornata. Se la mediana fosse
+   negativa a tutte le ore, comprese la notte e le ore di morbida, sarebbe un
    indizio a favore del margine inserito negli orari; se lo fosse solo di giorno,
    la spiegazione e' un'altra.
-3-bis. **Il ritardo per tipo di linea**, con il controllo di legittimita' sulle
+3-bis. Il ritardo per tipo di linea, con il controllo di legittimita' sulle
    sole fermate servite da piu' di un modo.
-4. **L'anticipo con cui le previsioni sono emesse**, confrontato fra le due
+4. L'anticipo con cui le previsioni sono emesse, confrontato fra le due
    citta'. Sulla giornata parziale erano 15,9 minuti di mediana su Roma e 2,1 su
    Torino: se regge, e' una differenza strutturale fra i due produttori.
-5. **Il ritardo per anticipo della previsione, dentro ciascuna fascia oraria.**
+5. Il ritardo per anticipo della previsione, dentro ciascuna fascia oraria.
    E' il quadro che conta: aggregando le fasce, anticipo e ora programmata
    restano confusi, ed e' l'errore che ha fatto sembrare vera l'ipotesi
    dell'ottimismo. Separarli richiede giornate intere, ed e' il motivo per cui
    questo script esiste.
-6. **Il filtro al momento del passaggio**, con quante righe sopravvivono e come
+6. Il filtro al momento del passaggio, con quante righe sopravvivono e come
    cambia la mediana per fascia oraria.
 
 Ogni tabella dichiara la numerosita' di ogni riga: le percentuali su basi
@@ -97,7 +97,7 @@ SOGLIA_TEST_TURNI = 200
 """Righe minime sulle corse successive perche' il test dei turni decida qualcosa.
 
 Sul 28 agosto quel test ha dato "40% delle corse successive in ritardo oltre
-l'ora" su **due** corse spostate, una sola osservata e quindici righe. Un numero
+l'ora" su due corse spostate, una sola osservata e quindici righe. Un numero
 del genere non e' un indizio debole, e' rumore con una percentuale davanti, e
 stampato accanto agli altri sembrerebbe dello stesso rango. Sotto la soglia si
 dichiara l'indecidibilita' invece del valore.
@@ -341,19 +341,19 @@ def quadro_forma_anomalie(d: pd.DataFrame, grandi: pd.DataFrame) -> None:
 
     Sui dati di sviluppo il fenomeno appariva come corse spostate per intero: il
     77% delle righe delle corse colpite era anomalo. Sui dati completi la quota
-    scende al 25%, quindi le corse hanno **alcune** fermate anomale e altre
+    scende al 25%, quindi le corse hanno alcune fermate anomale e altre
     normali, e la lettura precedente non regge. Questo quadro misura la forma
     nuova, che e' diversa dalla precedente e va accertata invece che supposta.
 
     Due domande, e ciascuna distingue due spiegazioni diverse.
 
-    *Le fermate anomale sono contigue o sparse?* Un tratto contiguo indica un
+    Le fermate anomale sono contigue o sparse? Un tratto contiguo indica un
     evento localizzato nel percorso - un blocco, una deviazione, un mezzo fermo
     per un tratto - dopo il quale la corsa recupera o viene ripresa. Fermate
     sparse lungo tutto il percorso indicano invece un difetto di trasmissione,
     perche' nessun fenomeno fisico salta avanti e indietro fra fermate vicine.
 
-    *Il ritardo anomalo ricorre attorno a valori precisi?* Valori ricorrenti,
+    Il ritardo anomalo ricorre attorno a valori precisi? Valori ricorrenti,
     specie se prossimi all'intervallo fra due corse successive della stessa
     linea, indicano che il feed sta descrivendo un veicolo diverso da quello che
     l'identificativo dichiara. Valori sparsi indicano ritardi reali.
@@ -570,7 +570,7 @@ def quadro_per_tipo(d: pd.DataFrame, ore: pd.Series, citta: str,
     assorbire. Il confronto fra modi e' pero' legittimo solo se i modi servono
     gli stessi luoghi: se il tram copre corridoi che il bus non tocca, si
     confrontano reti diverse e non modi diversi. Per questo si riporta anche il
-    confronto ristretto alle **fermate servite da entrambi**, che e' l'unico in
+    confronto ristretto alle fermate servite da entrambi, che e' l'unico in
     cui la differenza puo' essere attribuita al modo.
     """
     print()

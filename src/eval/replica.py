@@ -1,32 +1,32 @@
 """Rigiocare un itinerario sui ritardi che quel giorno sono stati osservati.
 
 E' il cuore del backtesting, e la ragione per cui esiste separato: la domanda di
-ricerca non chiede quale itinerario il modello **creda** piu' sicuro, chiede se
-quello scelto col modello perda **davvero** meno coincidenze. La differenza fra le
+ricerca non chiede quale itinerario il modello creda piu' sicuro, chiede se
+quello scelto col modello perda davvero meno coincidenze. La differenza fra le
 due cose e' esattamente cio' che un confronto fatto dentro il modello non puo'
 vedere, perche' li' il modello sarebbe insieme giudice e imputato.
 
-**Come si rigioca.** Il viaggiatore e' pronto a un istante; per ogni tappa si
+Come si rigioca. Il viaggiatore e' pronto a un istante; per ogni tappa si
 cerca la prima corsa fra quelle disponibili che parta dalla fermata di salita
-**non prima** che lui sia pronto, usando l'orario reale - programmato piu' ritardo
+non prima che lui sia pronto, usando l'orario reale - programmato piu' ritardo
 osservato - e non quello teorico. Da li' si legge l'arrivo reale alla fermata di
 discesa, si aggiunge il tempo minimo di trasbordo della tappa seguente, e si
 ricomincia.
 
-**Il mezzo in anticipo fa perdere la coincidenza come quello in ritardo.** Se la
+Il mezzo in anticipo fa perdere la coincidenza come quello in ritardo. Se la
 corsa pianificata e' gia' partita quando il viaggiatore arriva, la coincidenza e'
 persa anche se quel mezzo era puntualissimo o addirittura in anticipo. E' il
 fenomeno che la domanda di ricerca insegue, e rigiocare sugli orari reali e'
 l'unico modo di contarlo: un confronto sugli orari teorici lo darebbe sempre per
 riuscito.
 
-**I recuperi contano come coincidenze perse, non come fallimenti.** Ogni tappa
+I recuperi contano come coincidenze perse, non come fallimenti. Ogni tappa
 porta con se' le corse successive della stessa linea dalla stessa fermata: se la
 pianificata sfugge, si prende la seguente e si arriva piu' tardi. Trattare una
 coincidenza persa come un fallimento del viaggio sopravvaluterebbe la differenza
 fra le strategie, perche' in una rete urbana una linea ripassa.
 
-**Una tratta senza osservazione ferma la replica.** Non si sostituisce con
+Una tratta senza osservazione ferma la replica. Non si sostituisce con
 l'orario teorico: sarebbe come dichiarare puntuale cio' che non si e' visto, e
 proprio nei casi in cui il dato manca. Chi chiama riceve quante tratte sono state
 rigiocate prima di fermarsi, e decide se l'istanza sia utilizzabile.
@@ -51,7 +51,7 @@ class ErroreReplica(Exception):
 class EsitoCoincidenza:
     """Com'e' andato un singolo cambio, sull'orario e sui ritardi osservati.
 
-    Il respiro **nominale** e' quello che il pianificatore vedeva; quello **reale**
+    Il respiro nominale e' quello che il pianificatore vedeva; quello reale
     e' quello che il viaggiatore ha incontrato. Il secondo e' il solo che possa
     spiegare un errore del modello sui ritardi, perche' il modello sbaglia li' e non
     sull'orario: in un viaggio che slitta di dieci minuti i due non si somigliano.
@@ -174,7 +174,7 @@ def replica(itinerario: Itinerario, ritardo: RitardoOsservato) -> EsitoReplica:
 
 
 def rigiocabile(itinerario: Itinerario, ritardo: RitardoOsservato) -> bool:
-    """L'itinerario **pianificato** e' osservato in ogni sua tratta.
+    """L'itinerario pianificato e' osservato in ogni sua tratta.
 
     Si guarda la sola corsa pianificata, non i recuperi: un itinerario si include
     nel confronto se il piano che propone e' verificabile, e i recuperi servono a
@@ -200,7 +200,7 @@ def margine_piu_stretto(itinerario) -> int | None:
 
     Serve a distinguere due spiegazioni di uno stesso fenomeno. Il modello
     risulta pessimista sui viaggi rigiocati, e le ipotesi sono che l'errore si
-    **componga** lungo la catena oppure che sia **locale** alla coincidenza piu'
+    componga lungo la catena oppure che sia locale alla coincidenza piu'
     critica. Le due si separano guardando dove il divario si concentra, e questa
     e' la grandezza che lo dice.
 

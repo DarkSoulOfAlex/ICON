@@ -1,6 +1,6 @@
 """Ogni nome usato deve esistere, anche nei rami mai eseguiti sui dati di sviluppo.
 
-**Perche' questo test esiste.** Gli script hanno rami che i dati di sviluppo non
+Perche' questo test esiste. Gli script hanno rami che i dati di sviluppo non
 attraversano: un ramo che si apre solo in presenza di righe anomale, o solo su una
 citta', o solo attorno alla mezzanotte. Un nome cancellato per sbaglio dentro uno
 di quei rami non fa fallire nulla in locale - il ramo non entra mai in funzione -
@@ -8,16 +8,16 @@ e si manifesta soltanto sulla macchina di raccolta, dopo un trasferimento e
 un'esecuzione. E' gia' successo due volte con la stessa funzione, e il collaudo
 sui dati locali per costruzione non puo' vederlo.
 
-Il controllo e' statico e non esegue nulla: costruisce l'albero degli **ambiti**
+Il controllo e' statico e non esegue nulla: costruisce l'albero degli ambiti
 di ciascun modulo e verifica che ogni nome letto sia risolvibile fra le variabili
 locali, quelle delle funzioni che lo racchiudono, quelle del modulo e le
 incorporate. E' una versione ridotta di cio' che farebbe pyflakes, scritta a mano
 perche' lo stack del progetto e' chiuso e non vale una dipendenza in piu' per un
 solo controllo.
 
-**Gli ambiti vanno costruiti con precisione, e la prima versione non lo faceva.**
+Gli ambiti vanno costruiti con precisione, e la prima versione non lo faceva.
 Raccogliendo le funzioni annidate con una visita indiscriminata dell'albero, una
-funzione definita dentro un'altra veniva agganciata **anche** all'ambito del
+funzione definita dentro un'altra veniva agganciata anche all'ambito del
 modulo, perdendo per strada le variabili della funzione che la racchiude: ogni
 chiusura produceva un falso allarme. Un verificatore che segnala cio' che e'
 corretto viene disattivato dopo il terzo falso allarme, e a quel punto non
@@ -25,7 +25,7 @@ protegge piu' da nulla. Si scende percio' un ambito alla volta, senza entrare in
 quelli annidati, e si trattano come ambiti propri anche le espressioni lambda e le
 comprensioni, che in Python lo sono.
 
-**Cosa non copre**, dichiarato per non dargli piu' credito di quanto ne meriti: le
+Cosa non copre, dichiarato per non dargli piu' credito di quanto ne meriti: le
 annotazioni di tipo, che con ``from __future__ import annotations`` non vengono
 valutate e possono contenere riferimenti in avanti legittimi; gli attributi, di
 cui si verifica solo la radice; i nomi introdotti da ``import *``, che il progetto

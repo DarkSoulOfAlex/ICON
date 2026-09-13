@@ -20,7 +20,7 @@ serve: una quota bassa di righe con orario potrebbe venire da poche corse molto
 frequentate o da molte corse rare, e solo il conteggio sui ``trip_id`` distingue i
 due casi.
 
-**Perche' l'archivio si legge dall'indice e non si sceglie qui.** L'archivio in
+Perche' l'archivio si legge dall'indice e non si sceglie qui. L'archivio in
 vigore in una giornata e' una proprieta' di quella giornata, registrata quando la
 giornata e' stata consolidata. Sceglierne un altro adesso - il piu' recente, per
 esempio - misurerebbe una cosa diversa da quella che il consolidamento ha fatto, e

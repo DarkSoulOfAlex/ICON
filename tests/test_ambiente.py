@@ -2,7 +2,7 @@
 
 Non c'e' molto da collaudare in una stringa, e proprio per questo vale la pena di
 fissare le due proprieta' su cui qualcuno potrebbe contare senza accorgersene: che
-sia **stabile** dentro un'esecuzione, altrimenti due righe dello stesso CSV
+sia stabile dentro un'esecuzione, altrimenti due righe dello stesso CSV
 direbbero macchine diverse, e che contenga la versione di Python, che e' la sola
 parte dell'etichetta che cambi senza che cambi l'hardware.
 """

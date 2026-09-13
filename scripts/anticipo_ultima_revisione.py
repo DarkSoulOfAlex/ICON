@@ -7,21 +7,21 @@ osservato** ma l'ultima previsione pubblicata prima della sparizione. Quanto val
 quell'"ultima" decide quanto la limitazione sia severa: a dieci secondi dal transito
 e' quasi una constatazione, a dieci minuti e' una previsione a tutti gli effetti.
 
-**Perche' non e' la stessa cosa di ``feed - programmato``.** Quella grandezza, che
+Perche' non e' la stessa cosa di ``feed - programmato``. Quella grandezza, che
 ``diagnosi_constatazioni.py`` riporta, misura la distanza fra l'istante di
-pubblicazione e l'orario **programmato**, su **tutte** le righe: e' dominata dalle
+pubblicazione e l'orario programmato, su tutte le righe: e' dominata dalle
 previsioni lontane, che il feed ripubblica di continuo, e su Torino vale circa
 -330 s. Qui si misura un'altra cosa:
 
     anticipo = orario_osservato - timestamp_feed
 
-cioe' la distanza fra l'istante di pubblicazione e il transito **atteso** - orario
+cioe' la distanza fra l'istante di pubblicazione e il transito atteso - orario
 programmato piu' ritardo dichiarato - e solo sulla riga che ``ultima_revisione``
 conserva per ciascun passaggio, che e' la sola che entra nella stima. Le due
 rispondono a domande diverse e non vanno scambiate.
 
-Un anticipo **positivo** significa che il transito atteso e' nel futuro rispetto alla
-pubblicazione, cioe' che il dato e' una previsione; **negativo**, che il transito
+Un anticipo positivo significa che il transito atteso e' nel futuro rispetto alla
+pubblicazione, cioe' che il dato e' una previsione; negativo, che il transito
 atteso era gia' passato, cioe' una constatazione. Su Roma ci si aspettano entrambi i
 segni, su Torino quasi solo il primo.
 
@@ -120,7 +120,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                   f"{r['anticipo_mediana']:>9.0f} {r['anticipo_p75']:>9.0f} "
                   f"{r['quota_positivi']:>8.1%}")
         if per_citta:
-            # Media e deviazione **fra giornate**: i passaggi di uno stesso giorno
+            # Media e deviazione fra giornate: i passaggi di uno stesso giorno
             # condividono il traffico di quel giorno e non sono indipendenti.
             mediane = np.array([r["anticipo_mediana"] for r in per_citta])
             print(f"  mediana fra giornate: {mediane.mean():.0f} +/- "

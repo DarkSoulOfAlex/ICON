@@ -1,9 +1,9 @@
 """Costruisce il documento di riferimento per pandoc a partire dal template del docente.
 
-**Perche' serve.** `pandoc --reference-doc` prende dal documento indicato *gli
+Perche' serve. `pandoc --reference-doc` prende dal documento indicato *gli
 stili*, non i contenuti: il frontespizio va quindi scritto nel Markdown. Il
 problema e' un altro, e non e' evidente finche' non si apre il `.docx` prodotto:
-pandoc **riferisce** stili che il template del docente non **definisce**.
+pandoc riferisce stili che il template del docente non definisce.
 
 In particolare emette `<w:tblStyle w:val="Table"/>` per ogni tabella, ma il
 template dichiara solo `TableNormal`. Lo stile riferito non esiste, Word ricade
@@ -14,7 +14,7 @@ documento risulterebbe illeggibile. Lo stesso vale per `CaptionedFigure` e
 indistinguibile dal resto. Pandoc non colma la lacuna da solo: inietta
 `SourceCode` e gli stili di colorazione della sintassi, e nient'altro.
 
-**Perche' un file derivato invece di modificare il template.**
+Perche' un file derivato invece di modificare il template.
 `docs/template_docente.docx` e' materiale ricevuto e va lasciato intatto, sia per
 poterlo riconfrontare sia perche' e' il riferimento su cui il progetto viene
 giudicato. Il file generato qui e' rigenerabile in ogni momento da quello, quindi

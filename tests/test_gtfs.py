@@ -1,6 +1,6 @@
 """Test dei moduli GTFS.
 
-Coprono deliberatamente solo cio' che puo' rompersi **in silenzio**, cioe' senza
+Coprono deliberatamente solo cio' che puo' rompersi in silenzio, cioe' senza
 sollevare eccezioni e senza somigliare a un errore:
 
 * il calendario, che interpretato male non fallisce ma restituisce zero corse
@@ -206,7 +206,7 @@ def test_la_somma_e_una_durata_reale_non_un_salto_sull_orologio() -> None:
 
     Il confronto passa da UTC per una ragione che vale la pena fissare qui,
     perche' e' la stessa trappola che il modulo evita. Sottraendo due datetime
-    che portano **lo stesso oggetto** ``tzinfo``, Python ignora il fuso e
+    che portano lo stesso oggetto ``tzinfo``, Python ignora il fuso e
     sottrae i valori da orologio: fra le 01:00 del 25 ottobre e le 00:00 del 26
     ottobre risponderebbe 23 ore, perche' non applica il cambio d'ora che cade
     in mezzo. La differenza si misura solo dopo la conversione in UTC.

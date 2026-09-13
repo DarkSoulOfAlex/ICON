@@ -5,7 +5,7 @@ strategia che risolverebbe il problema se i vincoli fossero soltanto di
 precedenza. :func:`risolvi_completo` esplora con ritorno all'indietro ed e'
 completo: trova una soluzione ogni volta che esiste.
 
-**La differenza fra i due e' la misura che giustifica l'intero argomento.** Se il
+La differenza fra i due e' la misura che giustifica l'intero argomento. Se il
 greedy trovasse una soluzione ogni volta che ne esiste una, il viaggio
 multi-tappa non sarebbe un problema di soddisfacimento di vincoli ma una
 successione di decisioni indipendenti, e andrebbe trattato come tale. La funzione
@@ -14,7 +14,7 @@ mano, su cui il greedy fallisce mentre una soluzione esiste: dimostra che il cas
 e' possibile. Quanto sia frequente su istanze reali e' oggetto
 dell'esperimento in ``scripts/csp_greedy.py``.
 
-Il greedy implementato qui e' la versione **piu' forte** che non torni indietro:
+Il greedy implementato qui e' la versione piu' forte che non torni indietro:
 scarta i candidati che sforerebbero i budget gia' durante il cammino, invece di
 accorgersene alla fine. Indebolirlo renderebbe il confronto un fantoccio.
 """
@@ -183,7 +183,7 @@ def controesempio_budget(base: int = 1_800_000_000) -> Istanza:
 
     E' costruita a mano perche' sia verificabile a mano, e i suoi numeri sono
     quelli riportati nel documento. ``base`` rappresenta le 09:00; il viaggio
-    parte un'ora prima e il tetto globale e' di **quattro cambi**.
+    parte un'ora prima e il tetto globale e' di quattro cambi.
 
     Prima tappa, finestra 09:00-09:15: ``X1`` arriva alle 09:05 con tre cambi,
     ``X2`` alle 09:12 con un cambio. Seconda tappa: ``Y1`` esige di essere pronti
@@ -193,7 +193,7 @@ def controesempio_budget(base: int = 1_800_000_000) -> Istanza:
 
     Il greedy sceglie ``X1`` perche' arriva prima, poi ``Y1``: ha speso quattro
     cambi e alla terza tappa ne servirebbe un quinto, quindi dichiara l'istanza
-    infattibile. Scegliendo ``X2``, che arriva **sette minuti piu' tardi**, la
+    infattibile. Scegliendo ``X2``, che arriva sette minuti piu' tardi, la
     sosta impone ``Y2``, e il totale e' 1 + 2 + 1 = quattro cambi esatti: la
     soluzione esiste. Arrivare prima sulla prima tappa e' la mossa che perde.
     """

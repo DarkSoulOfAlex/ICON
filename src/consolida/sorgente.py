@@ -2,7 +2,7 @@
 
 Il consolidamento notturno comprime i ``.pb`` del giorno in ``grezzi.tar.gz`` e
 rimuove la forma sciolta, che occupa molto piu' spazio. La conseguenza e' che
-qualunque elaborazione su un giorno **passato** non trova piu' la cartella: vale
+qualunque elaborazione su un giorno passato non trova piu' la cartella: vale
 per la diagnosi, e vale soprattutto per la rigenerazione dei parquet, che senza
 questa lettura non potrebbe nemmeno partire.
 
@@ -10,7 +10,7 @@ Non si estrae nulla su disco. Un giorno di dump sciolti pesa oltre un gigabyte, 
 la macchina di raccolta ha spazio contato: estrarre per rileggere significherebbe
 raddoppiare l'occupazione proprio mentre si rigenera.
 
-L'accesso all'archivio e' **sequenziale** di proposito. Su un ``.tar.gz`` non
+L'accesso all'archivio e' sequenziale di proposito. Su un ``.tar.gz`` non
 esiste accesso casuale: leggere un membro a meta' costringe a decomprimere tutto
 cio' che lo precede, e su un giorno intero il costo diventerebbe quadratico.
 """
@@ -80,7 +80,7 @@ class SorgenteDump:
         """Vero per i membri della sottocartella giusta.
 
         Il controllo sulla sottocartella non e' pignoleria: dentro l'archivio i
-        ``vehicle_positions`` hanno gli **stessi nomi di file** dei
+        ``vehicle_positions`` hanno gli stessi nomi di file dei
         ``trip_updates``, perche' vengono dallo stesso giro di raccolta, e senza
         questo filtro si leggerebbero gli uni per gli altri.
         """

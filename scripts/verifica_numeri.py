@@ -8,20 +8,20 @@ file, ed e' l'unico modo di sbagliare che conti davvero quando si scrive il
 documento: un numero inventato non fa fallire nulla, non rompe nessun test, e
 resta li'.
 
-**Non e' un verificatore, e' un setaccio.** Riconosce come "risultato" qualunque
+Non e' un verificatore, e' un setaccio. Riconosce come "risultato" qualunque
 numero con la virgola decimale, qualunque percentuale e qualunque grandezza
 seguita da un'unita' - bit, secondi, minuti - e per ciascuno cerca una cella dei
-CSV che vi corrisponda **alla precisione con cui e' scritto**: 0,213 si confronta
+CSV che vi corrisponda alla precisione con cui e' scritto: 0,213 si confronta
 al millesimo, 45% al punto percentuale. I falsi positivi sono previsti e
 innocui - un anno, il numero di un capitolo, un conteggio - e si guardano a
 occhio. Cio' che non deve poter accadere e' il contrario: che un numero senza
 origine passi inosservato.
 
-**Come tratta le percentuali.** Un CSV che scrive 0,4664 e un documento che scrive
+Come tratta le percentuali. Un CSV che scrive 0,4664 e un documento che scrive
 46,6% dicono la stessa cosa: ogni percentuale viene quindi cercata sia come
 scritta sia divisa per cento. Lo stesso per i numeri con segno, dove il documento
 scrive +11,1% e la cella contiene una differenza che il CSV non ha mai
-materializzato: per questo si cercano anche le **differenze fra celle** della
+materializzato: per questo si cercano anche le differenze fra celle della
 stessa colonna, che sono il modo in cui quasi tutti i confronti vengono riportati.
 
     python scripts/verifica_numeri.py
@@ -87,7 +87,7 @@ def _interpreta(testo: str) -> list[tuple[float, int]]:
 
     ``7.334`` in un testo italiano vale settemila; ``0.9437`` copiato da un CSV vale
     zero virgola. Un punto seguito da esattamente tre cifre resta ambiguo: si
-    restituiscono **entrambe** le letture e si cerca l'una e l'altra. Sceglierne una
+    restituiscono entrambe le letture e si cerca l'una e l'altra. Sceglierne una
     sola darebbe NON TROVATO a meta' delle tabelle del documento, e un setaccio che
     segnala tutto non segnala niente.
     """
@@ -104,7 +104,7 @@ def _interpreta(testo: str) -> list[tuple[float, int]]:
         letture.append(ripulito)
     else:                                    # 0.9437 oppure 45
         letture.append(ripulito)
-    # Le cifre decimali si contano **su ciascuna lettura**, non sul testo: letto
+    # Le cifre decimali si contano su ciascuna lettura, non sul testo: letto
     # come migliaia, ``37.156`` non ha decimali e va cercato a mezza unita'; letto
     # come decimale ne ha tre e va cercato al mezzo millesimo. Contarle una volta
     # sola sul testo dava al primo la tolleranza del secondo, e faceva mancare la
@@ -159,7 +159,7 @@ def _aggregati(nome: str, tavola: pd.DataFrame) -> list[tuple[str, str, float]]:
     """Medie e deviazioni per gruppo: e' cosi' che una tabella di risultati si scrive.
 
     La prima versione del setaccio cercava solo celle e differenze fra celle, e
-    segnalava come NON TROVATI un centinaio di numeri **corretti**: i valori di
+    segnalava come NON TROVATI un centinaio di numeri corretti: i valori di
     Argomento 2, per esempio, sono le medie di ``ricerca_astar.csv`` calcolate sulle
     sole coppie risolte, quarantatre su cinquanta a Roma. Nessuno di quei numeri
     compare in una cella, e tutti si ricostruiscono in una riga.
@@ -218,7 +218,7 @@ RIGHE_DI_RIEPILOGO = 100
 
 Il documento cita riepiloghi: medie per citta', per margine, per strategia. I
 file di dettaglio - una riga per istanza - contengono migliaia di valori in
-[0, 1] e **saturano la retta dei numeri**: cercandovi dentro, qualunque
+[0, 1] e saturano la retta dei numeri: cercandovi dentro, qualunque
 percentuale inventata trova una corrispondenza. Misurato: col dettaglio incluso
 il 99,5% delle percentuali inventate a un decimale risulta "trovato", contro il
 61% coi soli riepiloghi. Si cercano quindi per difetto i soli riepiloghi, e
@@ -228,7 +228,7 @@ il 99,5% delle percentuali inventate a un decimale risulta "trovato", contro il
 
 def tasso_di_falso(celle: Sequence[tuple[str, str, float]], quanti: int = 400,
                    seme: int = 20260911) -> dict[str, float]:
-    """Quanto spesso un numero **inventato** trova una corrispondenza.
+    """Quanto spesso un numero inventato trova una corrispondenza.
 
     E' la misura che dice quanto valga un "trovato", e senza di essa il programma
     ingannerebbe chi lo usa. Un corpus di qualche migliaio di valori copre densamente
@@ -265,7 +265,7 @@ def carica_celle(cartella: Path, con_dettaglio: bool = False,
                  con_differenze: bool = False) -> list[tuple[str, str, float]]:
     """Ogni cella numerica di ogni CSV, come (file, colonna, valore).
 
-    Si tengono anche le **differenze** fra celle della stessa colonna dello stesso
+    Si tengono anche le differenze fra celle della stessa colonna dello stesso
     file: quasi tutti i confronti del documento sono differenze che il CSV non ha
     mai materializzato, e cercarle solo come valori assoluti darebbe NON TROVATO a
     numeri perfettamente sostenuti.

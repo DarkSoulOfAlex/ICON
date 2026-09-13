@@ -1,15 +1,15 @@
 """I numeri delle catene a risposta nota, su file invece che dentro un test.
 
 Il capitolo sull'apprendimento poggia su un punto di metodo che vale piu' della
-scelta che ne discende: **condizionare sul bin non e' condizionare sulla variabile**,
+scelta che ne discende: condizionare sul bin non e' condizionare sulla variabile,
 e l'eccesso di informazione che ne risulta si riconosce dal **verso con cui varia al
 raffinarsi della discretizzazione**. Quel punto e' dimostrato su due catene costruite
 a tavolino, di cui si conosce la risposta:
 
-- una **markoviana esatta nel continuo**, dove ``R0`` dipende da ``R-1`` e da nulla
+- una markoviana esatta nel continuo, dove ``R0`` dipende da ``R-1`` e da nulla
   altro, e dove quindi l'eccesso misurato dopo la discretizzazione e' interamente
   artefatto: deve dissolversi al crescere dei bin;
-- una in cui ``R0`` dipende **anche** da ``R-2``, dove l'eccesso e' struttura e non
+- una in cui ``R0`` dipende anche da ``R-2``, dove l'eccesso e' struttura e non
   deve dissolversi.
 
 I numeri stavano finora soltanto dentro ``tests/test_markov.py``, che li vincola con
@@ -18,10 +18,10 @@ delle soglie ma non li scrive da nessuna parte: chi legge il documento trovava
 passaggio piu' importante del capitolo, e questo script lo chiude scrivendo
 ``results/catena_costruita.csv``.
 
-**Perche' non lo fa il test.** Un test dichiara un comportamento e fallisce quando
+Perche' non lo fa il test. Un test dichiara un comportamento e fallisce quando
 cambia; non e' il posto dove produrre un artefatto da consegnare, perche' nessuno lo
 esegue per leggerne l'uscita e la suite non deve scrivere dentro ``results/``. Le
-catene stanno pero' in ``src.delays.markov`` e sono le **stesse** che il test usa, con
+catene stanno pero' in ``src.delays.markov`` e sono le stesse che il test usa, con
 lo stesso seme: se divergessero, il test se ne accorgerebbe.
 
     python scripts/catena_costruita.py

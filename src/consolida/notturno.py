@@ -6,7 +6,7 @@ raccolta, alle quattro del mattino.
 
 Tre scelte meritano di essere dichiarate.
 
-**La data di servizio viene dal feed, non dalla cartella.** Il descrittore di
+La data di servizio viene dal feed, non dalla cartella. Il descrittore di
 corsa del GTFS Real-Time porta ``start_date``, che e' la data di servizio a cui
 la corsa appartiene. Non coincide sempre con la data della cartella: una corsa
 delle 25:30 del giorno D circola all'una e mezza di notte del giorno D+1, quindi
@@ -31,7 +31,7 @@ sapere. La stessa logica vale per il ``route_id``, che si potrebbe in teoria
 ricavare dai ``vehicle_positions``, ma richiederebbe un accoppiamento temporale
 fra due feed con timestamp diversi mentre ``trips.txt`` lo dice in modo esatto.
 
-**La deduplica conserva l'evoluzione della previsione.** Vedere la classe
+La deduplica conserva l'evoluzione della previsione. Vedere la classe
 :class:`Politica`.
 """
 
@@ -240,7 +240,7 @@ def carica_orario(citta: str, service_date: str, cartella_gtfs: Path) -> tuple[d
     assert archivio.stop_times is not None
 
     # Si costruisce prima la mappa piccola, poi si lascia andare tutto cio' che
-    # non serve piu'. **Il picco non ne beneficia**, ed e' stato misurato: su Roma
+    # non serve piu'. Il picco non ne beneficia, ed e' stato misurato: su Roma
     # resta di 2,16 GB contro 1,63 GB di residenti, identico a prima del
     # rilascio. La ragione e' che il picco non cade dove sembrava, cioe' nella
     # costruzione dell'indice, ma nel caricamento dell'archivio: interpretare 5,5
@@ -312,7 +312,7 @@ class Riepilogo:
     vede un valore diverso a ogni passaggio e registra un cambio che non c'e':
     scrive righe in piu'. Nel caso opposto, piu' raro, sopprime un passaggio vero
     perche' il valore coincide con quello dell'altro giorno. Il conteggio delle
-    coppie con piu' date **non misura nulla di tutto questo**: quelle coppie
+    coppie con piu' date non misura nulla di tutto questo: quelle coppie
     devono esistere, dato che la stessa corsa ricorre in giorni diversi.
     """
 
@@ -477,7 +477,7 @@ def consolida_giorno(
                 if politica.nome == "ultimo":
                     # Sotto questa politica il difetto e' di natura diversa e va
                     # misurato diversamente: si conserva una riga per chiave,
-                    # quindi la chiave storica ne terrebbe **una sola** per due
+                    # quindi la chiave storica ne terrebbe una sola per due
                     # giorni di servizio, perdendo un passaggio intero invece di
                     # una ripetizione. La differenza fra i due conteggi di chiavi
                     # e' esattamente il numero di passaggi persi.

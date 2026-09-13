@@ -5,7 +5,7 @@ poggera' il grafo tempo-espanso della Fase 2, e ``results/kb_rete_intera.csv``, 
 riporta il costo dell'esecuzione a piena scala. Quest'ultimo serve al documento:
 e' la misura reale, non l'estrapolazione della curva di complessita'.
 
-**Perche' scrive un CSV e non solo a schermo.** Fino alla verifica del 11 settembre
+Perche' scrive un CSV e non solo a schermo. Fino alla verifica del 11 settembre
 questi numeri esistevano soltanto nel log di un'esecuzione: erano veri quando furono
 scritti nel documento e non erano piu' verificabili da nessuno, che e' esattamente il
 difetto da evitare. Undici secondi di grounding non sono un costo che giustifichi

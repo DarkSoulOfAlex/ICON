@@ -7,7 +7,7 @@ due artefatti destinati al documento:
     results/complessita_kb.csv   dati grezzi, una riga per ripetizione
     results/complessita_kb.png   figura a 150 dpi
 
-Oltre alla curva principale misura due varianti, che servono a **attribuire** il
+Oltre alla curva principale misura due varianti, che servono a attribuire il
 costo invece di dedurlo:
 
 * ``senza_indice`` confronta tutte le coppie di fermate anziche' le sole celle

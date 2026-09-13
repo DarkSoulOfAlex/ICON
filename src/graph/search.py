@@ -4,7 +4,7 @@ Contiene due ricerche. La prima e' mono-criterio e cerca il primo orario di
 arrivo possibile; la seconda e' multi-criterio e restituisce la frontiera di
 Pareto su orario di arrivo, numero di cambi e minuti a piedi.
 
-A* e Dijkstra condividono **lo stesso codice**: Dijkstra e' A* con euristica
+A* e Dijkstra condividono lo stesso codice: Dijkstra e' A* con euristica
 identicamente nulla. Non e' un dettaglio implementativo ma una condizione del
 confronto sperimentale: due implementazioni separate misurerebbero anche le
 differenze fra le due implementazioni, e non solo l'effetto dell'euristica.
@@ -40,7 +40,7 @@ def euristica_geografica(
     """Stima ottimistica del tempo residuo: distanza in linea d'aria diviso la
     velocita' massima della rete.
 
-    **Ammissibilita'.** Sia ``n`` uno stato la cui fermata dista ``d`` metri in
+    Ammissibilita'. Sia ``n`` uno stato la cui fermata dista ``d`` metri in
     linea d'aria dalla destinazione, e sia ``V`` la velocita' massima fra due
     fermate consecutive presente nell'orario. Qualunque itinerario che porti da
     ``n`` alla destinazione e' una successione di spostamenti fra fermate; la
@@ -53,13 +53,13 @@ def euristica_geografica(
     quindi non intaccano il limite. L'euristica non sovrastima mai il costo
     residuo, ed e' quindi ammissibile: A* restituisce l'ottimo.
 
-    **Consistenza.** L'euristica e' anche consistente, perche' e' della forma
+    Consistenza. L'euristica e' anche consistente, perche' e' della forma
     ``d(x)/V`` con ``d`` distanza euclidea, che soddisfa la disuguaglianza
     triangolare: per ogni arco da ``x`` a ``y`` di costo ``c``, si ha
     ``h(x) <= c + h(y)``. Con un'euristica consistente, ogni stato viene estratto
     dalla coda con il suo costo definitivo e non serve riaprirlo.
 
-    **Il prezzo di ``V``.** Il limite deve valere per l'orario cosi' com'e',
+    Il prezzo di ``V``. Il limite deve valere per l'orario cosi' com'e',
     difetti compresi. Se la tabella oraria dichiara un percorso di quattrocento
     metri in tre secondi, ``V`` deve tenerne conto, altrimenti l'euristica
     sovrastimerebbe il costo residuo su quel tratto e A* potrebbe scartare
@@ -105,7 +105,7 @@ class EsitoRicerca:
 def _chiave(grafo: Grafo, stato: Stato, con_cambi: bool, con_istante: bool = False) -> tuple:
     """Chiave con cui uno stato viene considerato gia' visitato.
 
-    Per uno stato a terra la chiave **non contiene l'istante**, e la ragione e'
+    Per uno stato a terra la chiave non contiene l'istante, e la ragione e'
     una relazione di dominanza: trovarsi alla stessa fermata con lo stesso numero
     di cambi ma prima e' sempre almeno altrettanto buono, perche' ogni
     proseguimento disponibile a chi arriva tardi lo e' anche a chi arriva presto,
@@ -146,7 +146,7 @@ def cerca_primo_arrivo(
 ) -> EsitoRicerca:
     """A* sul primo orario di arrivo. Con ``con_euristica=False`` e' Dijkstra.
 
-    Il costo di uno stato e' l'**orario di arrivo**, non la durata: partire piu'
+    Il costo di uno stato e' l'orario di arrivo, non la durata: partire piu'
     tardi non e' peggio se si arriva prima, e minimizzare la durata porterebbe a
     preferire un viaggio breve che parte fra due ore a uno un po' piu' lungo che
     parte adesso.

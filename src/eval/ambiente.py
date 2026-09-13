@@ -8,7 +8,7 @@ fossero omogenei. Nessuno poteva accorgersene, perche' nessun CSV lo diceva.
 
 La riga che il documento riporta una volta sola non basta da sola: dipende dal
 fatto che qualcuno la legga e la colleghi alla tabella giusta. La colonna nel CSV
-viaggia invece **insieme al numero**, e sopravvive al copia-incolla di una riga in
+viaggia invece insieme al numero, e sopravvive al copia-incolla di una riga in
 un'altra tabella.
 
 Si tiene volutamente corta: modello del processore, sistema e versione di Python.

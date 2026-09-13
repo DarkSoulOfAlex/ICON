@@ -137,7 +137,7 @@ def test_rollover_misto_con_ritardi_reali(tmp_path: Path) -> None:
 # la costante non era protetta da niente.
 #
 # Un ritardo di 60.000 s - sedici ore e quaranta - ha residuo 26.400 dalle
-# ventiquattro ore: assurdo come ritardo reale, ma **non e' un salto di giorno**,
+# ventiquattro ore: assurdo come ritardo reale, ma non e' un salto di giorno,
 # e il criterio del residuo deve saperlo distinguere. E' li' che si mette il
 # presidio, perche' e' li' che una soglia sbagliata butterebbe via dati veri.
 
@@ -158,7 +158,7 @@ def test_la_banda_fra_le_due_soglie_non_e_un_salto_di_giorno() -> None:
 
 
 def test_il_confine_della_soglia_sta_a_un_ora_esatta() -> None:
-    """Il confine e' scritto qui come **numero**, non come la costante stessa.
+    """Il confine e' scritto qui come numero, non come la costante stessa.
 
     Scriverlo come ``GIORNO - RESIDUO_PLAUSIBILE`` sembrerebbe piu' pulito e non
     proverebbe nulla: l'espressione si muove insieme alla costante, quindi il test

@@ -4,7 +4,7 @@ Stima ``P(ritardo alla fermata | contesto, ritardo alla fermata precedente)``, c
 e' la tabella su cui si fonda la composizione delle probabilita' lungo la catena
 delle coincidenze.
 
-**Il problema che la risalita risolve.** Al livello piu' fine - linea, fascia
+Il problema che la risalita risolve. Al livello piu' fine - linea, fascia
 oraria, tipo di giorno - le celle sono centinaia di migliaia e la loro popolazione
 e' fortemente disuguale: poche linee portanti concentrano la maggior parte dei
 passaggi, mentre molte combinazioni corrispondono a servizi marginali con pochi
@@ -13,34 +13,34 @@ precise dove i dati abbondano e prive di senso dove scarseggiano. Stimarle tutte
 un livello grossolano darebbe l'opposto: nessuna cella priva di senso, e nessuna
 capace di distinguere una linea dall'altra.
 
-**Come funziona.** Ogni gradino della scala viene stimato usando come priore di
+Come funziona. Ogni gradino della scala viene stimato usando come priore di
 Dirichlet la stima del gradino che lo precede, con concentrazione ``alfa``:
 
     P(cella) = (conteggi + alfa * P(genitore)) / (osservazioni + alfa)
 
 Una cella con tre osservazioni resta quasi uguale al genitore; una con tremila lo
-ignora; una senza osservazioni **coincide** con il genitore, che e' esattamente il
+ignora; una senza osservazioni coincide con il genitore, che e' esattamente il
 comportamento voluto e si ottiene senza alcuna regola aggiuntiva.
 
-**Perche' non esiste una soglia separata.** Verrebbe naturale aggiungere un
+Perche' non esiste una soglia separata. Verrebbe naturale aggiungere un
 parametro che dica "sotto tante osservazioni, usa il genitore". Sarebbe pero'
 ridondante e peggiore: ``alfa`` governa gia' quella transizione, e la governa in
-modo **graduale** invece che a gradino, evitando che due celle con novantanove e
+modo graduale invece che a gradino, evitando che due celle con novantanove e
 centouno osservazioni ricevano trattamenti diversi. I due parametri che il piano
 distingueva - quando salire e quanto pesare il genitore - sono lo stesso
-parametro. Si tara quindi ``alfa`` **per gradino**, il che permette di essere
+parametro. Si tara quindi ``alfa`` per gradino, il che permette di essere
 prudenti dove i dati scarseggiano e fiduciosi dove abbondano.
 
-**La scala ha due dimensioni.** Oltre al contesto, dal piu' grossolano al piu'
+La scala ha due dimensioni. Oltre al contesto, dal piu' grossolano al piu'
 fine, c'e' il tipo di dato: le constatazioni prima e le previsioni poi, perche' su
 Roma il 23% delle transizioni fra previsioni e' l'identita' - valori non
 ricalcolati, quindi copie - contro il 4,7% fra constatazioni. Ne segue
-che ogni gradino ha **le proprie osservazioni**, non una diversa partizione delle
+che ogni gradino ha le proprie osservazioni, non una diversa partizione delle
 stesse: il gradino "previsioni al contesto fine" vede righe che il gradino
 "constatazioni al contesto fine" non vede affatto. Da qui la firma di ``Livello``,
 che porta con se' il proprio campione.
 
-**La mappa dei genitori si dichiara, non si deduce.** Sarebbe comodo ricavarla dai
+La mappa dei genitori si dichiara, non si deduce. Sarebbe comodo ricavarla dai
 dati, guardando in quale cella grossolana cadano le osservazioni di ciascuna cella
 fine. Sarebbe pero' sbagliato proprio dove conta: una cella mai osservata in
 addestramento ma presente in verifica riceverebbe un genitore arbitrario, cioe' un
@@ -78,7 +78,7 @@ def _controlla_indici(indici: np.ndarray, quanti: int, che_cosa: str) -> None:
 class Livello:
     """Un gradino della scala: il suo campione, le sue celle, il suo genitore.
 
-    ``celle`` e ``valori`` hanno la lunghezza del campione **di questo gradino**,
+    ``celle`` e ``valori`` hanno la lunghezza del campione di questo gradino,
     che puo' essere diverso da quello degli altri. ``padre`` ha lunghezza
     ``quante`` e dice, per ogni cella di questo gradino, quale cella del gradino
     precedente la contiene; vale ``None`` solo per il primo gradino, il cui priore
@@ -139,7 +139,7 @@ def mappa_annidata(codice_figlio: np.ndarray, codice_padre: np.ndarray,
                    quante_figlio: int, quante_padre: int) -> np.ndarray:
     """Ricava la mappa dei genitori da una coppia di codifiche annidate.
 
-    Da usare solo quando il chiamante puo' enumerare **tutte** le celle, per
+    Da usare solo quando il chiamante puo' enumerare tutte le celle, per
     esempio percorrendo il prodotto cartesiano dei fattori del contesto, e non
     quando dispone soltanto delle celle osservate: vedere la nota nel docstring del
     modulo. L'annidamento viene verificato, perche' una codifica non annidata - due
@@ -239,7 +239,7 @@ def componi(conteggi: Conteggi, alfa: float | list[float]) -> Modello:
 def stima(livelli: list[Livello], n_valori: int, alfa: float | list[float]) -> Modello:
     """Conta e compone in un colpo solo.
 
-    ``livelli`` va fornito **ordinato**, dal gradino piu' generale al piu'
+    ``livelli`` va fornito ordinato, dal gradino piu' generale al piu'
     specifico: l'ultimo e' la tabella che il pianificatore adopera. ``alfa`` puo'
     essere un solo numero, applicato a tutti i gradini, oppure uno per gradino.
     """
@@ -254,7 +254,7 @@ L'estremo superiore e' alto di proposito. Un gradino che scegliesse il massimo
 disponibile non sarebbe tarato ma troncato: direbbe solo che il suo ottimo sta
 oltre il punto dove si e' smesso di cercare, e ``Taratura.al_bordo`` lo segnala.
 
-**Perche' arriva a cento milioni e non a un milione.** Con un milione la griglia si
+Perche' arriva a cento milioni e non a un milione. Con un milione la griglia si
 fermava troppo presto per i gradini a poche celle molto popolose. Il peso che una
 cella conserva sui propri conteggi vale ``N / (N + alfa)``: il gradino per tipo di
 veicolo di Roma ha otto celle su 1,17 milioni di coppie, cioe' circa
@@ -265,7 +265,7 @@ portano quel residuo sotto il punto percentuale e rendono la trasparenza
 raggiungibile, senza togliere nulla ai gradini che un alfa piccolo gia' serviva.
 
 Con una concentrazione molto maggiore del numero di osservazioni della cella, il
-gradino diventa **trasparente**: la sua stima coincide con quella del genitore.
+gradino diventa trasparente: la sua stima coincide con quella del genitore.
 E' una risposta legittima e non un troncamento - vuol dire che il gradino non
 serve - e su Roma capita davvero, perche' con tutte le linee di superficie
 classificate come autobus il livello per tipo di veicolo ripete quello sotto di
@@ -315,7 +315,7 @@ def tara(
 ) -> Taratura:
     """Sceglie una concentrazione per gradino minimizzando la perdita fuori campione.
 
-    Il campione di verifica deve contenere **solo constatazioni**: se contenesse
+    Il campione di verifica deve contenere solo constatazioni: se contenesse
     anche previsioni, fra le quali su Roma quasi un quarto delle transizioni e'
     l'identita', la concentrazione verrebbe scelta per predire bene le ripetizioni,
     che e' il contrario di cio' che serve.
@@ -357,12 +357,12 @@ def tara(
 class Trasparenza:
     """Quanto la tabella di un gradino si discosti da quella del suo genitore.
 
-    Serve a leggere un ``alfa`` finito **al bordo superiore** della griglia. Per
+    Serve a leggere un ``alfa`` finito al bordo superiore della griglia. Per
     ``alfa`` che cresce la stima di una cella tende alla stima del genitore -
     ``(conteggi + alfa*atteso) / (osservazioni + alfa) -> atteso`` - quindi un
     gradino che sceglie il massimo disponibile sta chiedendo di somigliare al
     genitore quanto la griglia gli concede. Non c'e' bisogno di allargare la
-    griglia per capire che cosa significhi: basta misurare **quanto dista gia'**.
+    griglia per capire che cosa significhi: basta misurare quanto dista gia'.
 
     Se dista zero entro il numerico, il gradino e' trasparente e non serve. Se
     dista ancora, la griglia e' troppo stretta e va detto, perche' allora la scala

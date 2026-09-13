@@ -308,7 +308,7 @@ def test_si_misura_l_effetto_della_data_nella_chiave(tmp_path: Path) -> None:
     che conta e' quante righe la chiave senza data avrebbe scritto in piu' o in
     meno, e sono due direzioni distinte che si compensano.
 
-    Qui si costruisce il caso che produce righe **in piu'** con la chiave storica:
+    Qui si costruisce il caso che produce righe in piu' con la chiave storica:
     lo stesso passaggio alternato fra due giorni di servizio. Alternando, la
     chiave senza data vede un valore diverso a ogni giro e registra un cambio che
     non c'e'.
@@ -355,7 +355,7 @@ def test_sotto_la_politica_ultimo_la_data_nella_chiave_salva_un_passaggio(
     """Sotto ``ultimo`` il difetto della chiave e' piu' grave, non piu' lieve.
 
     Quella politica conserva una riga per chiave, quindi la chiave senza data ne
-    terrebbe **una sola** per due giorni di servizio: si perderebbe un passaggio
+    terrebbe una sola per due giorni di servizio: si perderebbe un passaggio
     intero, non una ripetizione. I contatori devono misurarlo, altrimenti
     riporterebbero zero e lo zero verrebbe letto come "nessun effetto" invece che
     come "non misurato".

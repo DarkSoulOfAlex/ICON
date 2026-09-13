@@ -1,6 +1,6 @@
 """Interfaccia fra la ricerca di itinerari e il modello dei ritardi.
 
-Questo modulo non contiene alcun modello appreso: definisce la **forma** che un
+Questo modulo non contiene alcun modello appreso: definisce la forma che un
 modello dei ritardi deve avere, piu' una implementazione sintetica che serve
 soltanto a far girare e collaudare il resto del progetto finche' i dati veri non
 sono disponibili.
@@ -13,7 +13,7 @@ adesso il contratto - una tratta entra, una distribuzione esce - permette di
 scrivere e collaudare tutto il resto subito, e alla Fase 3 di sostituire soltanto
 l'implementazione.
 
-**La Fase 2 non usa i ritardi.** La ricerca di itinerari lavora sull'orario
+La Fase 2 non usa i ritardi. La ricerca di itinerari lavora sull'orario
 programmato: la robustezza probabilistica arriva in Fase 4. Questo modulo esiste
 in Fase 2 perche' l'interfaccia va progettata prima di cio' che la consumera',
 non perche' la ricerca ne dipenda.
@@ -49,7 +49,7 @@ class ErroreModelloSintetico(RuntimeError):
 class Tratta:
     """Il contesto minimo su cui un modello puo' fondare una previsione.
 
-    Contiene solo cio' che e' noto **al momento della pianificazione**: linea,
+    Contiene solo cio' che e' noto al momento della pianificazione: linea,
     corsa, fermata, posizione lungo il percorso e orario programmato. Non contiene
     nulla che si sappia soltanto dopo, ed e' voluto: e' la barriera che in Fase 3
     impedira' a una feature di guardare nel futuro. Un modello che volesse usare
@@ -261,7 +261,7 @@ class ModelloSintetico(ModelloRitardo):
     I ritardi dipendono in modo deterministico dalla linea e dalla fascia oraria,
     con le ore di punta piu' variabili di quelle di morbida, e crescono lungo il
     percorso perche' un ritardo accumulato non si riassorbe da solo. E' un
-    comportamento plausibile, ma **inventato**: serve a verificare che il codice a
+    comportamento plausibile, ma inventato: serve a verificare che il codice a
     valle funzioni, non a dire qualcosa sul trasporto pubblico di Roma o di
     Torino.
 
@@ -281,7 +281,7 @@ class ModelloSintetico(ModelloRitardo):
     ) -> None:
         """``correlazione`` governa quanto il ritardo a monte si trasmette a valle.
 
-        E' un **parametro** e non una costante cablata, per due ragioni. La prima
+        E' un parametro e non una costante cablata, per due ragioni. La prima
         e' che in Fase 3 il modello appreso avra' la correlazione che i dati
         mostrano, che potrebbe essere molto diversa da quella che inventiamo
         adesso: cablarla qui significherebbe scrivere il resto del progetto

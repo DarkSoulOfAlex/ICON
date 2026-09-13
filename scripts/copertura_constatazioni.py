@@ -4,20 +4,20 @@ E' la misura che decide l'ordine della scala di risalita, e va fatta prima di
 stimare qualunque cosa. E' stabilito che le constatazioni vengono prima
 delle previsioni, perche' su Roma il 23% delle transizioni fra previsioni e'
 l'identita' - valori non ricalcolati, quindi copie e non informazione - contro il
-4,7% fra constatazioni. Resta da sapere **fin dove** le constatazioni arrivino: se
+4,7% fra constatazioni. Resta da sapere fin dove le constatazioni arrivino: se
 coprissero il livello piu' fine, la questione dell'ordine non si porrebbe; se
 coprissero solo i livelli grossolani, il modello sara' per tipo di linea e non per
 linea, e va dichiarato.
 
-**Che cosa e' una cella.** La tabella stima ``P(R0 | contesto, R-1)``, quindi una
+Che cosa e' una cella. La tabella stima ``P(R0 | contesto, R-1)``, quindi una
 cella e' una combinazione di contesto e bin del ritardo a monte, e deve contenere
 abbastanza osservazioni da stimare una distribuzione su otto valori. Si riporta la
 copertura a tre soglie, cinque venti e cinquanta osservazioni per cella, perche'
 la soglia non e' un fatto ma una scelta e il lettore deve poterne vedere l'effetto.
 
-**Due letture della copertura, e la seconda conta di piu'.** La quota di **celle**
+Due letture della copertura, e la seconda conta di piu'. La quota di celle
 coperte dice quanto della tabella si riesce a stimare al livello fine; la quota di
-**osservazioni** che cadono in celle coperte dice quanta parte del traffico reale
+osservazioni che cadono in celle coperte dice quanta parte del traffico reale
 viene servita da quel livello. Le due divergono quando poche celle molto popolose
 convivono con molte celle vuote, che e' esattamente cio' che una rete di trasporto
 produce: poche linee portanti e molte marginali.
@@ -158,7 +158,7 @@ def coppie_di_un_giorno(percorso: Path, tipo_di: dict[str, int], conteggi: Conte
 
     contesti = _contesti(linea[1:][valida], tipo[1:][valida], fascia, tipo_giorno)
     bin_monte = discretizza(rit[:-1][valida], BORDI_OTTO)
-    # Una coppia e' constatata quando **entrambe** le osservazioni lo sono: il
+    # Una coppia e' constatata quando entrambe le osservazioni lo sono: il
     # ritardo a monte e' il condizionante, e se fosse una previsione la cella
     # sarebbe indicizzata da una stima invece che da un fatto.
     constatata = (anticipo[:-1][valida] <= 0) & (anticipo[1:][valida] <= 0)

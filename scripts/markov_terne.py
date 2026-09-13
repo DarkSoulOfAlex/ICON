@@ -2,22 +2,22 @@
 
 Risponde alla domanda che decide la struttura della rete bayesiana: il ritardo due
 fermate a monte aggiunge informazione, dato quello a una fermata a monte? Va
-risolta **prima** di stimare qualunque tabella di probabilita', perche' un arco in
+risolta prima di stimare qualunque tabella di probabilita', perche' un arco in
 piu' moltiplica per otto le celle.
 
-**Che cosa si misura e contro che cosa si giudica.** La quantita' e'
+Che cosa si misura e contro che cosa si giudica. La quantita' e'
 l'informazione mutua condizionata ``I(R0 ; R-2 | R-1)``, e non si legge da sola:
 si confronta con due riferimenti distinti, che catturano due confondenti diversi.
-Il **riferimento per permutazione** misura il bias di stima su campioni finiti,
-rimescolando ``R-2`` dentro gli strati di ``R-1``. La **scala per granularita'**
+Il riferimento per permutazione misura il bias di stima su campioni finiti,
+rimescolando ``R-2`` dentro gli strati di ``R-1``. La scala per granularita'
 misura l'artefatto della discretizzazione, che il primo riferimento non vede
 affatto: condizionare sul bin non e' condizionare sulla variabile, e su una catena
 markoviana per costruzione l'eccesso risulta dodici volte il riferimento per
 permutazione. Il criterio e' il verso della scala: se l'eccesso cala verso zero al
 raffinarsi dei bin e' discretizzazione, se resta o cresce e' struttura.
 
-**Le tre popolazioni, e perche' la terza e' quella conclusiva.** Il ritardo che i
-feed pubblicano e' in larga parte una **previsione**, emessa in media con quindici
+Le tre popolazioni, e perche' la terza e' quella conclusiva. Il ritardo che i
+feed pubblicano e' in larga parte una previsione, emessa in media con quindici
 minuti di anticipo su Roma e due su Torino. Previsioni successive della stessa
 corsa potrebbero essere correlate per come sono prodotte, e non per come si muove
 il veicolo. Si misura percio' separatamente sulle terne in cui tutte e tre le
@@ -26,12 +26,12 @@ passate** al momento dell'emissione, che sono constatazioni. Se la dipendenza
 sparisse fra le seconde e restasse fra le prime, sarebbe un artefatto del
 produttore e non un fatto sul traffico.
 
-**Le due citta' restano separate**, per un vincolo dichiarato: le loro colonne
+Le due citta' restano separate, per un vincolo dichiarato: le loro colonne
 ``ritardo_secondi`` non descrivono la stessa grandezza con la stessa
 affidabilita'. Se una soddisfacesse l'assunzione e l'altra no, e' gia' un
 risultato.
 
-**Sul volume.** Roma ha 172 milioni di righe, che non entrano in memoria insieme.
+Sul volume. Roma ha 172 milioni di righe, che non entrano in memoria insieme.
 Si legge un giorno alla volta, con le sole colonne necessarie, e si accumulano le
 sole terne: sono dell'ordine dei passaggi, non delle osservazioni, quindi circa
 settecentomila al giorno contro dodici milioni di righe lette.
@@ -125,7 +125,7 @@ class Grezze:
 def terne_di_un_giorno(percorso: Path, grezze: Grezze, indice_giorno: int) -> None:
     """Estrae le terne di una giornata e le accumula, senza tenere le righe.
 
-    Per ogni passaggio si conserva **una sola** osservazione, l'ultima per istante
+    Per ogni passaggio si conserva una sola osservazione, l'ultima per istante
     di emissione, che e' la piu' vicina al passaggio reale. Le altre si scartano, e
     quante siano viene contato: senza quel numero le numerosita' della tabella
     finale non sarebbero leggibili, perche' il test lavora su una frazione dei dati
@@ -294,10 +294,10 @@ def costo_beneficio(citta, r2, r1, r0, giorno, popolazioni) -> list[dict]:
     Dentro il campione un genitore in piu' migliora sempre, e di esattamente
     l'informazione condizionata misurata sopra: e' la stessa quantita' vista da un
     altro lato. La domanda che decide la struttura e' un'altra, cioe' se quel
-    guadagno **sopravviva** al costo di stimare otto volte le celle, e si risponde
+    guadagno sopravviva al costo di stimare otto volte le celle, e si risponde
     solo fuori campione.
 
-    La separazione e' **per giornata** e non casuale. Terne della stessa corsa
+    La separazione e' per giornata e non casuale. Terne della stessa corsa
     nello stesso giorno sono legate fra loro, e dividerle a caso metterebbe in
     verifica osservazioni quasi identiche a quelle di addestramento: entrambi i
     modelli sembrerebbero migliori, e soprattutto quello con piu' parametri, che e'
@@ -349,7 +349,7 @@ def costo_beneficio(citta, r2, r1, r0, giorno, popolazioni) -> list[dict]:
 
 
 def costo_beneficio_con_contesto(citta, r2, r1, r0, giorno, contesto, popolazioni) -> list[dict]:
-    """L'arco misurato **dentro il modello vero**, con linea, fascia e tipo di giorno.
+    """L'arco misurato dentro il modello vero, con linea, fascia e tipo di giorno.
 
     E' la misura che decide la struttura, e non coincide con quella senza
     contesto. Li' si confrontano 64 celle contro 512 su milioni di osservazioni,
@@ -419,7 +419,7 @@ def valori_ripetuti(citta, r2, r1, r0, popolazioni) -> list[dict]:
 
     Mette alla prova la spiegazione che invertirebbe la lettura del capovolgimento
     fra previsioni e constatazioni. Se il produttore, passato il mezzo,
-    **congelasse** il ritardo ripetendolo sulle fermate seguenti, i valori
+    congelasse il ritardo ripetendolo sulle fermate seguenti, i valori
     consecutivi sarebbero uguali per costruzione: l'entropia condizionata
     risulterebbe bassa e la dipendenza forte, ma si tratterebbe di copie e non di
     osservazioni. Spiegherebbe insieme le due anomalie, cioe' la perdita di 0,34

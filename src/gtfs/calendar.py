@@ -3,10 +3,10 @@
 Il modulo esiste perche' due cose, in questo formato, sembrano ovvie e non lo
 sono.
 
-La prima e' che il calendario ha **due regimi**, e le due citta' del progetto ne
+La prima e' che il calendario ha due regimi, e le due citta' del progetto ne
 usano uno ciascuno. Torino pubblica ``calendar.txt``, che dichiara una regola
 settimanale con un periodo di validita', piu' ``calendar_dates.txt`` per le
-eccezioni. Roma **non pubblica affatto** ``calendar.txt``: ogni singolo giorno di
+eccezioni. Roma non pubblica affatto ``calendar.txt``: ogni singolo giorno di
 servizio e' elencato come eccezione additiva in ``calendar_dates.txt``. Entrambi
 sono conformi alla specifica. Un modulo scritto sull'assunzione che
 ``calendar.txt`` esista funzionerebbe su Torino e restituirebbe zero corse su

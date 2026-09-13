@@ -1,7 +1,7 @@
 """Il ritardo due fermate a monte aggiunge informazione, dato quello a una fermata?
 
 E' la domanda che decide la struttura della rete bayesiana della Fase 3, e va
-risolta **prima** di stimare qualunque tabella di probabilita': se la risposta
+risolta prima di stimare qualunque tabella di probabilita': se la risposta
 fosse affermativa servirebbe un arco in piu', e con esso otto volte le celle, che
 non e' cosa da scoprire dopo aver stimato un milione e quattrocentomila
 probabilita' condizionate.
@@ -11,7 +11,7 @@ La quantita' misurata e' l'informazione mutua condizionata
 la corsa - il presente dipende dal passato solo attraverso il passato immediato -
 quella quantita' e' nulla.
 
-**Perche' il valore da solo non significa nulla, e serve un riferimento.**
+Perche' il valore da solo non significa nulla, e serve un riferimento.
 L'informazione mutua stimata da frequenze campionarie e' **sistematicamente
 positiva anche quando la vera e' zero**: il numero di celle e la numerosita'
 finita bastano a produrla. Un valore di 0,03 bit non e' interpretabile finche'
@@ -23,7 +23,7 @@ marginali sia la relazione fra ``R-2`` e ``R-1``. Rimescolare globalmente sarebb
 sbagliato, perche' spezzerebbe anche quella relazione e produrrebbe un
 riferimento troppo basso, facendo sembrare significativo cio' che non lo e'.
 
-**Perche' si riporta anche ``I(R0 ; R-1)``.** Un valore assoluto in bit non
+Perche' si riporta anche ``I(R0 ; R-1)``. Un valore assoluto in bit non
 risponde alla domanda vera, che e' *quanto il secondo antenato aggiunga rispetto a
 quanto il primo gia' spiega*. Il rapporto fra le due informazioni e' la scala
 interpretabile.
@@ -92,7 +92,7 @@ def estrai_terne(
 ) -> Terne:
     """Terne consecutive dentro una singola corsa, gia' discretizzate.
 
-    ``posizioni`` e ``ritardi`` descrivono i passaggi di **una** corsa in un
+    ``posizioni`` e ``ritardi`` descrivono i passaggi di una corsa in un
     giorno di servizio, e devono essere ordinati per posizione crescente. Si
     formano terne su osservazioni adiacenti nell'elenco, marcando quali abbiano
     anche ``stop_sequence`` consecutivi.
@@ -181,7 +181,7 @@ def riferimento_per_permutazione(
 ) -> tuple[float, float]:
     """Quanto vale "zero" su questo campione e questa griglia: media e deviazione standard.
 
-    Il rimescolamento avviene **dentro ogni strato di** ``Z``. E' la sola forma
+    Il rimescolamento avviene dentro ogni strato di ``Z``. E' la sola forma
     corretta per questa ipotesi: rimescolando globalmente si spezzerebbe anche la
     relazione fra ``X`` e ``Z``, e il riferimento risulterebbe piu' basso del
     dovuto, facendo sembrare significativo un valore che non lo e'.
@@ -263,7 +263,7 @@ def scala_per_granularita(
 
     **E' il discriminante che il riferimento per permutazione da solo non fornisce,
     ed e' emerso costruendo il test invece che progettandolo.** Discretizzare una
-    catena markoviana **crea** dipendenza condizionata apparente: il bin di
+    catena markoviana crea dipendenza condizionata apparente: il bin di
     ``R-1`` non porta tutta l'informazione del valore continuo che rappresenta, e
     ``R-2`` ne conserva un residuo. Misurato su una catena markoviana per
     costruzione, l'eccesso vale l'1,6% di cio' che il primo antenato spiega con
@@ -271,12 +271,12 @@ def scala_per_granularita(
     dodici volte meno: usando solo quello, un processo perfettamente markoviano
     verrebbe dichiarato non markoviano.
 
-    La distinzione si fa sul **verso della scala**. L'artefatto della
+    La distinzione si fa sul verso della scala. L'artefatto della
     discretizzazione si dissolve al raffinarsi dei bin, perche' bin piu' stretti
     perdono meno informazione: sulla catena costruita passa dal 3,6% a due bin
     allo 0,1% a venti. Una dipendenza vera non ha ragione di svanire, e anzi
     emerge meglio quando i bin smettono di confonderla. Se l'eccesso misurato sui
-    dati **cala verso zero** al crescere dei bin, e' discretizzazione; se resta o
+    dati cala verso zero al crescere dei bin, e' discretizzazione; se resta o
     cresce, e' struttura.
 
     Il vantaggio di questo criterio e' che non richiede alcuna ipotesi sul
@@ -319,9 +319,9 @@ def eccesso_si_dissolve(scala: list[tuple[int, EsitoMarkov]]) -> bool:
 TERNE_PER_CELLA = 50
 """Terne minime per cella della tabella condizionata, perche' una stima sia leggibile.
 
-Il numero di celle cresce con il **cubo** dei bin: a venti bin sono ottomila, e
+Il numero di celle cresce con il cubo dei bin: a venti bin sono ottomila, e
 una scala calcolata su poche migliaia di terne avrebbe meno di una osservazione
-per cella. La stima non diventa allora imprecisa, diventa **priva di significato**,
+per cella. La stima non diventa allora imprecisa, diventa priva di significato,
 e continua a produrre un numero: sulla giornata di sviluppo la scala oscillava fra
 il 2,0% e il 4,8% senza alcun andamento, e il criterio del verso avrebbe emesso un
 verdetto sul rumore.
@@ -454,7 +454,7 @@ def confronta_strutture(
     """Perdita fuori campione con e senza l'arco dal secondo antenato.
 
     ``addestramento`` e' una maschera booleana che separa le terne su cui si stima
-    da quelle su cui si verifica. La separazione deve essere **per giornata** e non
+    da quelle su cui si verifica. La separazione deve essere per giornata e non
     casuale: terne della stessa corsa nello stesso giorno sono legate fra loro, e
     dividerle a caso metterebbe in verifica osservazioni quasi identiche a quelle
     di addestramento, gonfiando entrambi i modelli e soprattutto quello con piu'
@@ -491,7 +491,7 @@ def confronta_con_contesto(
     n_contesto: int,
     alfa: float = 0.5,
 ) -> Confronto:
-    """Il costo-beneficio dell'arco **dentro il modello vero**, con il contesto.
+    """Il costo-beneficio dell'arco dentro il modello vero, con il contesto.
 
     E' una misura diversa da :func:`confronta_strutture`, e la differenza decide
     una scelta di struttura. Quella confronta ``P(R0|R-1)`` con
@@ -532,18 +532,18 @@ def confronta_con_contesto(
 
 
 def quota_valori_ripetuti(precedente: np.ndarray, corrente: np.ndarray) -> float:
-    """Frazione di coppie in cui il ritardo e' **identico** a quello della fermata prima.
+    """Frazione di coppie in cui il ritardo e' identico a quello della fermata prima.
 
     Serve a mettere alla prova una spiegazione che invertirebbe la lettura del
     capovolgimento fra previsioni e constatazioni. Se il produttore, una volta che
-    un mezzo e' passato, **congelasse** il ritardo e lo ripetesse sulle fermate
+    un mezzo e' passato, congelasse il ritardo e lo ripetesse sulle fermate
     seguenti, i valori consecutivi risulterebbero uguali per costruzione: il
     ritardo sembrerebbe quasi deterministico dato l'antenato - entropia bassa - e
     la dipendenza apparirebbe piu' forte. Sarebbero pero' copie, non osservazioni,
     e la maggiore prevedibilita' delle constatazioni sarebbe un artefatto di
     propagazione invece che un fatto sul traffico.
 
-    Si confronta sui valori **grezzi in secondi** e non sui bin: due ritardi
+    Si confronta sui valori grezzi in secondi e non sui bin: due ritardi
     diversi che cadono nello stesso bin non sono una ripetizione, e contarli come
     tale nasconderebbe proprio cio' che si vuole misurare.
     """
@@ -563,7 +563,7 @@ verso della scala - poggerebbe su cifre che nessuno puo' rifare.
 
 
 def catena_markoviana(n: int, seme: int = SEME_CATENA) -> tuple[np.ndarray, ...]:
-    """Una catena markoviana **esatta nel continuo**: R0 dipende da R-1 e da altro nulla.
+    """Una catena markoviana esatta nel continuo: R0 dipende da R-1 e da altro nulla.
 
     E' il banco su cui si e' scoperto che discretizzare rompe la markovianita': il
     bin di R-1 non porta tutta l'informazione del valore che rappresenta, e R-2 ne
@@ -584,7 +584,7 @@ def catena_markoviana(n: int, seme: int = SEME_CATENA) -> tuple[np.ndarray, ...]
 
 
 def catena_con_dipendenza_vera(n: int, seme: int = 37) -> tuple[np.ndarray, ...]:
-    """Il controllo speculare: R0 dipende **anche** da R-2, quindi la dipendenza esiste.
+    """Il controllo speculare: R0 dipende anche da R-2, quindi la dipendenza esiste.
 
     Senza di essa un criterio che dicesse sempre "si dissolve" passerebbe il primo
     banco e sarebbe inutile. La coppia delle due catene e' cio' che rende il

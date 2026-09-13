@@ -3,25 +3,25 @@
 Confronta due modi di scegliere un itinerario, a parita' di coppia origine-
 destinazione e di scadenza:
 
-  (a) **piu' veloce**: l'arrivo minimo secondo l'orario teorico;
-  (b) **robusto**: il massimo di ``P(arrivo <= T)`` secondo il modello di Fase 3.
+  (a) piu' veloce: l'arrivo minimo secondo l'orario teorico;
+  (b) robusto: il massimo di ``P(arrivo <= T)`` secondo il modello di Fase 3.
 
 Poi rigioca entrambe le scelte sui ritardi che quel giorno sono stati osservati
 davvero, e conta chi arriva entro T e chi perde coincidenze.
 
-**Perche' rigiocare, e non confrontare le probabilita'.** Chiedere al modello
+Perche' rigiocare, e non confrontare le probabilita'. Chiedere al modello
 quale itinerario creda piu' sicuro e credergli sulla parola non e' una verifica:
 il modello sarebbe giudice e imputato. La probabilita' che il modello attribuisce
 alla propria scelta e' per costruzione la piu' alta - e' quella che ha scelto - e
 misurarla non dice nulla su quanti viaggi riescano. Serve un arbitro esterno, e
 l'unico disponibile e' cio' che i mezzi hanno fatto.
 
-**Le giornate della replica sono quelle di verifica**, cioe' quelle che il modello
+Le giornate della replica sono quelle di verifica, cioe' quelle che il modello
 non ha visto in nessuna fase: la stima usa addestramento e taratura, la scelta dei
 bordi usa il banco dentro l'addestramento. Il modello arriva alla replica
 senza avere mai guardato quel giorno.
 
-**Che cosa si esclude, e va detto.** Solo una parte delle corse dell'orario compare
+Che cosa si esclude, e va detto. Solo una parte delle corse dell'orario compare
 nel tempo reale, quindi non ogni itinerario e' rigiocabile: si tengono le coppie
 con almeno due candidati interamente osservati. E' una selezione che favorisce le
 linee frequenti, ed e' riportata come quota invece di essere lasciata implicita.
@@ -161,7 +161,7 @@ def ritardi_osservati(percorso: Path,
     # su Roma il 31 agosto e il 7 settembre, e la conseguenza si e' manifestata
     # altrove e senza spiegazione. Si misura qui e si dichiara, non si esclude.
     #
-    # Si misura **prima** del filtro sulla data di servizio, come in
+    # Si misura prima del filtro sulla data di servizio, come in
     # ``scripts/copertura_orario.py``: la stessa grandezza deve avere lo stesso
     # valore ovunque la si legga, altrimenti non e' la stessa grandezza.
     copertura = copertura_orario(
@@ -272,7 +272,7 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
     ``coincidenze``, se dato, riceve una riga per ciascun cambio di ciascun
     itinerario scelto: la probabilita' che il modello gli attribuisce, il respiro
     nominale e reale, e se sia stato tenuto. Serve a confrontare la stima del
-    modello con la frequenza osservata **una coincidenza alla volta**, che e' la
+    modello con la frequenza osservata una coincidenza alla volta, che e' la
     misura che distingue un errore locale da uno che nasce nella composizione.
     """
     righe: list[Esito] = []
@@ -335,7 +335,7 @@ uno stesso giorno condividono il traffico di quel giorno e non sono indipendenti
 Ne segue pero' che una giornata con sette coppie conta quanto una con trenta, e
 sette coppie sono un campione che il caso muove a piacere.
 
-La soglia e' fissata a meta' delle coppie richieste ed e' stata scelta **prima** di
+La soglia e' fissata a meta' delle coppie richieste ed e' stata scelta prima di
 guardare quale risultato producesse: e' l'unico modo di non sceglierla per l'esito.
 Sui dati raccolti esclude una sola giornata, Roma 2026-09-07, che il consolidamento
 aveva prodotto parziale.
@@ -366,7 +366,7 @@ def segna_divergenze(tabella: pd.DataFrame, scarta_magre: bool = True) -> pd.Dat
     """Marca le istanze in cui le due strategie scelgono itinerari diversi.
 
     Serve perche' dove scelgono lo stesso itinerario la differenza fra loro e' zero
-    **per costruzione**, e mediare su quelle diluisce l'effetto verso lo zero per
+    per costruzione, e mediare su quelle diluisce l'effetto verso lo zero per
     quanto il modello sia bravo. La quota di divergenza va riportata accanto alla
     differenza, altrimenti un vantaggio inesistente e un vantaggio reale ma raro si
     leggono allo stesso modo.
@@ -395,7 +395,7 @@ def segna_divergenze(tabella: pd.DataFrame, scarta_magre: bool = True) -> pd.Dat
 
 
 def riepiloga(righe: list[dict], scarta_magre: bool = True) -> pd.DataFrame:
-    """Media e deviazione **sulle giornate**, non sulle istanze.
+    """Media e deviazione sulle giornate, non sulle istanze.
 
     Le istanze di uno stesso giorno condividono il traffico di quel giorno e non
     sono indipendenti: una deviazione calcolata su di esse sarebbe piu' stretta del
@@ -580,7 +580,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 continue
             quota = 1 - scartate / max(1, esaminate)
             # La provenienza porta gia' finestra, coppie richieste e seme: qui si
-            # aggiunge cio' che dice **su quale parte della rete** il numero valga.
+            # aggiunge cio' che dice su quale parte della rete il numero valga.
             provenienza["coppie_esaminate"] = esaminate
             provenienza["coppie_scartate"] = scartate
             provenienza["copertura_orario"] = copertura

@@ -6,7 +6,7 @@ che sta a valle lavori su dati di cui sono gia' note forma e completezza.
 
 Due scelte guidano l'implementazione.
 
-La prima e' che la validazione fallisce **rumorosamente e per intero**: un
+La prima e' che la validazione fallisce rumorosamente e per intero: un
 archivio a cui manca una colonna obbligatoria non viene caricato a meta', e il
 messaggio dice quale file e quale colonna. Un GTFS incompleto caricato
 silenziosamente produce, molte fasi piu' avanti, risultati sbagliati che non
@@ -128,14 +128,14 @@ class ArchivioGTFS:
 def orario_in_secondi(testo: str | None) -> int | None:
     """Converte un orario GTFS in secondi dall'inizio del giorno di servizio.
 
-    Il GTFS ammette e usa regolarmente valori **oltre le 24:00**: ``25:30:00`` e'
+    Il GTFS ammette e usa regolarmente valori oltre le 24:00: ``25:30:00`` e'
     un orario legittimo e significa l'una e mezza di notte del giorno successivo,
     ma appartenente al giorno di servizio precedente. Troncare o normalizzare a
     24 ore e' l'errore silenzioso classico su questo formato: non solleva
     eccezioni, sposta semplicemente le corse notturne sul giorno sbagliato, e in
     Fase 3 produce ritardi assurdi che sembrano un problema dei dati.
 
-    Per questo la conversione **non riporta mai il valore sotto le 24 ore**: il
+    Per questo la conversione non riporta mai il valore sotto le 24 ore: il
     numero restituito puo' superare 86400, ed e' compito di
     :func:`src.gtfs.calendar.istante_di_servizio` tradurlo in un istante reale.
 

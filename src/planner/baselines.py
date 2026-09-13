@@ -9,7 +9,7 @@ davvero quando non si dispone di un modello probabilistico dei ritardi.
 * :func:`meno_cambi` sceglie l'itinerario con il minor numero di trasbordi. E'
   cio' che fa chi ha imparato per esperienza che ogni cambio e' un'occasione di
   perdere una coincidenza, ma non sa quantificarlo.
-* :func:`margine_fisso` e' **la baseline che conta**. Rappresenta la persona
+* :func:`margine_fisso` e' la baseline che conta. Rappresenta la persona
   ragionevole che, senza modello, si da' una regola: accetto solo itinerari in
   cui ogni coincidenza ha almeno cinque minuti di margine, e fra quelli prendo il
   piu' veloce. E' una strategia sensata, gratuita e sorprendentemente efficace,
@@ -18,7 +18,7 @@ davvero quando non si dispone di un modello probabilistico dei ritardi.
   ritardi non sarebbe ripagata.
 
 Tutte restituiscono una :class:`Scelta`, e tutte vengono poi valutate con lo
-**stesso** calcolo di P(arrivo <= T): il confronto misura cosi' la strategia di
+stesso calcolo di P(arrivo <= T): il confronto misura cosi' la strategia di
 scelta, non il metodo di valutazione.
 """
 
@@ -67,7 +67,7 @@ def meno_cambi(candidati: list[Candidato]) -> Scelta:
 def margine_fisso(candidati: list[Candidato], margine: int = MARGINE_PREDEFINITO) -> Scelta:
     """Il piu' veloce fra quelli in cui ogni coincidenza ha almeno ``margine`` secondi.
 
-    Se nessun itinerario soddisfa la regola, la strategia **allenta il vincolo**
+    Se nessun itinerario soddisfa la regola, la strategia allenta il vincolo
     invece di rinunciare, e lo dichiara nel motivo. E' cio' che farebbe una
     persona reale: di fronte a nessuna alternativa comoda, si prende quella meno
     scomoda. Fingere che la strategia non risponda renderebbe il confronto

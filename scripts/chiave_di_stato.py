@@ -3,19 +3,19 @@
 Nel grafo tempo-espanso uno stato a terra si puo' identificare con
 ``(fermata, istante, cambi)`` oppure con ``(fermata, cambi)``. La prima
 formulazione sembra la piu' naturale - due arrivi alla stessa fermata in momenti
-diversi *sono* stati diversi - ed e' quella sbagliata: la ricerca procede in ordine
+diversi sono stati diversi - ed e' quella sbagliata: la ricerca procede in ordine
 di orario di arrivo, quindi il primo arrivo a una fermata con un dato numero di
 cambi domina tutti quelli successivi, e tenerli separati moltiplica gli stati senza
 cambiare la risposta.
 
-**Perche' questo programma esiste, e perche' cosi' tardi.** Il numero era stato
+Perche' questo programma esiste, e perche' cosi' tardi. Il numero era stato
 misurato una volta e riportato nel documento, ma non lo produceva nessuno script:
 viveva nel log di una sessione. E' lo stesso difetto - un numero vero
 quando fu scritto e non piu' verificabile - e qui costa un minuto rimediarlo,
 perche' la macchina per farlo c'era gia': ``cerca_primo_arrivo`` accetta
 ``istante_nella_chiave``.
 
-Si usa **la stessa coppia dichiarata nel documento**, la prima risolta del campione
+Si usa la stessa coppia dichiarata nel documento, la prima risolta del campione
 di Torino con il seme 20260826, e lo stesso archivio delle altre fasi. Cambiare uno
 di questi tre farebbe un esperimento diverso, non una verifica.
 
@@ -53,7 +53,7 @@ SEME = 20260826
 def velocita_massima(citta: str, risultati: Path) -> float:
     """La velocita' massima misurata sugli archi, da ``velocita_archi.csv``.
 
-    E' quella che rende ammissibile l'euristica della Fase 2, ed e' **la stessa**
+    E' quella che rende ammissibile l'euristica della Fase 2, ed e' la stessa
     con cui il resto di quel capitolo e' stato misurato. Al primo tentativo questo
     programma usava un limite lasco di 500 m/s, plausibile in astratto: dava
     1.512.712 stati contro i 1.464.312 del documento, cioe' un esperimento diverso

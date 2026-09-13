@@ -50,7 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if ultima:
             ultime.append(ultima)
     if ultime:
-        # La finestra comune e' l'ultima giornata disponibile per **tutte** le
+        # La finestra comune e' l'ultima giornata disponibile per tutte le
         # citta': usare la piu' recente in assoluto taglierebbe fuori una citta' a
         # meta', e il confronto fra le due si romperebbe.
         print(f"\n--fino-a {min(ultime)}")

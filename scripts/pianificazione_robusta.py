@@ -7,7 +7,7 @@ Produce gli artefatti destinati al documento:
     results/conv_vs_montecarlo.csv   errore e costo dei due metodi di calcolo
     results/conv_vs_montecarlo.png   figura a 150 dpi
 
-**Nessun risultato di questa fase e' un risultato sperimentale sui ritardi.** Il
+Nessun risultato di questa fase e' un risultato sperimentale sui ritardi. Il
 modello dei ritardi e' sintetico: i numeri dicono se il metodo funziona, non
 quanto valga sul trasporto pubblico reale. Ogni file prodotto porta il nome del
 modello in una colonna, e lo script rifiuta di scrivere senza il permesso

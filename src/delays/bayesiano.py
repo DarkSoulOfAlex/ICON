@@ -2,18 +2,18 @@
 
 La Fase 3 stima una tabella ``P(bin del ritardo a valle | contesto, bin a monte)``.
 La Fase 2 aveva pero' fissato un contratto diverso: una tratta entra, una
-**distribuzione continua** esce, con ripartizione, quantili, campionamento e media
+distribuzione continua esce, con ripartizione, quantili, campionamento e media
 (vedere ``src.delays.interfaccia``). Questo modulo e' il ponte fra le due cose, ed
-e' l'unico punto del progetto in cui si dichiara che cosa si assuma **dentro** un
+e' l'unico punto del progetto in cui si dichiara che cosa si assuma dentro un
 bin, dove la tabella per costruzione non dice nulla.
 
-**Che cosa si assume dentro un bin, e perche' proprio quello.** Ogni assunzione qui
+Che cosa si assume dentro un bin, e perche' proprio quello. Ogni assunzione qui
 e' la distribuzione di massima entropia compatibile con cio' che si e' misurato,
 cioe' quella che aggiunge meno informazione di quanta i dati ne diano:
 
-- nei bin **limitati** si conosce solo l'intervallo, e la massima entropia su un
+- nei bin limitati si conosce solo l'intervallo, e la massima entropia su un
   intervallo e' l'uniforme;
-- nei due bin **aperti** verso l'infinito l'intervallo non basta, ma si conosce il
+- nei due bin aperti verso l'infinito l'intervallo non basta, ma si conosce il
   ritardo medio misurato dentro quel bin, e la massima entropia su una semiretta
   con media assegnata e' l'esponenziale.
 
@@ -24,7 +24,7 @@ ripartizione diventerebbe una scala a gradini, e ``P(arrivo <= T)`` salterebbe d
 colpo al variare di T di un secondo, il che non e' un difetto di precisione ma un
 artefatto che il pianificatore prenderebbe per un fatto.
 
-**Il ritardo a monte puo' non essere noto.** Alla prima fermata di un itinerario
+Il ritardo a monte puo' non essere noto. Alla prima fermata di un itinerario
 nessuno ha ancora osservato nulla. In quel caso non si sceglie un bin arbitrario:
 si mescolano le righe della tabella pesandole con la distribuzione marginale dei
 bin a monte, misurata anch'essa. E' la stessa cosa che fare la media sulla
@@ -198,7 +198,7 @@ class MassaDiscreta(Distribuzione):
         return self._quantili(generatore.uniform(1e-9, 1 - 1e-9, size=quanti))
 
     def media(self) -> float:
-        """Usa le medie **misurate** dentro i bin, non i punti medi degli intervalli.
+        """Usa le medie misurate dentro i bin, non i punti medi degli intervalli.
 
         I due bin aperti non hanno un punto medio, e attribuirgliene uno sarebbe
         inventare; le medie misurate ci sono gia' e sono quelle giuste anche nei bin

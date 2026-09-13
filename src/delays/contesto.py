@@ -2,13 +2,13 @@
 
 Due lavori distinti, tenuti insieme perche' il secondo consuma il primo.
 
-**Estrarre le coppie.** La tabella stima ``P(R0 | contesto, R-1)``, dove R-1 e R0
-sono i ritardi a due fermate **consecutive della stessa corsa**. Le righe grezze
+Estrarre le coppie. La tabella stima ``P(R0 | contesto, R-1)``, dove R-1 e R0
+sono i ritardi a due fermate consecutive della stessa corsa. Le righe grezze
 non sono ne' una per passaggio - il feed ripubblica lo stesso passaggio a ogni
 revisione - ne' ordinate, quindi bisogna prima ridurle all'ultima revisione di
 ciascun passaggio e poi accoppiare le fermate contigue.
 
-**Codificare il contesto.** Ogni livello della scala di risalita e' una codifica a
+Codificare il contesto. Ogni livello della scala di risalita e' una codifica a
 radice mista dei fattori che tiene: al piu' fine la linea, al piu' grossolano
 nulla. Le formule sono scritte per esteso, un livello alla volta, invece di essere
 generate da un ciclo sui fattori: sono cinque, vanno riportate nel documento, e
@@ -16,7 +16,7 @@ una formula che si legge a occhio si controlla a occhio.
 
 La ragione per cui questo modulo esiste separato dallo script che legge i parquet
 e' la mappa dei genitori. Dedurla dalle osservazioni sarebbe comodo e sbagliato -
-vedere il docstring di ``src.delays.rete`` - quindi va calcolata sull'**intero**
+vedere il docstring di ``src.delays.rete`` - quindi va calcolata sull'intero
 prodotto cartesiano dei fattori, incluse le celle che nessuna giornata visita. Qui
 si conoscono i fattori; nello script si conoscono solo le righe.
 """
@@ -64,7 +64,7 @@ def ultima_revisione(codice: np.ndarray, sequenza: np.ndarray,
     gonfierebbe la numerosita' con copie correlate fra loro. Si tiene l'ultima
     perche' e' quella che il pianificatore avrebbe visto piu' vicino al fatto.
 
-    Restituisce la maschera **nell'ordine di ingresso**, cosi' chi chiama puo'
+    Restituisce la maschera nell'ordine di ingresso, cosi' chi chiama puo'
     applicarla anche a colonne che non ha passato.
     """
     if not (codice.shape == sequenza.shape == istante.shape):
@@ -99,10 +99,10 @@ RESIDUO_PLAUSIBILE = 3_600
 """Scarto massimo, tolte ventiquattro ore, perche' un ritardo sia un salto di giorno.
 
 Il criterio precedente era la distanza da +/- 86.400 entro dieci minuti, ed era
-sbagliato: un salto di giorno **piu' un ritardo reale di quaranta minuti** vale
+sbagliato: un salto di giorno piu' un ritardo reale di quaranta minuti vale
 -84.000 s, cade fuori da quella finestra e finiva contato fra le anomalie di altra
 natura, mescolando due fenomeni distinti. La regola giusta non guarda la distanza
-dal valore tondo ma il **residuo**: si tolgono ventiquattro ore e si guarda se cio'
+dal valore tondo ma il residuo: si tolgono ventiquattro ore e si guarda se cio'
 che resta sia un ritardo plausibile. Un'ora di residuo copre i ritardi reali senza
 catturare nient'altro, perche' un ritardo autentico di ventitre ore - il solo che
 verrebbe scambiato - non esiste.
@@ -130,7 +130,7 @@ def maschera_rollover(ritardo):
 SOGLIA_PUBBLICA_IL_PASSATO = 60.0
 """Secondi oltre l'orario programmato entro cui il feed deve arrivare almeno una volta.
 
-Serve a decidere se su un feed le constatazioni **esistano**. Se il produttore
+Serve a decidere se su un feed le constatazioni esistano. Se il produttore
 togliesse la fermata dal `trip_updates` appena il mezzo vi transita, nessun
 passaggio avvenuto sarebbe mai osservabile, e il criterio di ``constatazione``
 selezionerebbe soltanto le previsioni piu' anticipate - una selezione sistematica
@@ -156,12 +156,12 @@ coppie rigiocabili invece di trenta, attribuita per giorni a un consolidamento
 parziale che non c'era.
 
 Non e' una taratura ma un confine. Sui dati raccolti ogni giornata sta **sopra il
-97%** oppure **sotto il 40%**, e in mezzo non c'e' nulla: il 31 agosto e il 7
+97% oppure sotto il 40%**, e in mezzo non c'e' nulla: il 31 agosto e il 7
 settembre, gli unici due lunedi' della finestra, Roma riconosce il 43,5% e il 46,6%
 dei ``trip_id`` del proprio feed nell'archivio che ha pubblicato quel giorno. La
 soglia separa due popolazioni che i dati tengono gia' separate.
 
-**Chi la supera avvisa e non scarta.** Escludere in automatico cambierebbe in
+Chi la supera avvisa e non scarta. Escludere in automatico cambierebbe in
 silenzio il campione di stima, e quelle due giornate sono dentro la finestra su cui
 il modello e' stato stimato: toglierle e' una decisione da prendere guardando i
 numeri, non un effetto collaterale di un controllo. Cio' che mancava non era

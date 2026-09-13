@@ -1,6 +1,6 @@
 """Grafo tempo-espanso di una rete di trasporto pubblico.
 
-Un grafo tempo-espanso rappresenta non le fermate ma gli **eventi**: ogni
+Un grafo tempo-espanso rappresenta non le fermate ma gli eventi: ogni
 passaggio di una corsa a una fermata, con il suo orario. Muoversi nel grafo
 significa muoversi nel tempo oltre che nello spazio, ed e' cio' che permette di
 rispondere a "qual e' il primo momento in cui posso essere in B partendo da A alle
@@ -8,15 +8,15 @@ otto" invece che a "qual e' il percorso piu' corto fra A e B".
 
 Due scelte determinano tutto il resto.
 
-**La finestra temporale.** Il grafo non copre la giornata ma un intervallo
+La finestra temporale. Il grafo non copre la giornata ma un intervallo
 ``[partenza, partenza + orizzonte]``. Roma ha 5,6 milioni di passaggi al giorno:
 il grafo completo non e' un oggetto che si costruisce per rispondere a una query.
 La finestra e' anche cio' che una query usa davvero, perche' nessuno accetta di
 aspettare quattro ore alla fermata. Il prezzo va dichiarato: la ricerca trova
-l'ottimo **dentro la finestra**, e un itinerario che richiedesse di attendere
+l'ottimo dentro la finestra, e un itinerario che richiedesse di attendere
 oltre l'orizzonte non verrebbe trovato affatto.
 
-**Lo stato e' (fermata, istante, cambi), con una precisazione necessaria.** La
+Lo stato e' (fermata, istante, cambi), con una precisazione necessaria. La
 terna da sola non basta a contare correttamente i cambi: stando fermi a una
 fermata, "restare a bordo" e "salire di nuovo" sono indistinguibili se non si sa
 su quale corsa ci si trovi. Un viaggiatore che attraversa dieci fermate a bordo
@@ -379,7 +379,7 @@ def velocita_massima(archivio: ArchivioGTFS, percentile: float | None = None) ->
     Serve all'euristica geografica della ricerca, che ha bisogno di un limite
     superiore alla velocita' con cui ci si puo' muovere nella rete.
 
-    Si misura sull'orario **programmato** e non sul real-time di proposito: il
+    Si misura sull'orario programmato e non sul real-time di proposito: il
     primo e' un dato anagrafico pulito, il secondo puo' contenere salti di
     posizione che produrrebbero velocita' impossibili.
 

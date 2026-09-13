@@ -54,7 +54,7 @@ def _catena_markoviana(n: int, seme: int = 1) -> tuple[np.ndarray, np.ndarray, n
 
 
 def _catena_non_markoviana(n: int, seme: int = 1) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """R0 dipende da R-1 **e** da R-2: l'assunzione markoviana e' falsa."""
+    """R0 dipende da R-1 e da R-2: l'assunzione markoviana e' falsa."""
     g = np.random.default_rng(seme)
     r2 = g.integers(0, BIN, n)
     r1 = np.clip(r2 + g.integers(-1, 2, n), 0, BIN - 1)
@@ -224,7 +224,7 @@ def _catena_continua(n: int, seme: int = SEME_CATENA):
 def test_discretizzare_una_catena_markoviana_crea_dipendenza_apparente() -> None:
     """Il fatto scoperto costruendo il test, e la ragione per cui serve altro.
 
-    Una catena markoviana **nel continuo** smette di esserlo dopo la
+    Una catena markoviana nel continuo smette di esserlo dopo la
     discretizzazione: il bin di R-1 non porta tutta l'informazione del valore che
     rappresenta, e R-2 ne conserva un residuo. L'eccesso risultante e' reale, non
     e' rumore, e supera di molto il riferimento per permutazione.

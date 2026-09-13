@@ -3,7 +3,7 @@
 Vale qui la stessa regola dell'estimatore di informazione mutua: una stima non si
 collauda sui dati veri, dove la risposta non e' nota, ma su gerarchie costruite di
 cui si conosce la struttura. La differenza e' che qui non c'e' un numero da
-ritrovare, bensi' un ordinamento: la scala deve battere fuori campione **entrambi**
+ritrovare, bensi' un ordinamento: la scala deve battere fuori campione entrambi
 gli estremi fra cui si colloca, il livello fine stimato da solo e quello
 grossolano stimato da solo.
 

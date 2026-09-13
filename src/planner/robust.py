@@ -4,7 +4,7 @@ Calcola P(arrivo <= T) per un itinerario, dato un modello dei ritardi. E' il
 cuore del progetto: e' qui che l'obiettivo passa da "arrivare presto secondo
 l'orario" a "arrivare entro T con alta probabilita'".
 
-**Perche' il prodotto ingenuo delle probabilita' e' sbagliato.** La tentazione e'
+Perche' il prodotto ingenuo delle probabilita' e' sbagliato. La tentazione e'
 scrivere P(arrivo <= T) come prodotto delle probabilita' di prendere ciascuna
 coincidenza. Sbaglia per due ragioni di segno opposto, e nessuna delle due e'
 trascurabile.
@@ -20,10 +20,10 @@ essere ancora entro T. Ignorare il recupero cancella proprio il fenomeno che la
 domanda di ricerca vuole misurare: un itinerario e' robusto anche perche', quando
 perde una coincidenza, ne trova un'altra presto.
 
-**La struttura vera e' markoviana con azzeramento.** Presa una coincidenza,
+La struttura vera e' markoviana con azzeramento. Presa una coincidenza,
 l'arrivo a valle dipende dal ritardo del nuovo mezzo e non da quanto per poco la
 si e' presa: l'informazione sul ritardo precedente si perde. Il ritardo si
-propaga percio' *dentro* una corsa, non *attraverso* un cambio, e la catena va
+propaga percio' dentro una corsa, non attraverso un cambio, e la catena va
 modellata come una successione di tappe in cui a ogni tappa si sceglie quale
 corsa si riesce effettivamente a prendere.
 
@@ -218,10 +218,10 @@ def probabilita_coincidenze(itinerario: Itinerario,
     l'ipotesi che siano indipendenti: e' la stessa ipotesi che il pianificatore fa
     attraversando un cambio, dove il ritardo si azzera perche' il veicolo e' un altro.
 
-    **A che cosa serve, visto che il pianificatore non ne ha bisogno.** Il
+    A che cosa serve, visto che il pianificatore non ne ha bisogno. Il
     pianificatore compone tutto in un colpo e produce una probabilita' per l'intero
     viaggio; questa funzione la scompone nei suoi fattori, e permette di confrontare
-    la stima del modello con la frequenza osservata **una coincidenza alla volta**.
+    la stima del modello con la frequenza osservata una coincidenza alla volta.
     E' la misura che distingue un errore locale alla singola coincidenza da un errore
     che nasce nel comporle: senza, le due restano indistinguibili.
 
@@ -269,7 +269,7 @@ def probabilita_convoluzione(
     """P(arrivo <= scadenza) propagando le distribuzioni su una griglia temporale.
 
     A ogni tappa si calcola, per ciascuna corsa candidata, la probabilita' che
-    sia **la prima** che si riesce a prendere: e' il prodotto delle probabilita'
+    sia la prima che si riesce a prendere: e' il prodotto delle probabilita'
     di aver mancato tutte le precedenti per la probabilita' di prendere questa.
     Poiche' i ritardi di corse diverse sono indipendenti, quel prodotto si
     fattorizza a parita' di istante in cui si e' pronti, ed e' per questo che la
@@ -491,7 +491,7 @@ def itinerario_da_cammino(
 
     Il cammino alterna stati a terra e a bordo; una tappa e' una successione
     massimale di stati a bordo della stessa corsa. Per ciascuna si cercano poi le
-    corse successive della **stessa linea** dalla stessa fermata: sono le
+    corse successive della stessa linea dalla stessa fermata: sono le
     alternative con cui rappresentare una coincidenza persa come un ritardo
     anziche' come un fallimento.
 
@@ -640,7 +640,7 @@ class Candidato:
 def candidati_da_frontiera(grafo, esito_pareto, partenza_richiesta: int) -> list[Candidato]:
     """Traduce la frontiera di Pareto della Fase 2 in candidati valutabili.
 
-    **Limite dichiarato.** Il pianificatore massimizza la probabilita' sulla
+    Limite dichiarato. Il pianificatore massimizza la probabilita' sulla
     frontiera, non su tutti gli itinerari possibili: i due insiemi non
     coincidono. La frontiera e' calcolata su criteri deterministici, e in linea
     di principio potrebbe escludere un itinerario dominato sull'orario ma piu'

@@ -15,7 +15,7 @@ il cui orario atteso e' talmente in anticipo da precedere l'istante di
 pubblicazione. Sarebbe una selezione sistematica, non casuale, e il gradino delle
 "constatazioni" conterrebbe l'esatto contrario di cio' che il suo nome promette.
 
-**La statistica che decide e' una sola**: quanto in la' nel passato arriva
+La statistica che decide e' una sola: quanto in la' nel passato arriva
 ``timestamp_feed - orario_programmato``. Se il massimo su un'intera giornata e' di
 pochi secondi, il produttore non pubblica il passato e le constatazioni non
 esistono. Se arriva a decine di minuti, le pubblica e il criterio funziona.
@@ -76,7 +76,7 @@ def esamina_giornata(percorso: Path) -> dict | None:
         "feed_meno_programmato_p99": float(np.percentile(quanto_dopo, 99)),
         "feed_meno_programmato_max": float(quanto_dopo.max()),
         "quota_constatazioni": quante / ritardo.size,
-        # La prova del nove: se fra le constatazioni non c'e' **nessun** ritardo
+        # La prova del nove: se fra le constatazioni non c'e' nessun ritardo
         # positivo, non sono passaggi avvenuti ma previsioni anticipate, perche' un
         # mezzo in ritardo davvero passato darebbe una constatazione con ritardo
         # positivo.

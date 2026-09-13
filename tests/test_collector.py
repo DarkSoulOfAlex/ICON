@@ -309,7 +309,7 @@ def test_un_payload_vuoto_non_viene_scambiato_per_un_feed() -> None:
 def test_un_protobuf_senza_versione_non_e_un_feed_gtfs_rt() -> None:
     """Il parsing da solo non basta: serve anche un controllo semantico.
 
-    ``gtfs_realtime_version`` e' un campo *required* di proto2, ma protobuf
+    ``gtfs_realtime_version`` e' un campo required di proto2, ma protobuf
     verifica i campi obbligatori solo in scrittura: in lettura accetta senza
     protestare un messaggio che ne e' privo. I byte sono costruiti a mano proprio
     perche' l'API Python si rifiuterebbe di serializzarli, mentre un server

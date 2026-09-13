@@ -3,7 +3,7 @@
 E' la misura che decide se il viaggio multi-tappa sia davvero un problema di
 soddisfacimento di vincoli. Il controesempio costruito in
 :func:`src.csp.risolutori.controesempio_budget` dimostra che il caso e'
-**possibile**; questo esperimento dice se sia **frequente** su istanze costruite
+possibile; questo esperimento dice se sia frequente su istanze costruite
 dalla rete vera. Se la quota fosse prossima a zero, l'argomento si chiuderebbe
 qui come risultato negativo: i budget globali non stringono quasi mai, e il
 problema si risolve tappa per tappa senza mai tornare indietro.
@@ -15,10 +15,10 @@ derivati dai dati come "minimo ottenibile piu' un margine" invece che scelti a
 occhio: un tetto sotto quel minimo renderebbe l'istanza infattibile per
 aritmetica e non per interazione fra le tappe.
 
-**Perche' piu' grafi brevi invece di uno lungo.** Un viaggio a quattro tappe di
+Perche' piu' grafi brevi invece di uno lungo. Un viaggio a quattro tappe di
 tratte casuali attraversa la citta' per cinque o sei ore, e un grafo che copra
 tutto quel periodo rende ogni ricerca proibitiva: misurato su Roma, la stessa
-ricerca costa 2,87 s su un orizzonte di 150 minuti e **38,63 s** su uno di 420,
+ricerca costa 2,87 s su un orizzonte di 150 minuti e 38,63 s su uno di 420,
 perche' il numero di stati raggiungibili cresce con la finestra. Si costruisce
 percio' una successione di grafi brevi sfalsati di un'ora, e ogni tratta viene
 cercata su quello che copre il suo istante di disponibilita'. L'orizzonte
@@ -83,7 +83,7 @@ MARGINE_SCADENZA_MINUTI = 45
 SLACK_PIEDI_SECONDI = 1800
 """Margine sul budget di cammino, largo di proposito.
 
-L'esperimento isola l'effetto del budget sui **cambi**: far stringere anche
+L'esperimento isola l'effetto del budget sui cambi: far stringere anche
 quello sul cammino mescolerebbe due cause in un solo numero.
 """
 
@@ -248,7 +248,7 @@ def istanza_da_catena(catena: Catena, n_tappe: int, slack_cambi: int) -> Istanza
     """Ritaglia un viaggio di ``n_tappe`` dal prefisso della catena.
 
     I budget sono il minimo ottenibile piu' un margine, cosi' che ``slack_cambi``
-    misuri quanto il tetto sia stringente **rispetto a quella istanza** e non in
+    misuri quanto il tetto sia stringente rispetto a quella istanza e non in
     assoluto: istanze diverse hanno minimi diversi, e un tetto fisso confronterebbe
     cose non confrontabili.
     """

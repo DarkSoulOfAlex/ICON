@@ -6,18 +6,18 @@ solving, e materializza il risultato in ``data/processed/transfers.parquet``.
 
 Due scelte meritano di essere dichiarate subito.
 
-**Le fermate diventano numeri interi.** Gli identificativi GTFS sono stringhe
+Le fermate diventano numeri interi. Gli identificativi GTFS sono stringhe
 arbitrarie (``"0#4744-16"``, ``"79283"``) e usarle come termini ASP rallenta il
 grounding senza portare alcun vantaggio: la corrispondenza e' biunivoca e viene
 conservata in memoria, quindi il risultato si ritraduce esattamente. E' un
 cambio di rappresentazione, non di conoscenza.
 
-**Le coordinate diventano metri.** ``rules.lp`` confronta distanze, e farlo in
+Le coordinate diventano metri. ``rules.lp`` confronta distanze, e farlo in
 gradi richiederebbe di conoscere la latitudine dentro la regola. La proiezione
 equirettangolare locale, centrata sul baricentro delle fermate della citta',
 converte gradi in metri con un errore trascurabile sulla scala di una citta' (a
 250 m di distanza, ben sotto il metro). Anche questo e' un cambio di unita': la
-regola che decide *quali* coppie siano trasbordi resta interamente in ASP.
+regola che decide quali coppie siano trasbordi resta interamente in ASP.
 """
 
 from __future__ import annotations
@@ -129,7 +129,7 @@ def genera_fatti(
 ) -> Fatti:
     """Traduce l'archivio (o un suo sottoinsieme di fermate) nei fatti di rules.lp.
 
-    Il lato della cella dell'indice spaziale e' posto **uguale** alla soglia di
+    Il lato della cella dell'indice spaziale e' posto uguale alla soglia di
     cammino. E' la condizione che rende l'indice semanticamente neutro: due
     fermate a meno di ``soglia_piedi`` metri non possono finire in celle non
     adiacenti, quindi nessun trasbordo puo' sfuggire al confronto. Un lato
@@ -269,7 +269,7 @@ def esegui(
     ``con_indice`` e ``con_chiusura`` sono gli interruttori usati dalla misura di
     complessita'. Il primo fa confrontare tutte le coppie di fermate invece delle
     sole celle adiacenti: serve a verificare che l'insieme dei trasbordi derivati
-    sia **identico** con e senza indice, cioe' che l'indice non alteri la
+    sia identico con e senza indice, cioe' che l'indice non alteri la
     semantica. Il secondo disattiva la chiusura transitiva: la differenza fra le
     due esecuzioni attribuisce alla ricorsione la sua quota di atomi, invece di
     dedurla.

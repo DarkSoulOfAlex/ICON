@@ -1,23 +1,23 @@
 """Il viaggio con piu' tappe obbligate, come problema di soddisfacimento di vincoli.
 
-**Che cosa si sta modellando.** Un viaggiatore deve toccare piu' luoghi nella
+Che cosa si sta modellando. Un viaggiatore deve toccare piu' luoghi nella
 stessa giornata: essere in stazione fra le 9:00 e le 9:15, poi in ufficio entro le
 10:00. Per ogni tratta il pianificatore della Fase 2 sa gia' produrre gli
-itinerari non dominati; qui si sceglie **quale** itinerario usare su ciascuna
+itinerari non dominati; qui si sceglie quale itinerario usare su ciascuna
 tratta, in modo che le scelte siano fra loro compatibili.
 
-**Perche' non e' una ricerca sequenziale.** Con i soli vincoli di precedenza - la
+Perche' non e' una ricerca sequenziale. Con i soli vincoli di precedenza - la
 tappa successiva non puo' partire prima che io sia arrivato - il problema si
 risolverebbe da sinistra a destra scegliendo ogni volta l'arrivo piu' precoce, e
 chiamarlo soddisfacimento di vincoli sarebbe una millanteria. Cio' che rompe
-quella struttura sono i **budget globali**: un tetto sul numero totale di cambi
+quella struttura sono i budget globali: un tetto sul numero totale di cambi
 dell'intera giornata e uno sui minuti totali a piedi. Non sono vincoli inventati
 per creare l'accoppiamento: sono i vincoli che un viaggiatore reale ha. Nessuno
 accetta dodici cambi in una mattina, e le aziende stesse pubblicano tempi minimi
 di trasbordo proprio perche' il cambio ha un costo; il tetto sul cammino e' ancora
 piu' concreto, ed e' stringente per chi ha ridotta mobilita' - la stessa persona
 per cui esiste la regola ``accessibile/2`` della base di conoscenza.
-L'accoppiamento fra le variabili e' una **conseguenza** di quei vincoli, non la
+L'accoppiamento fra le variabili e' una conseguenza di quei vincoli, non la
 loro ragione.
 
 Sotto un budget globale l'arrivo piu' precoce non e' piu' sempre la scelta
@@ -25,11 +25,11 @@ migliore, perche' un itinerario che arriva prima puo' consumare cambi che
 serviranno dopo. Il modulo :mod:`src.csp.risolutori` contiene il controesempio
 costruito che lo dimostra, e l'esperimento che misura quanto spesso accada.
 
-**Una scelta di modellazione da dichiarare.** Il dominio di una tappa e' costruito
+Una scelta di modellazione da dichiarare. Il dominio di una tappa e' costruito
 interrogando il pianificatore da una griglia di istanti di disponibilita', e ogni
 candidato porta con se' l'istante da cui e' stato calcolato (``pronto_da``). Un
 itinerario calcolato per chi e' pronto alle 9:20 e' eseguibile da chiunque sia
-pronto **entro** le 9:20, quindi il vincolo di precedenza si scrive sul solo
+pronto entro le 9:20, quindi il vincolo di precedenza si scrive sul solo
 ``pronto_da`` e i domini restano statici. E' leggermente conservativo, perche' un
 viaggiatore pronto alle 9:12 potrebbe prendere qualcosa che la griglia non offre;
 ma vale per tutti i metodi confrontati, quindi non falsa il confronto.
@@ -79,7 +79,7 @@ class Tappa:
     finestra: tuple[int, int] | None = None
     """Estremi entro cui l'arrivo deve cadere, quando la tappa ne ha una.
 
-    E' a **due** estremi, e l'estremo inferiore non e' decorativo: se devo essere
+    E' a due estremi, e l'estremo inferiore non e' decorativo: se devo essere
     in stazione fra le 9:00 e le 9:15, arrivare alle 8:40 e' una violazione e non
     un vantaggio.
     """
@@ -116,7 +116,7 @@ def violazioni(istanza: Istanza, assegnazione: Assegnazione) -> tuple[str, ...]:
     """Elenco dei vincoli violati, vuoto se l'assegnazione e' ammissibile.
 
     Restituisce i nomi invece di un booleano perche' e' cio' che rende i test
-    capaci di distinguere *quale* vincolo abbia respinto un'assegnazione: un test
+    capaci di distinguere quale vincolo abbia respinto un'assegnazione: un test
     che verifica solo il rifiuto passerebbe anche se a rifiutare fosse il vincolo
     sbagliato.
     """
@@ -165,7 +165,7 @@ def limiti_inferiori(istanza: Istanza) -> tuple[int, int]:
     soglie. I budget dell'esperimento sono percio' espressi come questo limite
     piu' un margine.
 
-    Va notato che il limite **non e' raggiungibile in generale**: minimizza ogni
+    Va notato che il limite non e' raggiungibile in generale: minimizza ogni
     tappa separatamente ignorando precedenza e finestre, quindi e' un limite
     inferiore vero e proprio e non una soluzione.
     """

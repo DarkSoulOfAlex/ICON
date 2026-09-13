@@ -6,7 +6,7 @@ costruiscono invece itinerari di cui si conosce l'esito - la coincidenza si perd
 oppure si tiene per un soffio, oppure si recupera - e si verifica che la replica
 lo ritrovi.
 
-Il caso che conta piu' degli altri e' quello del **mezzo in anticipo**: e' il
+Il caso che conta piu' degli altri e' quello del mezzo in anticipo: e' il
 fenomeno su cui poggia l'intera domanda di ricerca, non ha nulla di intuitivo -
 un mezzo puntuale fa perdere la coincidenza - e un confronto fatto sugli orari
 teorici lo darebbe sempre per riuscito.
