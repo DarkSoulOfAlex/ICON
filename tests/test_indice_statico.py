@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from src.gtfs.indice_statico import carica_indice, indice_vuoto, salva_indice, versione_valida
 

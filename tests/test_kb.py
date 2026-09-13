@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from src.gtfs.loader import carica_archivio
 from src.kb.engine import esegui, fermata_centrale, genera_fatti, sottoinsieme_per_prossimita

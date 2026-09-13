@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.eval.replica import (ErroreReplica, EsitoCoincidenza,
-                              margine_piu_stretto, replica, rigiocabile)
+from src.eval.replica import (ErroreReplica, margine_piu_stretto, replica,
+                              rigiocabile)
 from src.planner.robust import Itinerario, Salita, Tappa
 
 ORA = 8 * 3600

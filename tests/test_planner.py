@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from src.delays.interfaccia import Distribuzione, ModelloSintetico, Tratta
+from src.delays.interfaccia import ModelloSintetico, Tratta
 from src.planner import robust
 from src.planner.baselines import margine_fisso, meno_cambi, piu_veloce
 from src.planner.robust import (
