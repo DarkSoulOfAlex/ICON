@@ -3278,7 +3278,9 @@ istanze in cui le due strategie scelgono diversamente.
 | 30 min | 40 su 90 | 444 s | 1.260 s | 42 su 120 | 293 s | 1.320 s |
 
 *Fonte: `results/backtest.csv`, bordi `ottili`, differenza di `arrivo_programmato`
-fra le due strategie sulle istanze in cui differisce; giornata magra esclusa.*
+fra le due strategie sulle istanze in cui differisce; giornata magra esclusa. Le righe
+a margine nullo e a cinque minuti poggiano su meno di venti istanze divergenti e vanno
+lette come indicazioni.*
 
 Le due tabelle vanno lette insieme, ed e' questo il risultato. A **quindici e venti
 minuti di margine su Roma** il criterio probabilistico porta **dieci e quattordici
@@ -3389,12 +3391,17 @@ costruzione. Restringendo alle sole divergenti:
 | 30 min | 40 | 0,6996 | 0,9302 | 42 | 0,8708 | **1,0000** |
 
 *Fonte: `results/backtest_riepilogo.csv`, colonne `quota_entro_divergenti` e
-`istanze_divergenti`, bordi `ottili`.*
+`istanze_divergenti`, bordi `ottili`. **Tre celle stanno sotto le venti istanze** -
+Roma a margine nullo (13) e a cinque minuti (19), Torino a margine nullo (9) - e li'
+la quota e' mossa da una manciata di viaggi: vanno lette come indicazioni, non come
+misure. Nella sezione, ogni tabella che contenga celle sotto quella soglia lo dichiara
+nella propria riga di fonte.*
 
 Qui il vantaggio e' molto piu' grande - a venti minuti su Roma il robusto porta a
-destinazione entro la scadenza il 94% delle istanze contro il 56% del piu' veloce - e
-questo e' il numero che descrive **quanto il modello sposti l'esito quando sposta la
-scelta**. Non e' pero' il numero che descrive quanto serva un pianificatore robusto a
+destinazione entro la scadenza il 94% delle istanze contro il 56% del piu' veloce, su
+trentaquattro istanze - e questo e' il numero che descrive **quanto il modello sposti
+l'esito quando sposta la scelta**. Non e' pero' il numero che descrive quanto serva
+un pianificatore robusto a
 un utente qualsiasi, perche' quell'utente incontra anche le istanze in cui le due
 strategie coincidono, che sono fra il 56% e il 93%. Le due letture rispondono a due
 domande diverse e vanno tenute separate.
@@ -3621,20 +3628,79 @@ indipendenti non e' un accidente del campione: e' il segno che il difetto sta ne
 Applicando `gamma = 0,65` a entrambe, il residuo resta sotto i cinque punti in sette
 classi su nove; le due eccezioni sono la classe piu' bassa di Roma (+0,18 su
 ventiquattro istanze) e la quarta (-0,06). La correzione **non e' stata adottata**, e
-per una ragione di metodo: e' stata stimata sulle stesse istanze su cui la si
-misurerebbe, quindi il suo effetto qui e' per costruzione ottimistico, e adottarla
-richiederebbe di tararla su giornate diverse da quelle di verifica. E' registrata come
-estensione, non come risultato.
+per una ragione di metodo che vale la pena enunciare per intero: `gamma` e' stato
+**tarato e valutato sulle stesse quattro giornate**, quindi quel che la tabella misura
+non e' la capacita' della correzione di prevedere ma la sua capacita' di descrivere, e
+le due non coincidono mai. Adottarla richiederebbe due cose che qui mancano: giornate
+di taratura separate da quelle di verifica, come gia' si fa per la concentrazione del
+priore; e un `gamma` che non vada tarato su ciascuna citta' - o fissato una volta per
+tutte, o legato a una grandezza misurabile della rete, altrimenti si sposterebbe il
+problema dal modello al suo correttore. La vicinanza dei due valori, 0,64 e 0,65 su
+campioni indipendenti, e' un indizio che la prima strada sia percorribile; un indizio,
+non una prova, perche' le citta' sono due.
+
+**Quarta ipotesi: l'errore e' locale alla coincidenza critica.** Se il modello fosse
+pessimista su una **singola** coincidenza e in modo quasi costante, si spiegherebbe
+insieme il divario e la sua indipendenza dalla lunghezza: a decidere l'esito di un
+viaggio e' la coincidenza piu' tesa, non tutte, e l'errore sarebbe quello di una sola.
+La previsione verificabile e' che il divario si concentri dove il respiro della
+coincidenza piu' stretta e' piccolo. Guardando le classi di margine critico senza
+altri controlli, su Roma sembra proprio cosi':
+
+| margine della coincidenza piu' tesa | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
+| --- | ---: | ---: | ---: | ---: |
+| 0 - 2 min | 144 | **+0,2038** | 148 | +0,1429 |
+| 2 - 5 min | 166 | +0,0782 | 182 | -0,0204 |
+| 5 - 10 min | 88 | +0,0020 | 87 | +0,0611 |
+| oltre 10 min | 56 | +0,0177 | 70 | **+0,1008** |
+
+*Fonte: `results/backtest.csv`, colonna `margine_critico`, strategia `robusto`, bordi
+`ottili`, sole istanze con almeno un cambio (941 su 1.260).*
+
+Su Roma il divario cala in modo monotono, da venti punti a due. Su **Torino no**: e'
+grande ai due estremi, +0,14 sotto i due minuti e +0,10 oltre i dieci, con un minimo
+in mezzo. E c'e' un motivo per cui la colonna romana non basta: **un margine stretto
+produce una probabilita' dichiarata bassa**, e nelle probabilita' basse il divario e'
+gia' grande per quanto visto sopra. Le due variabili sono confuse, e vanno separate
+come si e' fatto per i cambi. Dentro le tre bande di probabilita' dichiarata, la
+correlazione fra margine critico e divario e':
+
+| banda di probabilita' | Roma | Torino |
+| --- | ---: | ---: |
+| sotto 0,35 | -0,109 (p = 0,22, n = 130) | -0,161 (p = 0,14, n = 88) |
+| 0,35 - 0,65 | **-0,224** (p = 0,009, n = 134) | +0,106 (p = 0,23, n = 130) |
+| sopra 0,65 | +0,028 (p = 0,70, n = 190) | +0,109 (p = 0,08, n = 269) |
+
+*Fonte: come sopra; correlazione di Pearson fra `margine_critico` e lo scarto
+`entro_scadenza - probabilita_attesa`.*
+
+Una cella su sei e' significativa, ed e' nel verso previsto dall'ipotesi - su Roma,
+nella banda centrale, il divario cresce al restringersi del margine. Nelle altre cinque
+non c'e' segnale, e su Torino il segno e' due volte l'opposto. **L'ipotesi non e'
+esclusa ma non e' nemmeno sostenuta**: riceve appoggio in un solo punto di una sola
+citta', che e' meno di quanto serva per attribuirle un fenomeno costante su
+milleduecento
+istanze e due reti.
 
 **Che cosa resta accertato, e che cosa no.** Accertato: il modello e' pessimista di
-sei-dieci punti in media e fino a ventisette nelle classi basse; il segno e' costante;
-il difetto non viene dal tetto sui recuperi, non viene dalla selezione, non si accumula
-lungo la catena; ed e' riassumibile in un esponente che le due citta' concordano nel
-fissare a 0,65. Non accertato: da dove venga. L'unico candidato che sopravvive alle tre
-prove e' l'assunzione di **massima entropia dentro i bin**, perche' e' applicata a ogni
-tratta indipendentemente dalla lunghezza della catena e quindi non produrrebbe la
-crescita che i dati escludono - ma non e' stata messa alla prova, e va letta come
-congettura.
+sei-dieci punti in media e fino a ventisette nelle classi basse; il segno e' costante su
+entrambe le citta', entrambe le strategie e tutti i margini; il difetto **non** viene
+dal tetto sui recuperi, **non** viene dalla selezione, **non** si accumula lungo la
+catena, e **non** e' spiegato dal respiro della coincidenza critica se non forse in
+parte e su una citta' sola; ed e' riassumibile in un esponente che le due citta'
+concordano nel fissare a 0,65.
+
+Non accertato: da dove venga. Quattro ipotesi sono state formulate e messe alla prova,
+due sono state falsificate con il segno rovesciato, una e' stata contraddetta e una
+resta a meta'. **La causa e' ignota**, ed e' preferibile scriverlo che tenerne in piedi
+una a forza: il fenomeno e' reale, e' stato cercato su quattro fronti e non e'
+spiegato, e questo dice a chi riprendesse il lavoro che il punto e' aperto e dove non
+conviene ricominciare. Il solo candidato mai messo alla prova e' l'assunzione di
+**massima entropia dentro i bin**, che e' compatibile con tutti e quattro gli esiti
+perche' si applica a ogni tratta e non dipende ne' dalla lunghezza della catena ne' dal
+respiro delle coincidenze; provarla richiederebbe di rifare la composizione con una
+forma diversa nei bin aperti e confrontare, ed e' un esperimento che non e' stato
+fatto.
 
 Il difetto non invalida i confronti fra strategie: il vantaggio del criterio
 probabilistico e' misurato sulla replica e non sulle probabilita' dichiarate, quindi
