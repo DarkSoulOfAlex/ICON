@@ -373,7 +373,67 @@ un secondo supporto**: se si perde, si perde il progetto.
 
 ---
 
-## 6. Produrre il documento in formato `.docx`
+## 6. Rigenerare i risultati
+
+I CSV e i grafici in [results/](results/) sono versionati di proposito: sono il
+deliverable valutato del progetto, non artefatti che si rifanno a piacere. Ogni
+file ha pero' il programma che lo produce, e la corrispondenza e' questa.
+
+| Comando | Artefatti in `results/` |
+| --- | --- |
+| `python scripts/complessita_kb.py` | `complessita_kb.csv`, `complessita_kb.png` |
+| `python scripts/materializza_transfers.py` | `kb_rete_intera.csv` |
+| `python scripts/ricerca_confronto.py` | `grafo_finestra.csv`, `velocita_archi.csv`, `ricerca_astar.csv`, `ricerca_astar.png` |
+| `python scripts/chiave_di_stato.py` | `chiave_di_stato.csv` |
+| `python scripts/stima_rete.py` | `stima_rete.csv`, `correlazione_rete.csv`, `scelta_bordi.csv`, `trasparenza_gradini.csv`, `calibrazione_rete_roma.csv`, `calibrazione_rete_torino.csv` |
+| `python scripts/markov_terne.py` | `markov_terne.csv` |
+| `python scripts/catena_costruita.py` | `catena_costruita.csv` |
+| `python scripts/pianificazione_robusta.py` | `conv_vs_montecarlo.csv`, `conv_vs_montecarlo.png`, `robusto_griglia_T.csv`, `robusto_griglia_T.png` |
+| `python scripts/csp_greedy.py` | `csp_greedy.csv` |
+| `python scripts/backtest.py` | `backtest.csv`, `backtest_riepilogo.csv`, `backtest_riepilogo_con_magre.csv`, `coincidenze.csv` |
+| `python scripts/archivi_statici.py` | `archivi_statici.csv` |
+| `python scripts/anticipo_ultima_revisione.py` | `anticipo_ultima_revisione.csv` |
+| `python scripts/copertura_orario.py` | `copertura_orario.csv` |
+| `python scripts/diagnosi_constatazioni.py` | `diagnosi_constatazioni.csv` |
+| `python -m src.consolida.notturno` | `consolidamento.csv` |
+
+Ogni comando accetta `--help`. Due opzioni ricorrono e servono entrambe a rendere
+ripetibile il conto: `--radice` punta a una copia dell'archivio diversa da
+`data/`, e `--archivio AAAA-MM-GG` fissa la revisione dell'orario statico su cui
+lavorare, cosi' che due esecuzioni a distanza di giorni non diano numeri diversi
+solo perche' nel frattempo l'azienda ha pubblicato un orario nuovo.
+
+Il backtesting e' il piu' lungo di tutti: rigioca ogni coppia origine-destinazione
+su ogni giornata raccolta, e sulla griglia usata nel documento dura ore. Scrive a
+ogni giornata conclusa e `--riprendi` salta quelle gia' fatte, quindi si puo'
+interrompere e riavviare senza perdere il lavoro gia' svolto.
+
+Tre programmi non producono artefatti ma servono a chi rifa i conti:
+`etichetta_finestra.py` stampa la finestra di stima da passare a `--fino-a`,
+mentre `diagnosi_consolidamento.py` e `copertura_constatazioni.py` riportano a
+schermo lo stato dei dati su cui tutti gli altri lavorano.
+
+### Che ogni numero del documento venga da un file
+
+Il modo di sbagliare che conta davvero, scrivendo il documento, non e' un errore
+di calcolo: e' un numero scritto a memoria invece che riletto dal CSV. Non fa
+fallire nessun test, non rompe niente, e resta li'. Per questo c'e' un programma
+che ripassa il documento e cerca, per ogni numero, una cella che vi corrisponda:
+
+```bash
+python scripts/verifica_numeri.py
+```
+
+Non e' un verificatore ma un setaccio. Riconosce come risultato qualunque numero
+con la virgola, qualunque percentuale e qualunque grandezza seguita da un'unita',
+e cerca la corrispondenza **alla precisione con cui il numero e' scritto**. I
+falsi positivi - un anno, il numero di un capitolo, un conteggio - sono previsti
+e si guardano a occhio: cio' che non deve poter accadere e' il contrario, che un
+numero senza origine passi inosservato.
+
+---
+
+## 7. Produrre il documento in formato `.docx`
 
 Il documento si scrive in Markdown (`docs/documentazione.md`) e si consegna in
 `.docx` conforme al template del docente. **Il `.docx` non e' nel repository**: e'
