@@ -3512,47 +3512,80 @@ raggruppamento usa un esito della replica e non un'informazione disponibile al m
 della scelta, quindi non e' una misura di calibrazione: serve solo a localizzare il
 divario, ed e' sufficiente a escludere il meccanismo proposto.
 
-**Seconda ipotesi: la composizione lungo la catena.** La calibrazione dell'argomento
-precedente misura il modello leggermente **ottimista** sul singolo bin, di due o tre
-punti nelle classi centrali. Se sul singolo passo e' ottimista e sulla composizione e'
-pessimista, l'errore starebbe nel comporre e non nello stimare - e sarebbe
-un'osservazione sull'assunzione markoviana, che e' il pezzo di teoria piu' esposto del
-progetto. La previsione verificabile e' che il divario **cresca con la lunghezza della
-catena**, cioe' col numero di cambi. Non cresce:
+**Seconda ipotesi: l'errore nasce nel comporre.** Se il modello fosse accurato sul
+singolo passo e sbagliasse nel metterne insieme molti, l'errore starebbe nella
+composizione e non nella stima - e sarebbe un'osservazione sull'assunzione markoviana,
+che e' il pezzo di teoria piu' esposto del progetto. La prima prova che se n'e' fatta
+cercava il divario in funzione della lunghezza della catena, e non lo trovava: la
+correlazione fra numero di tratte e divario, dentro bande di probabilita' dichiarata,
+e' significativa in una cella su sei e in due **cala** invece di crescere.
 
-| cambi | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
-| ---: | ---: | ---: | ---: | ---: |
-| 1 | 86 | +0,1163 | 233 | +0,0708 |
-| 2 | 199 | -0,0057 | 293 | +0,0816 |
-| 3 | 169 | +0,1152 | 136 | +0,0678 |
-| 4 | 86 | +0,2927 | 58 | -0,0576 |
+Quella prova era pero' **sulla grandezza sbagliata**, e va detto perche' l'errore e'
+istruttivo. Il divario del viaggio mescola due cose: quanto il modello sbagli su
+ciascuna coincidenza, e quanto sbagli nel comporle. Guardarlo da solo non le separa, e
+un errore di composizione che cresce puo' restare invisibile se l'errore per
+coincidenza va nella direzione opposta. La misura che separa i due livelli e' un'altra,
+e si fa scomponendo la probabilita' del viaggio nei suoi fattori: per ogni cambio, la
+probabilita' che il modello attribuisce al **tenerlo**, contro la frequenza con cui e'
+stato tenuto davvero.
 
-*Fonte: come sopra, raggruppate per `cambi`; escluse le classi con meno di venti
-istanze.*
+| livello | Roma, n | Roma, attesa | Roma, osservata | Roma, scarto | Torino, n | Torino, scarto |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| la singola coincidenza | 1.666 | 0,7758 | 0,7269 | **-0,0489** | 1.116 | **-0,0890** |
+| il viaggio intero | 454 | 0,5588 | 0,6542 | **+0,0958** | 487 | **+0,0612** |
 
-Su Torino il divario e' piatto - fra +0,07 e +0,08 da uno a tre cambi - e su Roma non
-e' monotono. Il confronto grezzo e' pero' viziato: le catene lunghe ricevono
-probabilita' dichiarate piu' basse, e li' il divario e' gia' grande per altre ragioni.
-Ripetendolo **dentro tre bande di probabilita' dichiarata**, cioe' a parita' di quanto
-il modello si sbilanci, la correlazione fra numero di cambi e divario e':
+*Fonte: `results/coincidenze.csv` per la prima riga - colonne `probabilita_attesa` e
+`tenuta`, una riga per cambio - e `results/backtest.csv` per la seconda, ristretta ai
+viaggi con almeno un cambio; bordi `ottili`, giornata magra esclusa.*
 
-| banda di probabilita' | Roma | Torino |
-| --- | ---: | ---: |
-| sotto 0,35 | +0,271 (p = 0,002, n = 131) | +0,007 (p = 0,95, n = 98) |
-| 0,35 - 0,65 | +0,100 (p = 0,24, n = 143) | **-0,311** (p < 0,001, n = 155) |
-| sopra 0,65 | -0,012 (p = 0,85, n = 266) | **-0,162** (p < 0,001, n = 467) |
+**Il segno si capovolge fra i due livelli.** Sulla singola coincidenza il modello e'
+**ottimista** - promette il 78% e ne tiene il 73% su Roma, l'79% contro il 70% su
+Torino - e sul viaggio intero e' **pessimista** di dieci e sei punti. Se la
+composizione fosse fedele, una stima ottimista su ogni fattore darebbe un prodotto
+ottimista, non pessimista: il cambio di segno non puo' venire dai fattori, e viene
+percio' dal modo in cui sono messi insieme.
 
-*Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`; correlazione di
-Pearson fra `cambi` e lo scarto `entro_scadenza - probabilita_attesa`.*
+**E la divergenza cresce con la lunghezza della catena, che era la previsione da
+verificare.** Separando per numero di coincidenze dell'itinerario:
 
-In una sola cella su sei il divario cresce col numero di cambi, e in due **cala in
-modo significativo**. L'ipotesi non e' quindi soltanto non sostenuta: e'
-**contraddetta**. Qualunque cosa produca il pessimismo, non si accumula lungo la
-catena, e il costo dell'approssimazione markoviana - reale e dichiarato nell'argomento
-precedente - non e' questo. E' un esito che vale la pena scrivere perche' era la
-spiegazione piu' attraente: avrebbe collegato una decisione di modellazione al suo
-prezzo a valle, ed era proprio per questo che andava messa alla prova invece che
-adottata.
+| coincidenze | Roma, scarto coincidenza | Roma, scarto viaggio | divergenza | Torino, coinc. | Torino, viaggio | divergenza |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | -0,0441 | -0,0057 | **+0,038** | +0,0576 | +0,0816 | **+0,024** |
+| 2 | -0,0671 | +0,1152 | **+0,182** | -0,0711 | +0,0678 | **+0,139** |
+| 3 | +0,0359 | +0,2927 | **+0,257** | -0,3573 | -0,0576 | **+0,300** |
+
+*Fonte: come sopra; le due colonne di scarto sono misurate sulle stesse istanze, e la
+divergenza e' la loro differenza. Il numero di coincidenze si ricava dalla colonna
+`cambi` di `results/backtest.csv`, che conta le tratte: un itinerario con `cambi = 2`
+ha una coincidenza sola.*
+
+La divergenza fra i due livelli passa da quattro a ventisei punti su Roma e da due a
+trenta su Torino, **in modo monotono su entrambe le citta'**. Con una coincidenza sola
+i due livelli quasi coincidono; con tre, il modello sbaglia nella composizione quasi un
+terzo di probabilita'.
+
+**L'ipotesi e' quindi confermata, e la prima prova sbagliava per una ragione precisa.**
+Il divario del viaggio, preso da solo, e' la somma di due errori di segno opposto che
+crescono entrambi: quello per coincidenza, ottimista, e quello di composizione,
+pessimista e piu' grande. La loro somma non ha percio' un andamento leggibile in
+funzione della lunghezza, ed e' esattamente cio' che la prima tabella mostrava. Solo
+scomponendo i due livelli la struttura emerge.
+
+**Che cosa significa per l'argomento precedente.** L'assunzione markoviana era stata
+adottata come approssimazione dichiarata: l'arco verso il secondo antenato portava
+informazione misurabile ma peggiorava il modello per scarsita' di dati, e la decisione
+fu di non rappresentarla sapendo che cosa si trascurava. Questa misura ne da' il
+**prezzo a valle**: non in bit di perdita logaritmica, ma in punti di probabilita' su
+viaggi veri, e cresce con il numero di coincidenze che si compongono. E' l'unico punto
+del documento in cui una decisione di modellazione viene seguita fino alle sue
+conseguenze finali, e i due capitoli si tengono a vicenda - uno dichiara
+l'approssimazione, l'altro ne misura il costo.
+
+Va detto con una cautela: la composizione non e' **solo** l'assunzione markoviana. Nel
+comporre entrano anche l'indipendenza fra il ritardo di arrivo di una tratta e quello
+di partenza della successiva, il tetto sui recuperi e la discretizzazione in bin. La
+misura dice che l'errore nasce li' dentro; non dice quale dei quattro ingredienti lo
+produca, e separarli richiederebbe di rifare la composizione cambiandone uno alla volta.
 
 **Terza ipotesi: la selezione. Esclusa da un controllo diretto.** Se il divario venisse
 dal fatto che il criterio sceglie il proprio massimo, la strategia di riferimento -
@@ -3619,11 +3652,19 @@ probabilita' media e frequenza osservata su cinque classi di ampiezza 0,2, pesat
 numerosita'.*
 
 Un solo esponente porta il divario **sotto i tre punti** su entrambe le citta', da
-dieci e sei. E c'e' di piu': il `gamma` che pareggia le medie vale **0,64 su Roma e
-0,65 su Torino**, stimati indipendentemente su due reti, due produttori di dati e due
-popolazioni diverse. Un parametro che coincide alla seconda cifra su due campioni
-indipendenti non e' un accidente del campione: e' il segno che il difetto sta nel
-**metodo di composizione**, uguale nelle due citta', e non nei dati di ciascuna.
+dieci e sei. E il `gamma` che pareggia le medie vale **0,64 su Roma e 0,65 su Torino**,
+stimati indipendentemente su due reti, due produttori di dati e due popolazioni
+diverse: un parametro che coincide alla seconda cifra su due campioni indipendenti non
+e' un accidente, ed e' un altro indizio che il difetto stia nel metodo di composizione
+- uguale nelle due citta' - e non nei dati di ciascuna.
+
+Va pero' detto che quel valore e' una **media, non una costante**. Stimato dentro i
+sottogruppi, l'esponente varia di un fattore due col margine (da 0,85 a 0,40 su Roma) e
+di un fattore tre-cinque col numero di tratte (da 0,20 a 1,03 su Roma, da 0,38 a 1,22
+su Torino). La correzione a un parametro descrive bene il complesso e male le sue
+parti, il che e' coerente con un errore che **dipende dalla lunghezza della catena**:
+un esponente unico non puo' rappresentare una distorsione che cresce col numero di
+fattori composti.
 
 Applicando `gamma = 0,65` a entrambe, il residuo resta sotto i cinque punti in sette
 classi su nove; le due eccezioni sono la classe piu' bassa di Roma (+0,18 su
@@ -3683,24 +3724,26 @@ milleduecento
 istanze e due reti.
 
 **Che cosa resta accertato, e che cosa no.** Accertato: il modello e' pessimista di
-sei-dieci punti in media e fino a ventisette nelle classi basse; il segno e' costante su
-entrambe le citta', entrambe le strategie e tutti i margini; il difetto **non** viene
-dal tetto sui recuperi, **non** viene dalla selezione, **non** si accumula lungo la
-catena, e **non** e' spiegato dal respiro della coincidenza critica se non forse in
-parte e su una citta' sola; ed e' riassumibile in un esponente che le due citta'
-concordano nel fissare a 0,65.
+sei-dieci punti sul viaggio intero e fino a ventisette nelle classi di probabilita'
+piu' basse, con segno costante su entrambe le citta', entrambe le strategie e tutti i
+margini; e' invece **ottimista di cinque-nove punti sulla singola coincidenza**; il
+segno si capovolge fra i due livelli e la loro divergenza cresce in modo monotono col
+numero di coincidenze composte, da due-quattro punti con una sola a ventisei-trenta
+con tre. **L'errore nasce quindi nella composizione**, ed e' il prezzo a valle
+dell'approssimazione dichiarata nell'argomento precedente.
 
-Non accertato: da dove venga. Quattro ipotesi sono state formulate e messe alla prova,
-due sono state falsificate con il segno rovesciato, una e' stata contraddetta e una
-resta a meta'. **La causa e' ignota**, ed e' preferibile scriverlo che tenerne in piedi
-una a forza: il fenomeno e' reale, e' stato cercato su quattro fronti e non e'
-spiegato, e questo dice a chi riprendesse il lavoro che il punto e' aperto e dove non
-conviene ricominciare. Il solo candidato mai messo alla prova e' l'assunzione di
-**massima entropia dentro i bin**, che e' compatibile con tutti e quattro gli esiti
-perche' si applica a ogni tratta e non dipende ne' dalla lunghezza della catena ne' dal
-respiro delle coincidenze; provarla richiederebbe di rifare la composizione con una
-forma diversa nei bin aperti e confrontare, ed e' un esperimento che non e' stato
-fatto.
+Escluse invece: il tetto sui recuperi, falsificato con il segno rovesciato; la
+selezione, esclusa da un controllo diretto sulla strategia che non sceglie il proprio
+massimo; e il respiro della coincidenza critica, che riceve appoggio in una cella su
+sei.
+
+Non accertato: **quale ingrediente** della composizione produca l'errore. Ve ne sono
+almeno quattro - l'assunzione markoviana, l'indipendenza fra il ritardo di arrivo di
+una tratta e quello di partenza della successiva, il tetto sui recuperi e la
+discretizzazione in bin con l'assunzione di massima entropia dentro ciascuno - e la
+misura li implica tutti insieme senza separarli. Separarli richiederebbe di rifare la
+composizione cambiandone uno alla volta e confrontare, ed e' l'esperimento che chiude
+la questione e che non e' stato fatto.
 
 Il difetto non invalida i confronti fra strategie: il vantaggio del criterio
 probabilistico e' misurato sulla replica e non sulle probabilita' dichiarate, quindi
