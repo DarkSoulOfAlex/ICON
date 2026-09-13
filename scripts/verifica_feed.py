@@ -22,7 +22,7 @@ import argparse
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 
 RADICE = Path(__file__).resolve().parent.parent
 if str(RADICE) not in sys.path:

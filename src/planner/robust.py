@@ -36,7 +36,7 @@ catena. Il confronto fra i due e' un artefatto del documento.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
@@ -498,7 +498,7 @@ def itinerario_da_cammino(
     Restituisce ``None`` se il cammino non contiene alcun tratto a bordo, il che
     accade quando origine e destinazione sono collegate dal solo cammino a piedi.
     """
-    from src.graph.time_expanded import ABordo, ATerra
+    from src.graph.time_expanded import ATerra
 
     eventi_per_tappa: list[list[int]] = []
     terra_prima: list[ATerra] = []

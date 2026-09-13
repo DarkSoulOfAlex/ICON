@@ -61,7 +61,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Iterable, Sequence
 from zoneinfo import ZoneInfo
 
 import numpy as np

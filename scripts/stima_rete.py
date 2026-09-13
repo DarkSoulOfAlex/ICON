@@ -68,7 +68,7 @@ from src.delays.contesto import (  # noqa: E402
     tipo_di_giorno,
     ultima_revisione,
 )
-from src.delays.markov import BORDI_OTTO, BORDI_QUATTRO, discretizza  # noqa: E402
+from src.delays.markov import BORDI_OTTO, discretizza  # noqa: E402
 from src.delays.rete import Livello, componi, conta, stima, tara, trasparenza  # noqa: E402
 from src.gtfs.indice_statico import carica_indice, versione_valida  # noqa: E402
 from src.gtfs.loader import carica_archivio  # noqa: E402

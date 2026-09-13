@@ -35,7 +35,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Sequence
 
 RADICE = Path(__file__).resolve().parents[1]
 if str(RADICE) not in sys.path:
