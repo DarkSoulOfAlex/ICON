@@ -375,8 +375,13 @@ un secondo supporto**: se si perde, si perde il progetto.
 ## 6. Produrre il documento in formato `.docx`
 
 Il documento si scrive in Markdown (`docs/documentazione.md`) e si consegna in
-`.docx` conforme al template del docente. La conversione richiede
-[pandoc](https://pandoc.org/) e due comandi:
+`.docx` conforme al template del docente. **Il `.docx` non e' nel repository**: e'
+un derivato, si rigenera con i due comandi qui sotto, e tenerlo versionato
+significherebbe convivere con una copia che puo' invecchiare rispetto al Markdown
+senza che nulla lo segnali. Chi consegna lo produce al momento e lo allega
+all'archivio, non lo cerca dentro `docs/`.
+
+La conversione richiede [pandoc](https://pandoc.org/) e due comandi:
 
 ```bash
 python scripts/prepara_riferimento.py

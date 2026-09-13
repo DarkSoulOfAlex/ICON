@@ -44,6 +44,21 @@ desktop.ini
 # sono il deliverable valutato del progetto, non artefatti rigenerabili a piacere:
 # devono essere versionati insieme al codice che li ha prodotti.
 
-# Generati dal template del docente da scripts/prepara_riferimento.py
+# I due .docx restano FUORI dal repository, ed e' una scelta e non una svista.
+#
+# Sono derivati: si rigenerano dal Markdown e dal template con i due comandi della
+# sezione 6 del README, ed entrambi sono binari che git non sa confrontare - ogni
+# rigenerazione ne salverebbe una copia intera, e in una decina di consegne la
+# cronologia peserebbe piu' di tutto il resto del progetto messo insieme.
+#
+# La ragione che pesa di piu' non e' pero' lo spazio. Un .docx committato puo'
+# invecchiare rispetto al Markdown senza che nulla lo segnali, e a quel punto nel
+# repository esistono due versioni del deliverable e nessun modo di sapere quale
+# sia quella buona. E' lo stesso difetto dei numeri scritti a memoria che il
+# progetto ha inseguito per tutta la campagna: una copia che era vera quando fu
+# scritta e che nessuno rimette in discussione.
+#
+# Il file da consegnare si produce al momento della consegna. Se si consegna anche
+# il repository, il .docx va messo nell'archivio accanto ad esso, non dentro.
 docs/riferimento_pandoc.docx
 docs/documentazione.docx
