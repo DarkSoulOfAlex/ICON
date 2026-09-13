@@ -16,7 +16,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.eval.replica import ErroreReplica, replica, rigiocabile
+from src.eval.replica import (ErroreReplica, margine_piu_stretto, replica,
+                              rigiocabile)
 from src.planner.robust import Itinerario, Salita, Tappa
 
 ORA = 8 * 3600
@@ -161,3 +162,46 @@ def test_rigiocabile_guarda_solo_la_corsa_pianificata():
 def test_un_itinerario_senza_tappe_viene_detto():
     with pytest.raises(ErroreReplica, match="senza tappe"):
         replica(_itinerario([]), _ritardi({}))
+
+
+def test_il_margine_critico_e_il_minimo_fra_le_coincidenze():
+    """Due cambi con respiro diverso: conta il piu' teso, non la media."""
+    itinerario = _itinerario([
+        _tappa("A", "B", [("t1", ORA, ORA + 600)], trasbordo=60),
+        # pronto a ORA+660, parte a ORA+900: 240 s di respiro
+        _tappa("B", "C", [("t2", ORA + 900, ORA + 1500)], trasbordo=60),
+        # pronto a ORA+1560, parte a ORA+1620: 60 s di respiro
+        _tappa("C", "D", [("t3", ORA + 1620, ORA + 2000)], trasbordo=60),
+    ])
+    assert margine_piu_stretto(itinerario) == 60
+
+
+def test_un_itinerario_senza_cambi_non_ha_margine_critico():
+    """None e non zero: zero direbbe 'coincidenza strettissima' invece di 'nessuna'."""
+    itinerario = _itinerario([_tappa("A", "B", [("t1", ORA, ORA + 600)])])
+    assert margine_piu_stretto(itinerario) is None
+
+
+def test_una_coincidenza_gia_impossibile_sull_orario_da_un_margine_negativo():
+    """La frontiera puo' contenere coincidenze che l'orario stesso non regge.
+
+    Non e' un caso teorico: succede quando il tempo minimo di trasbordo derivato
+    dalla base di conoscenza e' maggiore del respiro che l'orario lascia. Il valore
+    deve restare negativo invece di essere azzerato, perche' zero direbbe
+    "appena fattibile" dove il dato dice "gia' impossibile".
+    """
+    itinerario = _itinerario([
+        _tappa("A", "B", [("t1", ORA, ORA + 600)], trasbordo=300),
+        _tappa("B", "C", [("t2", ORA + 700, ORA + 1200)], trasbordo=300),
+    ])
+    assert margine_piu_stretto(itinerario) == -200
+
+
+def test_i_recuperi_non_entrano_nel_margine_critico():
+    """Il respiro si misura sul piano, non sul piano di riserva."""
+    stretto = _itinerario([
+        _tappa("A", "B", [("t1", ORA, ORA + 600)], trasbordo=60),
+        _tappa("B", "C", [("t2", ORA + 700, ORA + 1200),
+                          ("t2b", ORA + 1800, ORA + 2400)], trasbordo=60),
+    ])
+    assert margine_piu_stretto(stretto) == 40

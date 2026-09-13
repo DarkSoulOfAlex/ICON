@@ -142,3 +142,35 @@ def rigiocabile(itinerario: Itinerario, ritardo: RitardoOsservato) -> bool:
         and ritardo(tappa.alternative[0].trip_id, tappa.fermata_discesa) is not None
         for tappa in itinerario.tappe
     )
+
+
+def margine_piu_stretto(itinerario) -> int | None:
+    """I secondi di respiro della coincidenza piu' tesa dell'itinerario.
+
+    Per ogni cambio, la differenza fra l'orario di partenza della corsa che si
+    deve prendere e il primo istante in cui si e' pronti a prenderla - arrivo
+    della tappa precedente piu' il tempo minimo di trasbordo. Il minimo su tutti
+    i cambi e' la coincidenza che decide l'esito del viaggio: se salta quella,
+    saltano le successive.
+
+    Serve a distinguere due spiegazioni di uno stesso fenomeno. Il modello
+    risulta pessimista sui viaggi rigiocati, e le ipotesi sono che l'errore si
+    **componga** lungo la catena oppure che sia **locale** alla coincidenza piu'
+    critica. Le due si separano guardando dove il divario si concentra, e questa
+    e' la grandezza che lo dice.
+
+    Vale ``None`` per un itinerario senza cambi: li' non c'e' coincidenza da
+    perdere, e un valore convenzionale la farebbe entrare nelle medie come se ce
+    ne fosse una molto larga.
+    """
+    if len(itinerario.tappe) < 2:
+        return None
+    margini = []
+    for precedente, tappa in zip(itinerario.tappe, itinerario.tappe[1:]):
+        # La prima alternativa e' la corsa pianificata: le altre sono i recuperi,
+        # e misurare il respiro su un recupero direbbe quanto sia comodo il piano
+        # di riserva invece di quanto sia teso il piano.
+        arrivo = precedente.alternative[0].arrivo_programmato
+        partenza = tappa.alternative[0].partenza_programmata
+        margini.append(partenza - arrivo - tappa.tempo_minimo_trasbordo)
+    return min(margini)

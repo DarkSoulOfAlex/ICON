@@ -52,7 +52,8 @@ import pyarrow.parquet as pq                                # noqa: E402
 from src.delays.bayesiano import Forma, ModelloBayesiano     # noqa: E402
 from src.delays.contesto import avviso_copertura, copertura_orario  # noqa: E402
 from src.delays.interfaccia import assicura_utilizzabile     # noqa: E402
-from src.eval.replica import replica, rigiocabile            # noqa: E402
+from src.eval.replica import (                               # noqa: E402
+    margine_piu_stretto, replica, rigiocabile)
 from src.graph.search import cerca_frontiera_pareto          # noqa: E402
 from src.graph.time_expanded import costruisci               # noqa: E402
 from src.gtfs.loader import carica_archivio                  # noqa: E402
@@ -132,6 +133,13 @@ class Esito:
     """Quota di righe della giornata che hanno trovato il proprio orario
     programmato: una giornata mal coperta produce poche coppie rigiocabili, ed e'
     successo (voce 64)."""
+    margine_critico: int | None
+    """Secondi di respiro della coincidenza piu' tesa dell'itinerario scelto.
+
+    Distingue due spiegazioni del pessimismo del modello: un errore che si compone
+    lungo la catena si concentrerebbe sugli itinerari lunghi, uno locale alla
+    coincidenza critica si concentrerebbe su quelli con margini stretti. Vale
+    ``None`` sugli itinerari senza cambi."""
 
 
 def ritardi_osservati(percorso: Path,
@@ -288,7 +296,8 @@ def valuta_coppia(citta: str, giornata: str, etichetta: str, indice: int,
                 completato=esito.completato,
                 coincidenze_perse=esito.coincidenze_perse,
                 recuperi=esito.recuperi_riusciti,
-                partenza_persa=esito.partenza_persa, candidati=len(candidati)))
+                partenza_persa=esito.partenza_persa, candidati=len(candidati),
+                margine_critico=margine_piu_stretto(candidato.itinerario)))
     return righe
 
 
