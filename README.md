@@ -391,6 +391,22 @@ pandoc docs/documentazione.md \
     -o docs/documentazione.docx
 ```
 
+Per ottenere il **PDF** si esporta il `.docx`, non si converte di nuovo il
+Markdown: passando per il `.docx` il PDF eredita gli stili del template del
+docente, mentre una conversione diretta da Markdown userebbe quelli di pandoc e
+produrrebbe un documento dall'aspetto diverso. Su Windows, con Word installato:
+
+```powershell
+$word = New-Object -ComObject Word.Application
+$word.Visible = $false
+$doc = $word.Documents.Open("$PWD\docs\documentazione.docx", $false, $true)
+$doc.ExportAsFixedFormat("$PWD\docs\documentazione.pdf", 17)
+$doc.Close(0); $word.Quit()
+```
+
+In alternativa `soffice --headless --convert-to pdf docs/documentazione.docx`, con
+LibreOffice al posto di Word.
+
 Il primo comando serve e non e' saltabile. `pandoc --reference-doc` prende dal
 documento indicato **gli stili, non i contenuti**, ma il template del docente non
 definisce tutti gli stili che pandoc **riferisce**: manca fra gli altri `Table`,
