@@ -2198,10 +2198,13 @@ nella direzione di chi ha meno dati, cioe' verso i livelli piu' grossolani della
 scala. Il 7 settembre e' piu' delicato, perche' sta **nella verifica**: e' una delle
 quattro giornate su cui perdita, calibrazione e correlazione sono misurate, e nella
 media fra giornate pesa un quarto a prescindere dalla sua numerosita'. La sua
-popolazione e' per giunta **distorta**, non solo ridotta: il 30% delle sue coppie
-supera il criterio di constatazione contro il 14-20% delle altre giornate, perche' le
-righe sopravvissute al join sono per costruzione quelle pubblicate piu' in la' nel
-passato. Le medie del capitolo contengono quindi, per un quarto, una giornata la cui
+popolazione e' per giunta **distorta**, non solo ridotta: il 30,5% delle sue coppie
+supera il criterio di constatazione contro il 13,9-19,7% delle altre tre giornate di
+verifica, perche' le righe sopravvissute al join sono per costruzione quelle
+pubblicate piu' in la' nel passato (*fonte: conteggi per giornata stampati da
+`scripts/stima_rete.py --fino-a 2026-09-09`, righe "N coppie, M constatate"; non
+esiste un CSV che li porti, e il comando e' il modo di rifarli*). Le medie del
+capitolo contengono quindi, per un quarto, una giornata la cui
 popolazione non e' la stessa delle altre tre.
 
 Quanto questo sposti i numeri **non e' misurato**: `results/stima_rete.csv` riporta
@@ -3808,11 +3811,17 @@ stabile: a ogni margine almeno una giornata su quattro ha segno negativo, e le
 deviazioni fra giornate sono spesso piu' grandi della differenza che accompagnano.
 
 **Dove non rende, detto per intero.** A **margine nullo** il vantaggio sugli arrivi
-non c'e': vale +1,1 punti su Roma, dentro una deviazione di dodici, ed e' **negativo**
-su Torino (-0,8 punti). E' atteso, perche' senza margine non c'e' nulla da comprare.
-Va pero' detto che **anche a margine nullo il robusto perde meno coincidenze** - 0,0667
-in meno su Roma e 0,0167 su Torino - quindi l'assenza di vantaggio riguarda gli arrivi,
-non le coincidenze.
+**non e' distinguibile da zero su nessuna delle due citta'**: le stime puntuali sono
+appena positive su Roma e appena negative su Torino, e in entrambi i casi le
+deviazioni fra giornate sono un ordine di grandezza piu' grandi della differenza -
++/-0,117 e +/-0,135 su Roma, +/-0,082 e +/-0,092 su Torino, contro differenze
+dell'ordine del centesimo. Il segno di quelle stime non va letto. E' d'altronde
+atteso: senza margine non c'e' nulla da comprare, perche' la scadenza coincide con
+l'arrivo programmato dell'itinerario piu' veloce.
+
+Sulle **coincidenze perse** il quadro a margine nullo e' diverso e leggibile: il
+robusto ne perde 0,0667 in meno su Roma e 0,0167 in meno su Torino. L'assenza di
+vantaggio riguarda quindi gli arrivi, non le coincidenze.
 
 Va corretta anche una semplificazione che verrebbe naturale: **non e' vero che su
 Torino il metodo renda meno a tutti i livelli**. Sugli arrivi si', a tutti e sei i
