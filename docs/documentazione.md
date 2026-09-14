@@ -55,7 +55,7 @@ la strategia di riferimento e' definita come quella che minimizza l'orario teori
 di arrivo, quindi qualunque altro itinerario arriva nominalmente **dopo**. Un
 insieme di itinerari a pari tempo nominale fra cui scegliere semplicemente non
 esiste, e chiederlo al confronto significa chiedergli un pasto gratis. La misura lo
-conferma senza eccezioni: nelle 337 istanze in cui le due strategie scelgono
+conferma senza eccezioni: nelle 338 istanze in cui le due strategie scelgono
 itinerari diversi, il robusto e' **sempre** nominalmente piu' lento.
 
 Cio' che il progetto misura davvero e' percio' uno **scambio**: il criterio
@@ -3119,8 +3119,11 @@ soddisfacibile, e non per un limite dei dati: la strategia di riferimento e' def
 come quella che **minimizza** l'orario teorico di arrivo, quindi qualunque altro
 itinerario arriva nominalmente dopo, e un insieme di alternative a pari tempo nominale
 fra cui scegliere non esiste sulla frontiera. La misura lo conferma senza eccezioni:
-nelle **337 istanze** in cui le due strategie scelgono itinerari diversi, il robusto e'
-nominalmente piu' lento **337 volte su 337**, mai uguale e mai piu' veloce.
+nelle **338 istanze** in cui le due strategie scelgono itinerari diversi sui bordi
+adottati, il robusto e' nominalmente piu' lento **338 volte su 338**, mai uguale e
+mai piu' veloce (*fonte: `results/backtest.csv`, bordi `ottili`, confronto di
+`arrivo_programmato` fra le due strategie a parita' di citta', giornata, coppia e
+margine*).
 
 Cio' che il backtesting misura e' percio' uno **scambio**, e la riformulazione onesta
 della domanda e' questa:
@@ -3796,8 +3799,8 @@ prevedeva e che costituisce meta' del risultato.
 **Il prezzo, prima del beneficio.** La clausola "a parita' di tempo di viaggio
 nominale" e' caduta perche' non e' soddisfacibile: la strategia di riferimento prende
 per definizione l'arrivo nominale minimo, quindi ogni altra scelta arriva dopo, e nelle
-337 istanze in cui le due divergono il robusto e' nominalmente piu' lento 337 volte su
-337. Cio' che il progetto misura e' percio' uno **scambio**: il criterio probabilistico
+338 istanze in cui le due divergono il robusto e' nominalmente piu' lento 338 volte su
+338. Cio' che il progetto misura e' percio' uno **scambio**: il criterio probabilistico
 compra affidabilita' pagando tempo nominale, entro il margine che il viaggiatore ha
 dichiarato accettando una scadenza. Il prezzo mediano e' di **quattro-sette minuti** su
 Roma nella fascia in cui il vantaggio e' massimo, e di **tre-cinque** su Torino.
