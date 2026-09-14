@@ -1365,8 +1365,9 @@ per il ritardo a monte.
 sia per convoluzione numerica su griglia sia per campionamento [1, cap. 9][11].
 Averne due non e' ridondanza: sulla catena a piu' coincidenze non esiste una forma
 chiusa contro cui verificare il risultato, e la concordanza fra due
-implementazioni che non condividono nulla e' l'unica verifica non circolare
-disponibile. L'unico caso con soluzione analitica — una sola tappa, senza
+implementazioni che calcolano la stessa quantita' con procedure numeriche
+indipendenti e' l'unica verifica non circolare disponibile. L'unico caso con
+soluzione analitica — una sola tappa, senza
 correlazione, con la corsa sempre prendibile — e' usato come ancoraggio nei test,
 e li' entrambi i metodi coincidono con la ripartizione del ritardo entro due punti
 percentuali.
@@ -1615,7 +1616,7 @@ proprieta' che la Tabella 9 non misura: e' **deterministica**. Due esecuzioni da
 lo stesso numero, mentre il Monte Carlo ha rumore campionario, e con un errore
 tipico di 0,0026 due itinerari le cui probabilita' distino meno di quel valore
 potrebbero scambiarsi di posto fra un'esecuzione e l'altra. Poiche' il
-pianificatore confronta cinque candidati fra loro e ne sceglie uno, il rumore si
+pianificatore confronta fra loro pochi candidati e ne sceglie uno, il rumore si
 trasformerebbe in una scelta irriproducibile, che e' un difetto peggiore di tre
 millesimi di errore. Il campionamento e' percio' relegato al ruolo di verifica,
 dove la sua accuratezza superiore serve davvero e il suo rumore non decide nulla.
@@ -1876,10 +1877,11 @@ la limitazione sia severa, ed e' misurato: la mediana dell'anticipo sul transito
 atteso vale **25 +/- 12 secondi** fra le sedici giornate, con il primo quartile
 appena sotto lo zero e il terzo intorno ai due minuti (*fonte:
 `results/anticipo_ultima_revisione.csv`, colonne `anticipo_p25`,
-`anticipo_mediana` e `anticipo_p75`, media e deviazione fra giornate*). Il dato
-torinese e' dunque molto piu' vicino a un fatto compiuto di quanto il solo nome
-"previsione" lasci pensare, e per circa un terzo dei passaggi il transito atteso era
-gia' trascorso al momento della pubblicazione. Le due perdite non sono percio'
+`anticipo_mediana`, `anticipo_p75` e `quota_positivi`, media e deviazione fra
+giornate*). Il dato torinese e' dunque molto piu' vicino a un fatto compiuto di
+quanto il solo nome "previsione" lasci pensare, e per il **34,8% +/- 4,7%** dei
+passaggi il transito atteso era gia' trascorso al momento della pubblicazione.
+Le due perdite non sono percio'
 confrontabili fra loro come se
 rispondessero alla stessa domanda, e ogni tabella che segue porta la popolazione
 accanto al numero. Le colonne `raffronto_tutte_*` di `results/stima_rete.csv`
@@ -3231,9 +3233,10 @@ torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita, quind
 l'ultima riga disponibile di ciascun passaggio e' l'ultima **stima** del produttore e
 non una constatazione. Quanto quell'ultima stima sia vicina al fatto e' misurato:
 **25 +/- 12 secondi** di anticipo mediano sul transito atteso, con il primo quartile
-sotto lo zero - cioe' un quarto delle righe e' pubblicato **dopo** il transito atteso -
-e il terzo intorno ai due minuti. La limitazione e' quindi molto piu' lieve di quanto
-la parola "previsione" lasci pensare, ma resta: i risultati torinesi misurano quanto
+sotto lo zero - il **34,8% +/- 4,7%** delle righe e' pubblicato **dopo** il transito
+atteso - e il terzo intorno ai due minuti. La limitazione e' quindi molto piu'
+lieve di quanto la parola "previsione" lasci pensare, ma resta: i risultati
+torinesi misurano quanto
 il pianificatore regga contro l'ultima stima del produttore, non contro un orologio.
 
 **I due insiemi di bordi si rigiocano entrambi, ed e' la chiusura di una questione
@@ -3801,9 +3804,9 @@ Roma nella fascia in cui il vantaggio e' massimo, e di **tre-cinque** su Torino.
 
 **Il beneficio sulle coincidenze perse, che e' la grandezza della domanda.** A trenta
 minuti di margine il robusto ne perde circa **la meta'** di quelle del riferimento su
-Roma e **un terzo** su Torino, e il vantaggio cresce in modo monotono col margine su
-entrambe le citta'. E' il risultato piu' solido del progetto, perche' e' netto, ha
-sempre lo stesso segno e non dipende dalla citta'.
+Roma e **un terzo** su Torino, e il vantaggio cresce col margine in modo monotono su
+Torino e, su Roma, dal primo margine non nullo in poi. E' il risultato piu' solido del
+progetto, perche' e' netto e ha lo stesso segno in entrambe le citta'.
 
 **Il beneficio sugli arrivi entro la scadenza, che e' piu' fragile.** Su Roma vale
 **dieci punti percentuali o piu'** fra i quindici e i trenta minuti, con tutte e tre le
@@ -3948,7 +3951,7 @@ il regime in cui un pianificatore robusto dovrebbe rendere di piu'.
 dal `trip_updates` appena il mezzo vi transita, quindi l'ultima riga di ciascun
 passaggio e' l'ultima **stima** del produttore e non una constatazione. Quanto sia
 vicina al fatto e' misurato - **25 +/- 12 secondi** di anticipo mediano sul transito
-atteso, con un quarto delle righe pubblicato **dopo** il transito atteso - ed e' molto
+atteso, con il **34,8%** delle righe pubblicato **dopo** il transito atteso - ed e' molto
 piu' vicina di quanto la parola "previsione" lasci pensare; ma resta che i risultati
 torinesi misurano il pianificatore contro l'ultima stima del produttore e non contro un
 orologio. La limitazione era stata dichiarata con un valore sbagliato, "circa due
