@@ -556,21 +556,13 @@ dichiarativa della rappresentazione.
 
 ## Valutazione
 
-La misura risponde a due domande: fino a che dimensione di rete questa base di
-conoscenza resta utilizzabile, e quale delle sue regole ne determina il costo.
-Sono state misurate cinque dimensioni crescenti, da cinquanta a duemila fermate,
-su entrambe le citta', con tre ripetizioni indipendenti per ogni combinazione. Per
-ciascuna esecuzione si registrano il numero di atomi generati, il tempo di
-grounding e il tempo di solving, tenuti separati perche' misurano due cose
-diverse: il primo e' il costo di istanziare le regole sui dati, il secondo quello
-di risolvere il programma proposizionale che ne risulta.
-
-Una precisazione sulle deviazioni standard riportate. Il numero di atomi e quello
-di regole sono grandezze **deterministiche**: a parita' di dati e di programma
-clingo genera sempre la stessa istanziazione, la loro deviazione standard sulle
-tre ripetizioni e' nulla per costruzione, e riportarla serve unicamente a
-documentare che le ripetizioni sono state eseguite. La variabilita' reale sta nei
-tempi.
+La misura risponde a due domande: fino a che dimensione di rete la base di conoscenza
+resta utilizzabile, e quale delle sue regole ne determina il costo. Sono state misurate
+cinque dimensioni, da cinquanta a duemila fermate, su entrambe le citta', con tre
+ripetizioni indipendenti; per ciascuna si registrano gli atomi generati, il tempo di
+grounding, cioe' il costo di istanziare le regole sui dati, e il tempo di solving,
+cioe' quello di risolvere il programma istanziato. Gli atomi sono deterministici, e la
+loro deviazione nulla documenta soltanto che le ripetizioni sono state eseguite.
 
 Tabella 1 — Roma, media e deviazione standard su tre ripetizioni.
 
@@ -582,19 +574,6 @@ Tabella 1 — Roma, media e deviazione standard su tre ripetizioni.
 | 1000 | 724.410 ± 0 | 1,593 ± 0,094 | 0,0152 ± 0,0012 | 7.232 |
 | 2000 | 2.358.444 ± 0 | 5,593 ± 0,158 | 0,0375 ± 0,0004 | 13.938 |
 
-La tabella va letta per righe, perche' il salto e' fra la terza e la quarta. Fino
-a quattrocento fermate la crescita e' quasi lineare nel numero di fermate: da 50 a
-400, cioe' otto volte le fermate, gli atomi passano da 7.334 a 70.612, meno di
-dieci volte, e i trasbordi derivati da 436 a 2.738, poco piu' di sei volte. Da 400
-a 1000 gli atomi decuplicano, da 70.612 a 724.410, mentre le fermate solo si
-duplicano e mezzo: e' li' che il comportamento cambia natura. Da 1000 a 2000, con
-un semplice raddoppio delle fermate, gli atomi triplicano. I trasbordi derivati,
-nel frattempo, continuano a crescere quasi linearmente — 7.232 e poi 13.938,
-esattamente un raddoppio — il che localizza il fenomeno: non sono i trasbordi a
-esplodere, ma qualcos'altro che li usa. Il tempo di grounding segue gli atomi
-fedelmente, da 0,012 a 5,593 secondi, mentre il solving resta tre ordini di
-grandezza sotto, da 0,0006 a 0,0375 secondi.
-
 Tabella 2 — Torino, media e deviazione standard su tre ripetizioni.
 
 | Fermate | Atomi | Grounding (s) | Solving (s) | Trasbordi derivati |
@@ -605,13 +584,15 @@ Tabella 2 — Torino, media e deviazione standard su tre ripetizioni.
 | 1000 | 136.729 ± 0 | 0,240 ± 0,005 | 0,0074 ± 0,0009 | 4.498 |
 | 2000 | 438.374 ± 0 | 0,916 ± 0,023 | 0,0179 ± 0,0008 | 9.542 |
 
-Torino mostra la stessa forma ma spostata. Il salto da 400 a 1000 c'e' anche qui,
-136.729 atomi contro 34.018, cioe' quattro volte, ma e' meno violento del
-decuplicarsi di Roma; e a duemila fermate Torino si ferma a 438.374 atomi contro i
-2.358.444 di Roma, un fattore 5,4 a parita' di numero di fermate. Sul piano dei
-tempi la differenza e' pratica prima che teorica: 0,916 secondi contro 5,593 per
-istanziare la stessa dimensione di problema. I trasbordi derivati crescono anche
-qui quasi linearmente, 4.498 e poi 9.542.
+Il salto e' fra quattrocento e mille fermate. Fino a quattrocento la crescita e' quasi
+lineare: da 50 a 400 fermate gli atomi di Roma passano da 7.334 a 70.612, meno di dieci
+volte. Da 400 a 1000 decuplicano, da 70.612 a 724.410, e da 1000 a 2000 triplicano con
+un semplice raddoppio delle fermate. Torino mostra la stessa forma, attenuata: da
+34.018 a 136.729 atomi fra 400 e 1000, e a duemila fermate 438.374 contro i 2.358.444
+di Roma, un fattore 5,4. I trasbordi derivati crescono invece quasi linearmente in
+entrambe le citta' - 7.232 e poi 13.938 su Roma, esattamente un raddoppio - e questo
+localizza il fenomeno: non sono i trasbordi a esplodere, ma qualcos'altro che li usa.
+Il solving resta tre ordini di grandezza sotto il grounding.
 
 ![**Figura 1.** Costo della base di conoscenza al crescere del numero di fermate, in
 scala doppio logaritmica, per le due citta'. I pannelli (a), (b) e (c) riportano
@@ -624,14 +605,10 @@ eseguita solo fino a quattrocento fermate perche' oltre quella soglia il suo cos
 quadratico non aggiunge informazione. Dati grezzi in
 `results/complessita_kb.csv`.](../results/complessita_kb.png)
 
-**Da dove nasce la crescita.** La pendenza delle curve in scala doppio logaritmica
-e' l'esponente di crescita. Su tutto l'intervallo misurato gli atomi crescono come
-`n^1,59` a Roma e come `n^1,30` a Torino, ma il dato interessante e' che la
-pendenza **aumenta con la dimensione**: sull'ultimo raddoppio, da mille a duemila
-fermate, entrambe le citta' si assestano attorno a `n^1,70`. Non e' una crescita
-polinomiale di ordine fisso, e' una crescita che accelera. Disattivando la sola
-ricorsione e rieseguendo la stessa istanza si ottiene l'attribuzione diretta,
-senza doverla dedurre dalla forma della curva.
+**Da dove nasce la crescita.** Su tutto l'intervallo gli atomi crescono come `n^1,59` a
+Roma e `n^1,30` a Torino, ma la pendenza **aumenta con la dimensione**: sull'ultimo
+raddoppio entrambe le citta' si assestano attorno a `n^1,70`. Disattivando la sola
+ricorsione e rieseguendo la stessa istanza si ottiene l'attribuzione diretta.
 
 Tabella 3 — Quota di atomi generata dalla chiusura transitiva.
 
@@ -643,49 +620,29 @@ Tabella 3 — Quota di atomi generata dalla chiusura transitiva.
 | 1000 | 88,0% | 54,9% |
 | 2000 | 92,9% | 70,4% |
 
-Le due colonne raccontano la stessa storia a velocita' diverse. A cinquanta
-fermate le due citta' sono indistinguibili, 31,5% e 32,2%: la ricorsione produce
-meno di un terzo degli atomi e il costo e' dominato dalla generazione delle coppie
-candidate e dal calcolo delle distanze. A centocinquanta le strade divergono, con
-Roma al 45,7% e Torino ferma al 35,2%, e a quattrocento il divario si consolida,
-52,6% contro 35,7%. Il salto avviene fra 400 e 1000 su Roma, dove la quota passa
-dal 52,6% all'88,0%, e fra 1000 e 2000 su Torino, dal 54,9% al 70,4%: e' la stessa
-transizione, traslata di un punto della griglia. A duemila fermate, su Roma, il
-92,9% degli atomi nasce dalla sola chiusura transitiva, e ogni altra regola
-contribuisce insieme per il restante sette per cento.
+A cinquanta fermate le due citta' sono indistinguibili, 31,5% e 32,2%, e il costo e'
+dominato dalla generazione delle coppie candidate. Il salto avviene fra 400 e 1000 su
+Roma, dal 52,6% all'88,0%, e fra 1000 e 2000 su Torino, dal 54,9% al 70,4%: e' la
+stessa transizione, traslata di un punto della griglia. A duemila fermate, su Roma, il
+92,9% degli atomi nasce dalla sola chiusura transitiva. La ragione e' strutturale: la
+chiusura e' quadratica nella dimensione della componente connessa, e allargando la
+sottorete le fermate finiscono quasi tutte nella stessa componente, mentre le altre
+regole restano lineari nel numero di coppie candidate, che l'indice spaziale mantiene
+proporzionale alle fermate. Il solving conferma la lettura: con la negazione
+stratificata e la ricorsione positiva il modello e' unico, e il risolutore non esplora
+alcuno spazio di ricerca. **Il costo di questa base di conoscenza e' interamente un
+costo di istanziazione, non di ricerca**, e ogni ottimizzazione va rivolta alla forma
+delle regole e non alla configurazione del risolutore.
 
-E' questa la regola che domina il grounding, e il motivo e' strutturale: la
-chiusura transitiva di una relazione e' quadratica nella dimensione della
-componente connessa su cui viene calcolata, e man mano che la sottorete si allarga
-le fermate finiscono quasi tutte nella stessa componente. Le altre regole restano
-invece lineari nel numero di coppie candidate, che l'indice spaziale mantiene
-proporzionale al numero di fermate — ed e' esattamente cio' che si osserva nelle
-Tabelle 1 e 2, dove i trasbordi derivati raddoppiano quando raddoppiano le
-fermate.
-
-Il tempo di solving, due ordini di grandezza inferiore a quello di grounding,
-conferma la lettura. Il programma, una volta istanziato, e' sostanzialmente
-deterministico: non ci sono scelte da compiere, perche' la negazione e'
-stratificata e la ricorsione e' positiva, quindi il modello e' unico e il
-risolutore non deve esplorare alcuno spazio di ricerca. **Il costo di questa base
-di conoscenza e' interamente un costo di istanziazione, non di ricerca**, e ne
-discende che ogni tentativo di ottimizzazione va rivolto alla forma delle regole e
-non alla configurazione del risolutore.
-
-**Perche' le due reti si comportano in modo diverso.** A parita' di numero di
-fermate Roma costa costantemente piu' di Torino, e il divario si allarga: a
-cinquanta fermate il rapporto fra gli atomi e' 2,3, a duemila e' 5,4. La
-differenza non sta nelle dimensioni assolute delle due reti, che sono
-confrontabili, 8.301 fermate contro 7.073, ma nella **densita' locale**. Nella
-sottorete campionata attorno al centro, Roma deriva stabilmente attorno a sette
-trasbordi per fermata, Torino attorno a quattro e mezzo. Un rapporto di densita'
-di circa 1,5 diventa un rapporto di 5,4 sul numero di atomi proprio per via della
-chiusura transitiva: una componente connessa piu' densa e' anche piu' grande, e il
-costo della chiusura cresce con il quadrato della sua dimensione. E' il risultato
-che giustifica l'aver misurato due citta' anziche' una, perche' con una sola rete
-non si sarebbe potuto distinguere fra un costo intrinseco della formulazione e un
-costo dipendente dalla topologia; con due si vede che la forma della crescita e'
-la stessa e che a cambiare e' solo la costante.
+**Perche' le due reti si comportano in modo diverso.** A parita' di fermate Roma costa
+piu' di Torino, e il rapporto fra gli atomi sale da 2,3 a cinquanta fermate a 5,4 a
+duemila. Le due reti hanno dimensioni confrontabili, 8.301 fermate contro 7.073: a
+differire e' la **densita' locale**, circa sette trasbordi per fermata su Roma contro
+quattro e mezzo su Torino, e un rapporto di densita' di circa 1,5 diventa un rapporto di
+5,4 sugli atomi proprio per via della chiusura transitiva. Con una sola citta' non si
+sarebbe potuto distinguere un costo intrinseco della formulazione da uno dovuto alla
+topologia; con due si vede che la forma della crescita e' la stessa e cambia solo la
+costante.
 
 **Il costo dell'indice spaziale, e la verifica della sua semantica.**
 
@@ -697,32 +654,20 @@ Tabella 4 — Atomi generati con e senza indice spaziale.
 | 150 | 24.463 | 63.727 | 13.862 | 55.330 |
 | 400 | 70.612 | 375.992 | 34.018 | 345.082 |
 
-Riga per riga, il risparmio non e' un fattore costante ma **cresce con il numero
-di fermate**. A cinquanta fermate l'indice fa risparmiare 1,4 volte su Roma
-(7.334 contro 10.222) e 2,3 su Torino (3.141 contro 7.377): poco, perche' su un
-campione tanto piccolo quasi tutte le coppie sono comunque vicine. A
-centocinquanta il rapporto sale a 2,6 e 4,0; a quattrocento arriva a 5,3 e 10,1.
-La ragione e' che la variante esaustiva genera un numero di coppie quadratico
-mentre quella indicizzata lo mantiene proporzionale al numero di fermate, quindi
-il rapporto fra le due cresce linearmente. Vale la pena notare che il risparmio e'
-maggiore su Torino, che e' la rete meno densa: dove le fermate sono piu' sparse
-l'indice scarta una frazione maggiore di coppie, mentre su una rete fitta molte
-coppie sono davvero vicine e vanno confrontate comunque. Estrapolando alla rete
-intera di Roma, la variante esaustiva dovrebbe istanziare circa 69 milioni di
-coppie, il che spiega perche' non sia praticabile a piena scala e perche' la riga
-a 1000 e 2000 fermate manchi dalla tabella.
+Il risparmio **cresce con il numero di fermate**, da 1,4 e 2,3 volte a cinquanta fermate
+fino a 5,3 e 10,1 a quattrocento, perche' la variante esaustiva genera un numero di
+coppie quadratico mentre quella indicizzata lo mantiene proporzionale alle fermate; ed
+e' maggiore su Torino, dove le fermate sono piu' sparse. Sulla rete intera di Roma la
+variante esaustiva dovrebbe istanziare circa 69 milioni di coppie, ed e' per questo che
+le righe a mille e duemila fermate mancano. La verifica che conta e' pero' quella sulla
+semantica: a ogni dimensione in cui entrambe le varianti sono state eseguite l'insieme
+dei trasbordi derivati e' risultato **identico**, con gli stessi tempi minimi e gli
+stessi attributi. L'indice restringe l'ordine di istanziazione, non l'insieme delle
+conclusioni.
 
-La verifica che conta non e' pero' quella sul costo ma quella sulla semantica. A
-ogni dimensione in cui entrambe le varianti sono state eseguite l'insieme dei
-trasbordi derivati e' risultato **identico**: stessi trasbordi, stessi tempi
-minimi, stessi attributi di accessibilita' e di utilita'. L'indice restringe
-l'ordine di istanziazione, non l'insieme delle conclusioni, e l'argomentazione
-geometrica esposta nel sommario trova qui la sua conferma sperimentale.
-
-**La rete intera.** La curva si ferma a duemila fermate perche' oltre quella
-soglia il campionamento per prossimita' comincia a coincidere con la rete intera e
-il confronto fra dimensioni perde significato. La rete intera e' pero' stata
-eseguita, e i suoi numeri sono una misura e non un'estrapolazione.
+**La rete intera.** Oltre duemila fermate il campionamento per prossimita' comincia a
+coincidere con la rete intera, che e' stata eseguita a parte: i suoi numeri sono una
+misura e non un'estrapolazione.
 
 Tabella 5 — Esecuzione sull'intera rete di ciascuna citta'.
 
@@ -731,74 +676,45 @@ Tabella 5 — Esecuzione sull'intera rete di ciascuna citta'.
 | Fermate | 8.301 | 7.073 |
 | Fatti in ingresso | 55.894 | 44.187 |
 | Atomi generati | 4.541.658 | 958.909 |
-| Tempo di grounding | 11,3 s | 2,1 s |
-| Tempo di solving | 0,09 s | 0,04 s |
+| Tempo di grounding | 12,12 s | 2,36 s |
+| Tempo di solving | 0,09 s | 0,05 s |
 | Trasbordi derivati | 41.266 | 21.130 |
 | di cui accessibili | 0 | 7.382 |
 | di cui utili | 24.554 | 11.439 |
 
-Le righe vanno lette a coppie. **Fermate e fatti in ingresso** dicono che i due
-problemi sono di taglia paragonabile: 8.301 contro 7.073 fermate, 55.894 contro
-44.187 fatti, un rapporto di circa 1,25. **Atomi e tempo di grounding** dicono che
-i due costi non lo sono affatto: 4,5 milioni contro 959 mila atomi, un rapporto di
-4,7, e 12,12 contro 2,36 secondi, un rapporto di 5,1. Il fattore quattro di
-differenza fra il rapporto degli ingressi e quello dei costi e' l'effetto della
-densita' gia' discusso. **Il tempo di solving** conferma per l'ultima volta la
-sproporzione: 0,09 secondi su Roma, cioe' meno di un centesimo del tempo speso a
-istanziare. **I trasbordi derivati**, 41.266 e 21.130, sono la relazione che il
-resto del sistema consumera', e il loro rapporto, 1,95, e' molto piu' vicino a
-quello delle fermate che a quello degli atomi: l'uscita utile del modulo cresce
-con la rete, non con il costo. **Di cui utili**, 24.554 e 11.439, dice che circa
-tre trasbordi su cinque portano davvero a una linea nuova, quindi la regola di
-utilita' scarta i due quinti restanti prima che diventino archi del grafo. **Di
-cui accessibili**, 0 e 7.382, e' la riga che merita una discussione a parte.
+*Fonte: `results/kb_rete_intera.csv`, colonne omonime.*
 
-L'intera base di conoscenza di Roma si istanzia in dodici secondi, costo
-pienamente sostenibile per un'elaborazione da eseguire una volta al giorno, quando
-l'orario statico cambia. Va segnalato che il numero di atomi sulla rete intera di
-Roma, 4,5 milioni, e' **inferiore** ai 26 milioni che l'esponente `n^1,70` misurato
-sull'ultimo raddoppio avrebbe fatto prevedere: la ragione e' che il campionamento
-per prossimita' seleziona la porzione piu' densa della rete, quella centrale, e
-allargandosi alla periferia la densita' cala, le componenti connesse si
-frammentano e la chiusura transitiva cresce meno del previsto. E' la conferma
-sperimentale del limite dichiarato fra le decisioni di progetto, e va letta come
-tale: la curva misura correttamente il costo su porzioni dense di rete e
-sovrastima quello sulla rete completa.
+I due problemi hanno taglia paragonabile - 8.301 contro 7.073 fermate, 55.894 contro
+44.187 fatti, un rapporto di circa 1,25 - ma i costi no: 4,5 milioni contro 959 mila
+atomi, un rapporto di 4,7, e 12,12 contro 2,36 secondi di grounding, un rapporto di 5,1,
+che e' l'effetto della densita' gia' discusso. Il solving resta sotto il decimo di
+secondo. I trasbordi derivati, 41.266 e 21.130, sono la relazione che il resto del
+sistema consuma, e il loro rapporto, 1,95, segue le fermate e non il costo; circa tre
+su cinque sono utili, cioe' portano a una linea nuova. L'intera base di conoscenza di
+Roma si istanzia in dodici secondi, un costo sostenibile per un'elaborazione da
+rieseguire quando l'orario statico cambia. I 4,5 milioni di atomi sono **inferiori** ai
+26 milioni che l'esponente `n^1,70` avrebbe fatto prevedere, perche' il campionamento
+per prossimita' seleziona la porzione centrale e piu' densa della rete: la curva misura
+correttamente le porzioni dense e sovrastima la rete completa, come dichiarato fra le
+decisioni di progetto.
 
-**Un risultato negativo sulla poverta' dei dati.** Delle 8.301 fermate di Roma,
-**tutte** dichiarano `wheelchair_boarding` uguale a zero, che nella codifica dello
-standard significa "informazione non disponibile"; lo stesso vale per il campo
-corrispondente su tutte le 179.177 corse. Inoltre **nessuna** fermata di Roma
-dichiara una `parent_station`: la gerarchia delle stazioni, in quell'archivio, non
-esiste. Torino si comporta diversamente, con 2.722 fermate dichiarate accessibili,
-1.075 esplicitamente non accessibili e 3.276 senza informazione, e 47.023 corse su
-60.580 dichiarate accessibili; ma anche li' soltanto due fermate su 7.073
-appartengono a una stazione.
-
-Le conseguenze si leggono nella riga "di cui accessibili" della Tabella 5. Su Roma
-la regola dell'accessibilita' deriva **zero** trasbordi accessibili: non perche'
-sia sbagliata, ma perche' il suo antecedente non e' mai soddisfatto, dal momento
-che nessuna fermata risulta accessibile e non esiste alcuna stazione da cui
-ereditare il dato. Su Torino la stessa regola funziona e deriva 7.382 trasbordi
-accessibili su 21.130, poco piu' di un terzo. Quanto alla gerarchia dei tempi
-minimi, il suo primo livello non riceve alcun fatto su nessuna delle due citta',
-perche' nessuna pubblica `transfers.txt`, e il secondo livello si applica a due
-sole fermate in tutto il progetto: su questi dati l'eredita' con default collassa
-quasi ovunque sul terzo livello, quello del cammino all'aperto piu' il margine.
-
-Sarebbe disonesto presentare come funzionante una gerarchia a tre livelli di cui,
-sul campo, ne opera stabilmente uno solo. Va detto con precisione che cosa questo
-dimostri e che cosa no. **Dimostra** che la formulazione e' piu' generale dei dati
-disponibili, il che e' una scelta deliberata: la base di conoscenza e' scritta per
-il formato GTFS e non per due archivi particolari, e su un'azienda che pubblichi
-`transfers.txt` e una gerarchia di stazioni i primi due livelli entrerebbero in
-funzione senza modificare una riga. **Non dimostra** che quei livelli siano utili
-in pratica su Roma e Torino, perche' su Roma e Torino non lo sono, e il loro
-collaudo e' percio' affidato a dati costruiti. Ne discende inoltre una conseguenza
-operativa per il resto del progetto: la distinzione fra `raggiungibile` e
-`raggiungibile_accessibile`, sul piano della rappresentazione una delle parti piu'
-interessanti, e' misurabile soltanto su Torino, e ogni risultato
-sull'accessibilita' va riferito a quella citta' e non alla media delle due.
+**Un risultato negativo sulla poverta' dei dati.** Delle 8.301 fermate di Roma **tutte**
+dichiarano `wheelchair_boarding` uguale a zero, cioe' "informazione non disponibile", e
+lo stesso vale per tutte le 179.177 corse; **nessuna** fermata dichiara una
+`parent_station`. Torino ha 2.722 fermate dichiarate accessibili, 1.075 non accessibili
+e 3.276 senza informazione, e 47.023 corse su 60.580 dichiarate accessibili, ma anche
+li' soltanto due fermate su 7.073 appartengono a una stazione. Ne segue la riga "di cui
+accessibili" della Tabella 5: su Roma la regola dell'accessibilita' deriva **zero**
+trasbordi, perche' il suo antecedente non e' mai soddisfatto, mentre su Torino ne deriva
+7.382 su 21.130. Della gerarchia dei tempi minimi il primo livello non riceve fatti,
+perche' nessuna azienda pubblica `transfers.txt`, e il secondo si applica a due sole
+fermate: sul campo l'eredita' con default collassa quasi ovunque sul terzo livello.
+Questo **dimostra** che la formulazione e' piu' generale dei dati, scritta per il
+formato GTFS e non per due archivi, e che su un'azienda che pubblichi `transfers.txt` e
+una gerarchia di stazioni i primi due livelli entrerebbero in funzione senza cambiare
+una riga; **non dimostra** che quei livelli siano utili su Roma e Torino, e il loro
+collaudo e' affidato a dati costruiti. Ogni risultato sull'accessibilita' va percio'
+riferito alla sola Torino.
 
 # Sezione Argomento 2 — Ricerca di soluzioni
 
@@ -1012,10 +928,9 @@ della finestra temporale, che e' un risultato da riportare.
 
 ## Valutazione
 
-Il confronto e' stato eseguito su cinquanta coppie origine-destinazione per
-citta', con partenza alle 08:00 e orizzonte di 120 minuti. Le varianti condividono
-lo stesso codice e differiscono solo per l'euristica o per la chiave di stato,
-cosi' che il confronto isoli l'elemento in esame.
+Il confronto e' stato eseguito su cinquanta coppie origine-destinazione per citta', con
+partenza alle 08:00 e orizzonte di 120 minuti; le varianti condividono lo stesso codice
+e differiscono solo per l'euristica o per la chiave di stato.
 
 **Il costo del grafo.**
 
@@ -1032,36 +947,24 @@ costruzione e la variabilita' sta nel solo tempo di costruzione.
 | 120 min | 212.788 | 566.576 | 11,9 | 83.121 | 227.023 | 5,1 |
 | 240 min | 315.000 | 871.117 | 17,0 | 118.263 | 330.877 | 6,8 |
 
-La lettura per righe mostra una crescita **fortemente sublineare**. Sedici volte
-la finestra, da 15 a 240 minuti, moltiplica gli eventi di Roma solo per 2,6, da
-120.725 a 315.000, e gli archi per 3,0, da 291.306 a 871.117. Quadruplicando
-l'orizzonte da 60 a 240 minuti gli archi poco piu' che raddoppiano, da 410.436 a
-871.117. La ragione si legge nel confronto fra la prima riga e la differenza fra
-le righe: a quindici minuti il grafo di Roma ha gia' 291.306 archi, e i trasbordi
-a terra derivati dalla base di conoscenza sono 41.266 a Roma e 21.130 a Torino,
-gli stessi a qualunque ora. Una parte cospicua del grafo non dipende dunque dalla
-finestra, ed e' quella parte a rendere il primo punto tanto alto e la pendenza
-successiva tanto bassa. Torino si comporta allo stesso modo con costanti minori,
-da 50.548 a 118.263 eventi. La colonna dei megabyte e' quella che decide la
-strategia: il grafo di due ore di Roma occupa 11,9 MB, e anche quello di quattro
-ore ne occupa 17,0, quindi ricostruirlo a ogni interrogazione e' praticabile e
+La crescita e' **fortemente sublineare**: sedici volte la finestra, da 15 a 240 minuti,
+moltiplica gli eventi di Roma per 2,6 e gli archi per 3,0. Una parte cospicua del grafo
+non dipende dalla finestra - i trasbordi a terra derivati dalla base di conoscenza,
+41.266 a Roma e 21.130 a Torino, sono gli stessi a qualunque ora - ed e' quella parte a
+rendere alto il primo punto e bassa la pendenza. Il grafo di due ore di Roma occupa 11,9
+MB e quello di quattro ore 17,0: ricostruirlo a ogni interrogazione e' praticabile, e
 conservarlo non serve.
 
-Sulle cinquanta coppie esaminate per citta' la finestra di due ore si e' rivelata
-sufficiente in **43 casi su 50 a Roma e 39 su 50 a Torino**, cioe' nell'86% e nel
-78%. Le sette e le undici coppie rimaste corrispondono a collegamenti che nella
-finestra considerata non esistono, tipicamente fra periferie opposte servite da
-linee a bassa frequenza. Non sono state escluse dal campione: la loro percentuale
-e' essa stessa un risultato, e delimita la generalita' di tutto cio' che segue
-alle coppie collegate entro due ore.
+Sulle cinquanta coppie la finestra di due ore e' bastata in **43 casi su 50 a Roma e 39
+su 50 a Torino**, cioe' nell'86% e nel 78%; le coppie rimaste corrispondono a
+collegamenti che nella finestra non esistono, tipicamente fra periferie opposte. Non
+sono state escluse dal campione, e delimitano la generalita' di cio' che segue alle
+coppie collegate entro due ore.
 
-**La relazione di dominanza vale due ordini di grandezza.** Il fenomeno fu scoperto
-su un'interrogazione di Torino in cui la formulazione con l'istante nella chiave
-espandeva **6,4 milioni di stati in 224 secondi** contro **45 mila in 0,7**
-(*misura una tantum del 27 agosto 2026: quell'interrogazione non era stata estratta
-con un seme dichiarato e non e' piu' identificabile*). L'esperimento e' stato percio'
-ripetuto in forma riproducibile sulla prima coppia risolta del campione di Torino, la
-3176 → 3492 estratta con il seme 20260826.
+**La relazione di dominanza vale due ordini di grandezza.** Sulla prima coppia risolta
+del campione di Torino, la 3176 → 3492 estratta con il seme 20260826, togliere l'istante
+dalla chiave dello stato a terra riduce il lavoro di due ordini di grandezza, con lo
+stesso identico orario di arrivo:
 
 | Formulazione dello stato a terra | Stati espansi | Secondi |
 | --- | ---: | ---: |
@@ -1071,17 +974,11 @@ ripetuto in forma riproducibile sulla prima coppia risolta del campione di Torin
 *Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocita' massima
 139,12 m/s misurata da `results/velocita_archi.csv`.*
 
-Su questa coppia il rapporto e' di 62 volte sugli stati e di 100 volte sul tempo,
-con lo stesso identico orario di arrivo. Che il rapporto sul tempo superi quello
-sugli stati non e' un'anomalia: la coda di priorita' cresce con il numero di stati
-aperti, quindi ogni singola estrazione costa di piu' quando gli stati sono
-milioni. La coincidenza degli orari di arrivo prima e dopo conferma
-sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di
-progetto. Vale la pena osservare che senza questa riformulazione l'intera campagna
-sperimentale finale, che prevede migliaia di interrogazioni, non sarebbe
-eseguibile: a cinquantasette secondi per interrogazione, mille interrogazioni
-richiederebbero sedici ore di calcolo, e il campione della Fase 5 ne conta
-migliaia.
+Il rapporto e' di 62 volte sugli stati e di 100 sul tempo, perche' la coda di priorita'
+cresce con gli stati aperti. La coincidenza degli orari di arrivo conferma
+sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di progetto; e
+senza questa riformulazione il backtesting, con le sue migliaia di interrogazioni a
+cinquantasette secondi l'una, non sarebbe stato eseguibile.
 
 **L'euristica geografica: un risultato negativo.**
 
@@ -1100,34 +997,21 @@ stima sbagliata.
 | Torino | A* ammissibile | 139,1 | 13.301 ± 10.034 | 0,300 ± 0,181 | 3,8% ± 1,6% | 0 / 39 |
 | Torino | A* p99,9 *(non amm.)* | 22,8 | 11.070 ± 8.532 | 0,264 ± 0,170 | 20,6% ± 6,8% | 0 / 39 |
 
-Le righe vanno confrontate a gruppi di tre. Su **Roma**, Dijkstra espande 37.156
-stati in 0,484 secondi; A* ammissibile ne espande 34.391, cioe' il 7,7% in meno,
-ma impiega 0,724 secondi, cioe' il 49% in **piu'**. Su **Torino** il quadro e'
-identico e piu' netto: 13.783 stati contro 13.301, un risparmio del 3,8%, e 0,188
-secondi contro 0,300, cioe' il 59% in piu'. Il risultato principale e' dunque
-negativo, e conviene enunciarlo senza attenuazioni: **l'euristica ammissibile
-risparmia meno del dieci per cento degli stati e fa impiegare ad A\* piu' tempo di
-Dijkstra**. Calcolare l'euristica costa piu' dei nodi che fa evitare.
+Su **Roma** A* ammissibile espande il 7,7% di stati in meno di Dijkstra ma impiega il 49%
+di tempo in **piu'**, 0,724 secondi contro 0,484; su **Torino** risparmia il 3,8% e
+impiega il 59% in piu'. Il risultato e' negativo, e va enunciato senza attenuazioni:
+**l'euristica ammissibile risparmia meno del dieci per cento degli stati e fa impiegare
+ad A\* piu' tempo di Dijkstra**. Le deviazioni standard, dello stesso ordine delle medie,
+misurano la diversa difficolta' delle coppie e non l'incertezza della misura: il
+risparmio, che confronta le varianti sulla stessa interrogazione, ha deviazione molto
+piu' contenuta.
 
-Le colonne delle deviazioni standard meritano una nota: sono dello stesso ordine
-delle medie — 32.062 su 37.156 stati a Roma — perche' le coppie
-origine-destinazione hanno difficolta' molto diverse fra loro, dalle vicine alle
-attraversamenti completi della citta'. La dispersione riguarda le interrogazioni,
-non la misura, e infatti la colonna del risparmio, che confronta le varianti
-sulla **stessa** interrogazione, ha deviazione standard molto piu' contenuta:
-2,6% su una media del 7,7%.
-
-La colonna `V` spiega il fallimento. L'ammissibilita' obbliga a scegliere il
-massimo vero delle velocita', che vale 82,5 m/s a Roma e 139,1 a Torino, cioe'
-**297,1 e 500,8 km/h**. Quei valori non vengono da coordinate sbagliate, come si
-potrebbe supporre, ma dalla tabella oraria: gli archi anomali coprono distanze del
-tutto ordinarie, duecento o quattrocento metri, in **tre secondi di orario
-programmato**. Sono 135 archi su 1.752.603 a Torino e 1.063 su 5.343.307 a Roma.
-Con un `V` di cinquecento chilometri orari l'euristica stima in pochi secondi un
-tempo residuo che ne vale centinaia, resta quasi ovunque prossima a zero, e A* si
-comporta quasi come Dijkstra pagando in piu' il calcolo della distanza. Che il
-difetto sia piu' grave su Torino — 500,8 contro 297,1 km/h — spiega perche' il
-risparmio sia li' ancora minore, 3,8% contro 7,7%.
+La colonna `V` spiega il fallimento. L'ammissibilita' obbliga a usare il massimo vero
+delle velocita', 82,5 m/s a Roma e 139,1 a Torino, cioe' **297,1 e 500,8 km/h**, e quei
+valori vengono dalla tabella oraria: archi di duecento o quattrocento metri percorsi in
+**tre secondi di orario programmato**. Con un `V` simile l'euristica resta quasi ovunque
+prossima a zero, e A* si comporta come Dijkstra pagando in piu' il calcolo della
+distanza.
 
 Tabella 8 — Distribuzione delle velocita' fra fermate consecutive, misurata
 sull'orario programmato.
@@ -1137,72 +1021,35 @@ sull'orario programmato.
 | Roma | 5.343.307 | 15,6 km/h | 34,4 km/h | 55,2 km/h | 297,1 km/h | 1.063 |
 | Torino | 1.752.603 | 16,4 km/h | 56,2 km/h | 82,0 km/h | 500,8 km/h | 135 |
 
-Questa tabella e' la diagnosi del problema, e va letta da sinistra a destra. Le
-**mediane** sono quasi identiche e del tutto plausibili, 15,6 e 16,4 km/h: le due
-reti, nel caso tipico, si comportano come ci si aspetta da un mezzo urbano. Il
-**p99** resta ragionevole, 34,4 e 56,2 km/h, valori compatibili con tratte
-extraurbane o metropolitane. Il **p99,9** e' ancora difendibile, 55,2 e 82,0 km/h.
-Il **massimo** e' fuori scala: 297,1 e 500,8 km/h. Fra il p99,9 e il massimo c'e'
-dunque un fattore 5,4 su Roma e 6,1 su Torino, concentrato in una frazione di
-archi che l'ultima colonna quantifica: 1.063 su 5,3 milioni e 135 su 1,75
-milioni, cioe' lo 0,02% e lo 0,008%. **Meno di un arco su cinquemila determina il
-valore di `V`, e con esso l'efficacia dell'euristica su tutti gli altri.** E' la
-ragione per cui il risultato negativo non e' un fallimento del metodo ma il metodo
+Mediane, p99 e p99,9 sono plausibili per un mezzo urbano; il massimo e' fuori scala, e
+sta in 1.063 archi su 5,3 milioni a Roma e 135 su 1,75 milioni a Torino. **Meno di un
+arco su cinquemila determina il valore di `V`, e con esso l'efficacia dell'euristica su
+tutti gli altri**: il risultato negativo non e' un fallimento del metodo, ma il metodo
 che funziona correttamente su dati imperfetti.
 
 La variante non ammissibile, tarata sul p99,9, risparmia il 35,8% e il 20,6% degli
-stati, da quattro a cinque volte piu' dell'ammissibile, e su Roma riesce anche a
-essere piu' rapida di A* ammissibile, 0,574 secondi contro 0,724, pur restando
-sopra Dijkstra. Il dato piu' interessante e' pero' nell'ultima colonna: **su
-nessuna delle 82 interrogazioni risolte la variante non ammissibile ha restituito
-un orario di arrivo diverso dall'ottimo**. La garanzia formale e la sua violazione
-pratica sono due cose distinte, e i dati dicono che su questa rete la seconda non
-si manifesta. Cio' non autorizza a rinunciare alla garanzia: un campione di
-ottantadue interrogazioni non dimostra che non esista una coppia su cui la
-variante sbagli, e la differenza fra "non abbiamo trovato controesempi" e "non
-esistono controesempi" e' esattamente cio' che una dimostrazione fornisce e una
-misura no.
+stati, e **su nessuna delle 82 interrogazioni risolte ha restituito un orario di arrivo
+diverso dall'ottimo**. Cio' non autorizza a rinunciare alla garanzia: ottantadue
+interrogazioni senza controesempi non dimostrano che non ne esistano, ed e' esattamente
+la differenza fra una misura e una dimostrazione.
 
-**Il costo dei cambi nello stato, e perche' non e' spreco.** Tenere il numero di
-cambi nello stato moltiplica lo spazio di ricerca. La variante che proietta via i
-cambi, identificando uno stato a terra con la sola fermata, espande **11.734 stati
-contro 34.391 a Roma** e **4.817 contro 13.301 a Torino**, cioe' circa un terzo in
-entrambe le citta'. Preso da solo, il numero suggerirebbe che i cambi nello stato
-costino un fattore tre di lavoro inutile, e che rimuoverli sia un'ottimizzazione
-gratuita.
+**Il costo dei cambi nello stato, e perche' non e' spreco.** La variante che identifica
+uno stato a terra con la sola fermata espande **11.734 stati contro 34.391 a Roma** e
+**4.817 contro 13.301 a Torino**, circa un terzo, ma **restituisce l'itinerario
+sbagliato su 5 interrogazioni su 40 a Roma e su 4 su 39 a Torino**, oltre l'undici per
+cento. La causa e' il tetto di quattro cambi: uno stato raggiunto per primo con quattro
+cambi gia' spesi viene marcato come visitato, e un percorso successivo che vi arrivi con
+un cambio solo viene scartato benche' avrebbe potuto proseguire. Ripetendo l'esperimento
+con un tetto di dodici cambi le discrepanze scendono a **zero** su entrambe le citta'.
+Il fattore tre non e' dunque spreco, ma il **prezzo della correttezza** in presenza di un
+vincolo sul numero di cambi.
 
-La misura dice pero' anche un'altra cosa, che il solo conteggio degli stati
-nasconderebbe: la variante proiettata **restituisce l'itinerario sbagliato su 5
-interrogazioni su 40 a Roma e su 4 su 39 a Torino**, cioe' su nove su
-settantanove, oltre l'undici per cento.
-
-Il meccanismo e' stato isolato sperimentalmente ed e' l'interazione con il tetto
-di quattro cambi. Con i cambi proiettati via, uno stato raggiunto per primo
-attraverso un percorso che ha gia' speso quattro cambi viene marcato come
-visitato, e un percorso successivo che vi arrivi con un solo cambio viene scartato
-perche' non migliora l'orario di arrivo — salvo che quel secondo percorso avrebbe
-potuto proseguire per altri tre cambi, mentre il primo era esaurito. La
-dominanza, in altre parole, non vale piu': arrivare prima non e' sufficiente se si
-arriva con meno cambi residui. La verifica decisiva e' la ripetizione
-dell'esperimento con un tetto di dodici cambi, che porta le discrepanze a **zero**
-su entrambe le citta': conferma che la causa e' il tetto e non un difetto della
-proiezione in se'. Il fattore tre non e' dunque spreco ma il **prezzo della
-correttezza** in presenza di un vincolo sul numero di cambi, ed e' anche la
-ragione per cui il progetto mantiene una sola struttura di stato invece di due
-implementazioni: la variante proiettata esiste unicamente come termine di paragone
-di questa misura.
-
-**La frontiera di Pareto sui dati reali.** La ricerca multi-criterio restituisce
-in media **5,72 ± 2,83 soluzioni non dominate a Roma** e **5,05 ± 2,89 a Torino**.
-Il numero e' significativo: se esistesse un itinerario ottimo unico la frontiera
-ne conterrebbe uno solo, e la deviazione standard sarebbe nulla. Che ne contenga
-mediamente cinque, con una dispersione ampia, significa che su una tipica coppia
-origine-destinazione ci sono cinque compromessi genuinamente diversi fra
-rapidita', numero di cambi e minuti a piedi, e che il loro numero varia molto da
-coppia a coppia. E' precisamente il fatto che rende interessante la domanda di
-ricerca del progetto: se l'itinerario ottimo fosse unico, massimizzare la
-probabilita' di arrivo entro un orario si ridurrebbe a un problema di
-riordinamento, e non ci sarebbe nulla da scegliere.
+**La frontiera di Pareto sui dati reali.** La ricerca multi-criterio restituisce in
+media **5,72 ± 2,83 soluzioni non dominate a Roma** e **5,05 ± 2,89 a Torino**. Se
+esistesse un itinerario ottimo unico la frontiera ne conterrebbe uno solo: su una tipica
+coppia ci sono invece piu' compromessi genuinamente diversi fra rapidita', cambi e
+cammino, ed e' questo che rende la domanda di ricerca non banale, perche' altrimenti
+massimizzare la probabilita' di arrivo non avrebbe nulla fra cui scegliere.
 
 ![**Figura 2.** Costo del grafo ed effetto dell'euristica, su cinquanta coppie
 origine-destinazione per citta' con partenza alle 08:00 e finestra di 120 minuti. Il
@@ -1218,9 +1065,8 @@ degli stati, ma sbaglia l'itinerario su nove interrogazioni su 79. Dati grezzi i
 `results/ricerca_astar.csv`, `results/grafo_finestra.csv` e
 `results/velocita_archi.csv`.](../results/ricerca_astar.png)
 
-Nessuno dei risultati riportati in questa sezione dipende da un modello dei
-ritardi: sono tutti calcolati sull'orario programmato pubblicato dalle due
-aziende.
+Nessuno dei risultati di questa sezione dipende da un modello dei ritardi: sono tutti
+calcolati sull'orario programmato pubblicato dalle due aziende.
 
 # Sezione Argomento 3 — Ragionamento e incertezza
 
@@ -1547,17 +1393,13 @@ e' la differenza fra trovare il difetto e nasconderlo.
 
 ## Valutazione
 
-**Avvertenza sui risultati di questa sezione.** Il modello dei ritardi utilizzato
-qui e' **sintetico**: le distribuzioni sono inventate, non apprese dai dati
-raccolti sul campo, che alla data di scrittura non erano ancora sufficienti. I
-numeri riportati qualificano il **metodo** — se il calcolo e' corretto, quanto
-costa, in quali condizioni il criterio probabilistico cambia la scelta — e non
-dicono nulla sul trasporto pubblico di Roma o di Torino. Ogni file di risultato
-porta il nome del modello in una colonna, e gli script si rifiutano di scrivere
-senza un permesso esplicito. I risultati sui ritardi reali sono oggetto
-dell'argomento successivo, non ancora concluso. Le sezioni precedenti non sono
-interessate da questa avvertenza: i loro risultati sono calcolati sulla topologia
-della rete e sull'orario programmato pubblicati dalle due aziende.
+**Avvertenza sui risultati di questa sezione.** Il modello dei ritardi utilizzato qui e'
+**sintetico**: le distribuzioni sono inventate, non apprese dai dati raccolti sul
+campo. I numeri qualificano il **metodo** - se il calcolo e' corretto, quanto costa, in
+quali condizioni il criterio probabilistico cambia la scelta - e non dicono nulla sul
+trasporto pubblico di Roma o di Torino; i risultati sui ritardi reali sono nella
+sezione sul backtesting. Ogni file di risultato porta il nome del modello in una
+colonna, e gli script si rifiutano di scrivere senza un permesso esplicito.
 
 **Accuratezza e costo dei due metodi di calcolo.**
 
@@ -1576,42 +1418,25 @@ griglia.
 | Monte Carlo | 10.000 campioni | 0,0026 ± 0,0021 | 25 ms |
 | Monte Carlo | 100.000 campioni | 0,0011 ± 0,0008 | 151 ms |
 
-Le quattro righe della convoluzione vanno lette sulla colonna del costo prima che
-su quella dell'errore, perche' e' li' che si trova la sorpresa. Passando da 60 a 5
-secondi di passo, cioe' raffinando la griglia di dodici volte, l'errore migliora
-di quasi dieci volte, da 0,0385 a 0,0039, ma il costo passa da 87 a 96
-millisecondi: **nove millisecondi in tutto**. La griglia temporale non e' dunque
-cio' che rende costosa la convoluzione. Il costo di base di 87 millisecondi e'
-speso altrove, ed e' il numero di interrogazioni al modello dei ritardi: una per
-ogni bin di ritardo alla salita e per ogni corsa candidata, perche' ognuna
-richiede la distribuzione condizionata corrispondente.
-
-Le quattro righe del Monte Carlo si comportano come ci si aspetta da uno stimatore
-campionario: centuplicando i campioni da 100 a 10.000 l'errore scende di poco piu'
-di dieci volte, da 0,0271 a 0,0026, che e' la legge della radice; e il costo cresce
-in modo quasi proporzionale ai campioni oltre le prime migliaia, da 8 a 25 a 151
-millisecondi.
+Nella convoluzione la griglia temporale non e' cio' che costa: raffinando il passo da
+60 a 5 secondi l'errore migliora di quasi dieci volte, da 0,0385 a 0,0039, ma il costo
+sale da 87 a 96 millisecondi, **nove millisecondi in tutto**. Il costo di base e' speso
+nelle interrogazioni al modello dei ritardi, una per ogni bin di ritardo alla salita e
+per ogni corsa candidata. Il Monte Carlo segue invece la legge della radice:
+centuplicando i campioni da 100 a 10.000 l'errore scende da 0,0271 a 0,0026.
 
 Il confronto fra i due blocchi e' **il risultato non atteso** della sezione. Ci si
 aspettava che la convoluzione fosse il metodo esatto e il campionamento
-l'approssimazione economica. La riga del Monte Carlo con 10.000 campioni e la riga
-della convoluzione con passo 10 s dicono il contrario: **0,0026 di errore contro
-0,0049, e 25 millisecondi contro 89**. Il campionamento e' quasi due volte piu'
-accurato e tre volte e mezzo piu' rapido. E la dominanza non riguarda solo quella
-coppia di righe: il Monte Carlo con 1.000 campioni costa 8 millisecondi, cioe' un
-decimo della convoluzione piu' economica, con un errore di 0,0107 che e' meno di
-un terzo di quello della convoluzione a passo 60. Non esiste una scelta dei
-parametri per cui la convoluzione risulti preferibile su entrambi gli assi.
-
-Nonostante questo la convoluzione resta il metodo usato dal pianificatore, per una
-proprieta' che la Tabella 9 non misura: e' **deterministica**. Due esecuzioni danno
-lo stesso numero, mentre il Monte Carlo ha rumore campionario, e con un errore
-tipico di 0,0026 due itinerari le cui probabilita' distino meno di quel valore
-potrebbero scambiarsi di posto fra un'esecuzione e l'altra. Poiche' il
-pianificatore confronta fra loro pochi candidati e ne sceglie uno, il rumore si
-trasformerebbe in una scelta irriproducibile, che e' un difetto peggiore di tre
-millesimi di errore. Il campionamento e' percio' relegato al ruolo di verifica,
-dove la sua accuratezza superiore serve davvero e il suo rumore non decide nulla.
+l'approssimazione economica, e accade il contrario: il Monte Carlo con 10.000
+campioni ha **0,0026 di errore contro 0,0049, in 25 millisecondi contro 89**, e non
+esiste una scelta dei parametri per cui la convoluzione risulti preferibile su
+entrambi gli assi. La convoluzione resta pero' il metodo del pianificatore, per una
+proprieta' che la Tabella 9 non misura: e' **deterministica**. Con un errore tipico
+di 0,0026, due itinerari le cui probabilita' distino meno di quel valore potrebbero
+scambiarsi di posto fra un'esecuzione e l'altra, e poiche' il pianificatore confronta
+fra loro pochi candidati e ne sceglie uno, il rumore diventerebbe una scelta
+irriproducibile, che e' un difetto peggiore di tre millesimi di errore. Il
+campionamento e' percio' relegato al ruolo di verifica.
 
 ![**Figura 3.** Accuratezza e costo dei due metodi di calcolo, su distribuzioni
 sintetiche. Nel pannello (a) l'asse orizzontale porta il parametro di ciascun
@@ -1642,54 +1467,32 @@ probabilita' della scelta robusta e quella della baseline piu' veloce.
 | Torino | 20 min | 0,429 ± 0,265 | 68% | 0,096 ± 0,191 |
 | Torino | 30 min | 0,478 ± 0,271 | 55% | 0,061 ± 0,120 |
 
-Le tre colonne vanno lette una alla volta, e ciascuna dice una cosa diversa.
+**L'ampiezza sulla frontiera** cresce col margine su entrambe le citta', da 0,026 e 0,024
+a margine zero fino a 0,562 e 0,478 a trenta minuti - in modo monotono su Roma, su
+Torino con una flessione fra quindici e venti minuti - e il salto piu' forte e' il primo,
+fra zero e cinque minuti, dove si decuplica: a margine nullo tutti i candidati hanno
+probabilita' prossima a zero, e appena la scadenza si allarga gli itinerari si
+differenziano. E' la misura che giustifica la frontiera di Pareto come insieme
+candidato.
 
-**L'ampiezza sulla frontiera** parte quasi nulla e cresce in modo monotono su
-entrambe le citta': 0,026 e 0,024 a margine zero, poi 0,279 e 0,290 a cinque
-minuti, fino a 0,562 e 0,478 a trenta. Il salto piu' violento e' il primo, da zero
-a cinque minuti, dove l'ampiezza si decuplica. La ragione e' che a margine nullo
-tutti i candidati hanno probabilita' prossima a zero e non c'e' nulla da
-distinguere; appena la scadenza si allarga, gli itinerari cominciano a
-differenziarsi, e la frontiera si rivela ricca. E' la misura che giustifica l'uso
-della frontiera di Pareto come insieme candidato, ed e' anche quella che, nella
-sua prima versione viziata, dava 0,66 anziche' 0,44.
-
-**La coincidenza fra la scelta robusta e quella piu' veloce scende
-monotonamente**, dall'85% al 62% su Roma e dall'88% al 55% su Torino, senza una
-sola inversione su dodici righe. E' la dimostrazione empirica di non riducibilita'
-annunciata nel sommario: al variare della sola scadenza, a parita' di rete, di
-orario e di modello dei ritardi, il criterio probabilistico cambia idea su una
-frazione crescente delle coppie — dal 12-15% al 38-45%. Nessun ordinamento fisso
-sugli itinerari puo' produrre questo comportamento, perche' un ordinamento fisso
-sceglierebbe sempre lo stesso itinerario e la coincidenza sarebbe costante. La
-misura sostituisce l'esempio a due itinerari costruito nel sommario, perche' e'
-fatta su ottanta coppie estratte e non su un caso scelto ad arte.
+**La coincidenza fra la scelta robusta e quella piu' veloce scende**, dall'85% al 62% su
+Roma e dall'88% al 55% su Torino, senza una sola inversione. E' la dimostrazione
+empirica di non riducibilita' annunciata nel sommario: a parita' di rete, di orario e di
+modello dei ritardi, al variare della sola scadenza il criterio probabilistico cambia
+scelta su una frazione crescente delle coppie, dal 12-15% al 38-45%, e nessun
+ordinamento fisso sugli itinerari puo' produrre questo comportamento.
 
 **Il guadagno non e' monotono**, e la sua forma a campana e' il risultato piu'
-informativo della sezione. Su Roma sale da 0,001 a 0,040, 0,068, 0,080 e 0,084,
-per poi ricadere a 0,049; su Torino da 0,009 a 0,040, 0,058, 0,098 e 0,096, per
-poi ricadere a 0,061. Il massimo e' fra i quindici e i venti minuti su entrambe le
-citta'. A margine nullo il guadagno vale praticamente zero perche' la scadenza
-coincide con l'arrivo programmato del piu' veloce e nessun itinerario ha speranze
-apprezzabili: non c'e' niente da guadagnare quando tutti falliscono. A trenta
-minuti torna a scendere perche' la scadenza e' cosi' larga che quasi tutti
-arrivano: non c'e' niente da guadagnare nemmeno quando tutti riescono. Va notato
-che il massimo del guadagno **non coincide** con il massimo dell'ampiezza sulla
-frontiera, che continua a crescere fino a trenta minuti: la frontiera resta
-diversificata anche quando la scelta non conta piu', perche' distinguere gli
-itinerari e sceglierne uno che valga la pena sono due cose diverse.
-
-Le deviazioni standard del guadagno sono grandi rispetto alle medie — 0,188 su
-0,080 a Roma — e la ragione e' che il guadagno e' nullo su tutte le coppie in cui
-la scelta robusta coincide con la piu' veloce, che sono la maggioranza, e
-concentrato sulle poche in cui differisce. La distribuzione e' quindi fortemente
-asimmetrica, con una massa in zero e una coda positiva.
-
-La lettura d'insieme e' che questo **non e' un limite del metodo ma il suo campo
-di applicabilita'**: il ragionamento probabilistico serve quando la scadenza e'
-abbastanza stretta da rendere il fallimento possibile e abbastanza larga da
-rendere il successo raggiungibile. Fuori da quell'intervallo la risposta non
-dipende dal criterio, e un modello dei ritardi non ripaga la propria complessita'.
+informativo della sezione: sale fino a 0,084 su Roma e 0,098 su Torino fra i quindici e
+i venti minuti, e ricade a 0,049 e 0,061 a trenta. A margine nullo non c'e' niente da
+guadagnare perche' tutti falliscono, a trenta minuti perche' quasi tutti riescono; e il
+massimo del guadagno **non coincide** con quello dell'ampiezza, perche' distinguere gli
+itinerari e sceglierne uno che valga la pena sono due cose diverse. Le deviazioni
+standard del guadagno, grandi rispetto alle medie, vengono da una distribuzione con una
+massa in zero - le coppie in cui la scelta robusta coincide con la piu' veloce - e una
+coda positiva. Non e' un limite del metodo ma il suo **campo di applicabilita'**: il
+ragionamento probabilistico serve quando la scadenza e' abbastanza stretta da rendere il
+fallimento possibile e abbastanza larga da rendere il successo raggiungibile.
 
 ![**Figura 4.** Le tre grandezze in funzione del margine sulla scadenza, su quaranta
 coppie per citta' e con modello dei ritardi sintetico. Il pannello (b) e' la
@@ -1702,22 +1505,16 @@ la differenza per singola coppia non e' **mai** negativa, in nessuna delle 480
 combinazioni esaminate. Dati grezzi in
 `results/robusto_griglia_T.csv`.](../results/robusto_griglia_T.png)
 
-**Il confronto con le strategie di riferimento.** Le tre baseline non sono
-avversari di comodo: rappresentano cio' che si fa realmente in assenza di un
-modello dei ritardi. La **piu' veloce** e' il pianificatore di qualunque
-applicazione di viaggio, ed e' il termine di paragone naturale perche' e' quello
-che l'utente ha oggi. **Meno cambi** e' cio' che fa chi ha imparato per esperienza
-che ogni trasbordo e' un'occasione di perdere una coincidenza, ma non sa
-quantificarlo. Il **margine fisso** e' la baseline che conta: rappresenta la
-persona ragionevole che si da' una regola — accetto solo itinerari in cui ogni
-coincidenza ha almeno cinque minuti di margine, e fra quelli prendo il piu' veloce
-— ed e' una strategia sensata, gratuita e quella che il pianificatore
-probabilistico deve battere per giustificare la propria esistenza. Quando nessun
-itinerario soddisfa la regola, la strategia allenta il vincolo invece di
-rinunciare, perche' fingere che non risponda la giudicherebbe solo sui casi
-facili. Tutte e quattro le strategie scelgono dallo stesso insieme di candidati e
-vengono valutate con lo stesso calcolo di P(arrivo <= T): il confronto misura
-quindi la strategia di scelta e non il metodo di valutazione.
+**Il confronto con le strategie di riferimento.** Le tre baseline rappresentano cio' che
+si fa in assenza di un modello dei ritardi. La **piu' veloce** e' il pianificatore di
+qualunque applicazione di viaggio; **meno cambi** e' la regola di chi sa per esperienza
+che ogni trasbordo e' un'occasione di perdere una coincidenza; il **margine fisso** -
+solo itinerari con almeno cinque minuti su ogni coincidenza, e fra quelli il piu'
+veloce - e' la regola ragionevole che il pianificatore probabilistico deve battere, e
+quando nessun itinerario la soddisfa allenta il vincolo invece di rinunciare. Tutte e
+quattro le strategie scelgono dallo stesso insieme di candidati e sono valutate con lo
+stesso calcolo di P(arrivo <= T), quindi il confronto misura la strategia di scelta e
+non il metodo di valutazione.
 
 Tabella 11 — Probabilita' media di arrivo entro la scadenza, su tutte le coppie e
 tutti i margini della griglia.
@@ -1729,50 +1526,22 @@ tutti i margini della griglia.
 | meno cambi | 0,429 ± 0,411 | 0,388 ± 0,418 |
 | margine fisso | 0,403 ± 0,418 | 0,426 ± 0,420 |
 
-La prima riga e la seconda distano poco, 0,555 contro 0,501 su Roma e 0,570 contro
-0,509 su Torino, cioe' circa cinque-sei punti percentuali: e' il vantaggio del
-criterio probabilistico sulla strategia che l'utente ha oggi, mediato su tutta la
-griglia di scadenze, comprese quelle degeneri agli estremi dove il guadagno e'
-nullo per costruzione. La Tabella 10 mostra che nell'intervallo utile il vantaggio
-sale a otto-dieci punti.
+Il robusto supera la piu' veloce di cinque-sei punti mediati su tutta la griglia, 0,555
+contro 0,501 su Roma e 0,570 contro 0,509 su Torino, comprese le scadenze degeneri agli
+estremi; nell'intervallo utile la Tabella 10 mostra otto-dieci punti. Il robusto **non
+perde mai** contro nessuna baseline, su tutte e 480 le combinazioni di citta', coppia e
+margine, ma questo **non e' un risultato: e' un controllo di correttezza**, perche' le
+strategie scelgono dallo stesso insieme e il robusto massimizza per definizione la
+grandezza con cui tutte vengono valutate. Il risultato e' semmai di quanto vince.
 
-La terza e la quarta riga stanno sensibilmente piu' in basso, fra 0,388 e 0,429, e
-qui ci sono due osservazioni, di cui la seconda inattesa.
-
-La prima e' che il pianificatore robusto **non perde mai** contro nessuna
-baseline: su tutte e 480 le combinazioni di citta', coppia e margine la sua
-probabilita' e' maggiore o uguale a quella di ciascuna alternativa. Va detto pero'
-che questo non e' un risultato ma un **controllo di correttezza**: le quattro
-strategie scelgono dallo stesso insieme e il pianificatore massimizza per
-definizione la grandezza con cui tutte vengono poi valutate, quindi perdere
-sarebbe stato un difetto dell'implementazione. Il risultato e' semmai di quanto
-vince, che e' il contenuto della Tabella 10.
-
-La seconda e' che la strategia del **margine fisso e' la peggiore delle tre su
-Roma**, 0,403 contro 0,429 di "meno cambi", e la penultima su Torino. Il fatto
-merita attenzione perche' contraddice l'intuizione: la regola dei cinque minuti e'
-pensata proprio per proteggere dalle coincidenze perse, che sono il fenomeno in
-esame. La spiegazione sta nell'interazione con la definizione della scadenza. Con
-T ancorata all'arrivo del piu' veloce, imporre cinque minuti di margine su **ogni**
-coincidenza costringe a scegliere itinerari sensibilmente piu' lenti sull'orario,
-e lo svantaggio di partenza supera il beneficio della maggiore affidabilita': si
-guadagna in probabilita' di prendere ogni singola coincidenza e si perde in
-probabilita' di arrivare in tempo, che e' la grandezza che conta. La regola del
-margine fisso e' una difesa contro le coincidenze perse che **non guarda alla
-scadenza**, e in un problema in cui la scadenza e' il vincolo si difende dal
-rischio sbagliato. E' precisamente il tipo di errore che un criterio
-probabilistico esplicito evita, perche' P(arrivo <= T) contiene T e la regola dei
-cinque minuti no. Le deviazioni standard delle due ultime righe, oltre 0,41,
-superano quelle delle prime due e confermano la lettura: sono strategie che
-funzionano molto bene su alcune coppie e molto male su altre, mentre il criterio
-probabilistico e' piu' uniforme.
-
-Va ricordato un'ultima volta che tutti i numeri di questa sezione sono calcolati
-su ritardi inventati. Dicono che il metodo distingue gli itinerari, che il calcolo
-e' corretto e riproducibile, e in quale intervallo di scadenze il criterio
-probabilistico cambia le decisioni. Se il vantaggio misurato qui si conservi sui
-ritardi reali di Roma e di Torino e' esattamente la domanda a cui l'argomento
-successivo dovra' rispondere.
+Inatteso e' invece che il **margine fisso sia la peggiore delle tre baseline su Roma**,
+0,403 contro 0,429 di "meno cambi", e la penultima su Torino. Con la scadenza ancorata
+all'arrivo del piu' veloce, imporre cinque minuti su **ogni** coincidenza costringe a
+itinerari sensibilmente piu' lenti, e lo svantaggio di partenza supera il beneficio: la
+regola si difende dalle coincidenze perse **senza guardare alla scadenza**, che e' il
+vincolo del problema, mentre P(arrivo <= T) contiene T. Le deviazioni standard delle
+ultime due righe, oltre 0,41, confermano che sono strategie che funzionano molto bene su
+alcune coppie e molto male su altre.
 
 # Sezione Argomento 4 — Apprendimento supervisionato e apprendimento con incertezza
 
@@ -1921,7 +1690,7 @@ del contesto; il terzo, il tipo di giorno, viene dal calendario. Non prende inve
 accessibilita' e la loro utilita' sono relazioni fra fermate, e la distribuzione di
 un ritardo non dipende da esse. La direzione del flusso e' l'opposta: la tabella
 stimata qui viene consegnata al pianificatore dell'argomento precedente attraverso
-il contratto `ModelloRitardo` fissato nella Fase 2, ed e' li' che incontra i
+il contratto `ModelloRitardo`, fissato prima della stima, ed e' li' che incontra i
 trasbordi derivati dalla base di conoscenza. Il modello dei ritardi ignora inoltre
 del tutto la topologia della rete: due fermate consecutive di una corsa sono per lui
 una coppia ordinata di osservazioni, non due punti a una certa distanza. E' una
@@ -2034,15 +1803,14 @@ li' l'arco non paga ma nemmeno costa, e se fosse stato l'unico caso disponibile 
 decisione sarebbe rimasta aperta. Regge perche' il segno e' lo stesso su tutte e sei
 le combinazioni e perche' la causa - le osservazioni per cella - e' misurata e non
 congetturata; ma e' piu' debole di quanto un intervallo che partisse dal quattro per
-cento avrebbe lasciato credere.
-L'arco non si aggiunge e **l'assunzione markoviana si tiene come approssimazione
-dichiarata**: e' una posizione piu' forte di quella di partenza, perche' la Fase 4
-la assumeva senza averla verificata mentre ora si sa che cosa si trascura e quanto
-vale. Il punto di metodo che ne discende vale oltre questo caso: una misura va fatta
-**nel regime in cui la decisione si applica**. Il confronto senza contesto era
-corretto - misurava esattamente cio' che dichiarava - ma era calcolato in abbondanza
-di dati mentre la decisione si applica in scarsita', e fra i due regimi il segno del
-risultato cambia.
+cento avrebbe lasciato credere. L'arco non si aggiunge e **l'assunzione markoviana si
+tiene come approssimazione dichiarata**: e' una posizione piu' forte di quella di
+partenza, perche' l'argomento sull'incertezza la assumeva senza averla verificata
+mentre ora si sa che cosa si trascura e quanto vale. Il punto di metodo che ne
+discende vale oltre questo caso: una misura va fatta **nel regime in cui la decisione
+si applica**. Il confronto senza contesto era corretto - misurava esattamente cio'
+che dichiarava - ma era calcolato in abbondanza di dati mentre la decisione si
+applica in scarsita', e fra i due regimi il segno del risultato cambia.
 
 **I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno: e' una
 doppia tautologia.** E' la decisione piu' istruttiva del capitolo, perche' i due
@@ -2110,7 +1878,7 @@ insiemi indistinguibili sui risultati - ed e' la ragione per cui il paragrafo
 seguente esiste. Una regola che ammette un candidato solo non e' una regola che ha
 scelto: e' una soglia che ha scartato tutti gli altri, e il fatto che il superstite
 coincida col vincitore del criterio che si voleva evitare andava scritto qui e non
-lasciato dedurre. I bordi precedenti, ereditati dalla Fase 3 e
+lasciato dedurre. I bordi precedenti, ereditati dalla prima versione del modello e
 scelti su una popolazione diversa, erano invece sbagliati in modo non opinabile: con
 essi il **62,3%** delle osservazioni romane e il **45,7%** delle torinesi finiva in
 uno dei due bin aperti, dove il modello dichiara di non distinguere nulla.
@@ -2353,66 +2121,35 @@ all'estremo, e la misura lo conferma senza inferenze: **la scala torinese lavora
 tre gradini su cinque**. Su Roma, invece, dopo l'allargamento della griglia **nessun
 gradino resta all'estremo**, e la questione si chiude in un altro modo.
 
-**Perche' la griglia e' stata allargata, e che cosa ha risposto.** Nella prima
-esecuzione la griglia si fermava a un milione, e tre gradini vi si appoggiavano. Un
-estremo superiore non e' un valore come gli altri, ma non e' nemmeno automaticamente
-una saturazione: il peso che una cella conserva sui propri conteggi vale
+**La concentrazione del priore non e' identificabile da questi dati.** Nella prima
+esecuzione la griglia degli `alfa` si fermava a un milione e tre gradini vi si
+appoggiavano; poiche' il peso che una cella conserva sui propri conteggi vale
 `N / (N + alfa)`, e il livello per tipo di Roma ha **otto celle sole** su 1,17 milioni
-di coppie - circa centoquarantaseimila osservazioni ciascuna - quindi a un milione ne
-conservava ancora un ottavo e restava a quarantatre millesimi dal genitore. La griglia
-e' stata portata a **cento milioni** e l'esperimento rifatto. L'esito ha tre parti.
+di coppie, la griglia e' stata portata a **cento milioni** e l'esperimento rifatto. La
+perdita non si muove: sulla scala principale romana passa da 0,9437 a 0,9426 bit, cioe'
+**un millesimo**, contro una deviazione fra giornate di +/-0,064, e su Torino da
+1,1260 a 1,1261; la scelta dei bordi non cambia. Su Torino i due gradini all'estremo
+passano da quattro millesimi e mezzo millesimo a **sei centomillesimi e cinque
+milionesimi**: era davvero un troncamento. Su Roma invece la taratura del livello per
+tipo **scende a centomila**, e l'intera configurazione si riorganizza per un guadagno
+di un millesimo di bit; nella scala `previsioni sole` i primi due gradini passano da
+centomila e un milione a **0,5 e 0,5**, sei ordini di grandezza, e la perdita migliora
+di cinque decimillesimi.
 
-*Primo: la perdita non si muove.* Sulla scala principale romana passa da 0,9437 a
-0,9426 bit, cioe' **un millesimo**, contro una deviazione fra giornate di +/-0,064; su
-Torino passa da 1,1260 a 1,1261, cioe' **un decimillesimo**. La scelta dei bordi non
-cambia, e tutte le altre grandezze del capitolo si spostano al quarto o quinto
-decimale. Allargare la griglia non compra accuratezza.
-
-*I valori "prima" di questo confronto non stanno in nessun CSV, ed e' voluto: i file
-in `results/` portano lo stato corrente, e tenerne due versioni per un confronto
-transitorio moltiplicherebbe le fonti invece di chiarirle. Il confronto si rifa'
-cambiando `CANDIDATI` in `src/delays/rete.py` e rieseguendo `scripts/stima_rete.py
---fino-a 2026-09-09`; i valori con la griglia a un milione sono quelli del commit
-`a59f0b9`.*
-
-*Secondo: su Torino lo scarto crolla.* I due gradini all'estremo passano da
-quattro millesimi e mezzo millesimo a **sei centomillesimi e cinque milionesimi**, cioe'
-da "quasi trasparenti" a trasparenti senza residuo. Era davvero un troncamento, e ora
-non lo e' piu'.
-
-*Terzo, ed e' il risultato che conta: su Roma il gradino non voleva un `alfa` piu'
-grande.* Avendo a disposizione cento milioni, la taratura per il livello per tipo non
-e' salita: e' **scesa a centomila**, e la distanza dal genitore e' **cresciuta** a
-0,205. Non era quindi un gradino che premeva contro il soffitto. Con la griglia larga
-l'intera configurazione romana si e' riorganizzata - il livello per tipo e fascia da
-mille a duecentocinquanta, quello per tipo, fascia e giorno da duecentocinquanta a
-venticinquemila - per un guadagno di un millesimo di bit.
-
-**Che cosa se ne impara, ed e' piu' importante della domanda di partenza.** Due
-configurazioni di `alfa` che differiscono di **ordini di grandezza** su piu' gradini
-danno perdite che differiscono di un millesimo di bit, cioe' di un sessantesimo della
-variabilita' fra giornate. La prova piu' netta e' la scala `previsioni sole`, dove i
-primi due gradini passano da centomila e un milione a **0,5 e 0,5** - sei ordini di
-grandezza - e la perdita migliora di cinque decimillesimi. E la controprova sta in
-Torino, la cui scala principale **peggiora** di un decimillesimo pur avendo a
-disposizione una griglia strettamente piu' ampia: puo' accadere solo perche' la
-discesa coordinata non e' esaustiva e il punto in cui si ferma dipende dal cammino.
+*I valori con la griglia a un milione non stanno in nessun CSV, che porta lo stato
+corrente: si rifanno cambiando `CANDIDATI` in `src/delays/rete.py` e rieseguendo
+`scripts/stima_rete.py --fino-a 2026-09-09`, e sono quelli del commit `a59f0b9`.*
 
 Ne segue che **il valore di `alfa` di un singolo gradino non e' identificabile da
-questi dati**, e che leggerci dentro un significato - "e' al massimo, dunque il
-gradino non serve" - e' sovrainterpretare. La superficie della perdita e' piatta, e la
-taratura sceglie fra configurazioni equivalenti. Cio' che resta leggibile non e'
-`alfa` ma la **distanza fra le matrici**, che e' una misura diretta e non un'inferenza
-sul cercatore: e' quella che dice che due gradini torinesi sono trasparenti e che
-nessun gradino romano lo e'.
-
-Va comunque detto perche' ci si aspettasse che il gradino per tipo fosse ridondante su
-Roma: nei dati romani tutte le linee portano **un solo `route_type`**, quindi quel
-livello produce esattamente la stessa partizione del livello sotto di se' e la sua
-mappa dei genitori e' l'identita'. Che la taratura non lo spenga, e che anzi preferisca
-lasciarlo lavorare, e' coerente con la piattezza appena descritta: riapplicare gli
-stessi conteggi una seconda volta sposta la tabella verso le frequenze osservate, e su
-questa scala di differenze il criterio non ha modo di preferire l'una all'altra.
+questi dati**. La superficie della perdita e' piatta e la discesa coordinata non e'
+esaustiva - Torino peggiora di un decimillesimo pur disponendo di una griglia piu'
+ampia - quindi leggere nel valore di un gradino un significato ("e' al massimo, dunque
+non serve") e' sovrainterpretare. Cio' che resta leggibile e' la **distanza fra le
+matrici**, che e' una misura diretta: dice che due gradini torinesi sono trasparenti e
+che nessun gradino romano lo e'. Con la stessa piattezza e' coerente il fatto che su
+Roma la taratura non spenga il gradino per tipo, benche' nei dati romani tutte le linee
+portino un solo `route_type` e quel livello produca la stessa partizione del livello
+sotto di se'.
 
 **Dove la scala lavora davvero.** La stessa tabella lo dice, e non era ovvio: i
 gradini che spostano di piu' sono i **primi due di contesto** - il tipo e la fascia
@@ -2440,7 +2177,8 @@ soglie di ammissione sono la colonna `deviazione_perdita` della riga `attuali` d
 ciascuna citta'. Le ampiezze sono ristrette alle osservazioni fra zero e trenta
 minuti.*
 
-I bordi ereditati dalla Fase 3 lasciavano quasi due terzi della massa romana in un
+I bordi ereditati dalla prima versione del modello lasciavano quasi due terzi della
+massa romana in un
 bin aperto, dove il modello dichiara di non distinguere nulla, e il loro guadagno e'
 il piu' basso su Roma: su questo non c'e' ambiguita'. Fra i quattro candidati nuovi
 la lettura dipende invece dal criterio, come la doppia tautologia fa prevedere: gli
@@ -2551,10 +2289,10 @@ probabilita' stampata accanto a un itinerario e' un paio di punti sopra la frequ
 osservata. Le classi centrali che sembrano peggiori, 0,4-0,5, sono anche le meno
 popolate - 597 coppie su Roma - e non reggono da sole nessuna conclusione.
 
-**La correlazione reale contro lo 0,70 sintetico della Fase 4.** L'argomento
-precedente aveva assunto un parametro scalare in [0, 1] per la trasmissione del
-ritardo lungo la corsa e aveva usato **0,70**, dichiarandolo un numero scelto per
-buon senso in attesa della misura. Questa e' la misura.
+**La correlazione reale contro lo 0,70 sintetico dell'argomento sull'incertezza.**
+L'argomento precedente aveva assunto un parametro scalare in [0, 1] per la
+trasmissione del ritardo lungo la corsa e aveva usato **0,70**, dichiarandolo un
+numero scelto per buon senso in attesa della misura. Questa e' la misura.
 
 | | Roma | Torino |
 | --- | ---: | ---: |
@@ -2565,15 +2303,15 @@ buon senso in attesa della misura. Questa e' la misura.
 | correlazione implicita nella matrice stimata | 0,9631 +/- 0,0006 | 0,9207 +/- 0,0034 |
 | quota di coppie dentro i bordi | 0,7324 +/- 0,0110 | 0,8599 +/- 0,0261 |
 | quota di transizioni identiche al secondo | 0,0435 +/- 0,0124 | 0,0116 +/- 0,0006 |
-| valore sintetico usato nella Fase 4 | 0,70 | 0,70 |
+| valore sintetico dell'argomento precedente | 0,70 | 0,70 |
 
 *Fonte: `results/correlazione_rete.csv`, riga `fascia = tutte`, media e deviazione su
 quattro giornate di verifica; popolazione `constatazioni` per Roma e `tutte` per
 Torino.*
 
 Tre letture, nell'ordine. La prima e' che **il ritardo si trasmette lungo la corsa
-molto piu' di quanto la Fase 4 avesse assunto**: 0,96 su Roma e 0,91 su Torino
-contro 0,70, e la distanza e' di venti-trenta punti, ben oltre qualunque
+molto piu' di quanto l'argomento precedente avesse assunto**: 0,96 su Roma e 0,91 su
+Torino contro 0,70, e la distanza e' di venti-trenta punti, ben oltre qualunque
 variabilita' fra giornate. Gli esperimenti sintetici dell'argomento precedente sono
 stati quindi eseguiti in un mondo in cui il ritardo si propaga meno che nella
 realta', ed e' esattamente il mondo in cui un pianificatore che ignori la
@@ -2582,17 +2320,16 @@ considerarsi **prudente**, non gonfiato. La seconda e' che la discretizzazione i
 otto bin **non distrugge la dipendenza che deve rappresentare**: la correlazione
 implicita nella matrice stimata e quella misurata sui secondi distano **meno di un
 millesimo su Roma** e **sei millesimi su Torino**, entrambe intorno a 0,96 e a 0,92:
-le cifre piene sono in tabella. E' il
-controllo che giustifica a posteriori l'intera rappresentazione a bin, perche' una
-matrice che perdesse la correlazione renderebbe inutile il condizionamento sul
-ritardo a monte. La terza e' che **le quattro letture concordano fra loro**: Pearson
-e Spearman, su tutte le coppie e dentro i soli bordi dei bin, stanno tutte fra 0,91
-e 0,98. Non e' un'osservazione oziosa, perche' sulla popolazione torinese mal
-definita descritta nelle decisioni di progetto le stesse quattro letture si
-contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi (*misura una tantum
-del 9 settembre 2026, su una popolazione poi abbandonata*), e la loro discordanza e'
-stato il segnale che qualcosa non andava nella definizione della popolazione prima
-ancora che nei numeri.
+le cifre piene sono in tabella. E' il controllo che giustifica a posteriori l'intera
+rappresentazione a bin, perche' una matrice che perdesse la correlazione renderebbe
+inutile il condizionamento sul ritardo a monte. La terza e' che **le quattro letture
+concordano fra loro**: Pearson e Spearman, su tutte le coppie e dentro i soli bordi
+dei bin, stanno tutte fra 0,91 e 0,98. Non e' un'osservazione oziosa, perche' sulla
+popolazione torinese mal definita descritta nelle decisioni di progetto le stesse
+quattro letture si contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi
+(*misura una tantum del 9 settembre 2026, su una popolazione poi abbandonata*), e la
+loro discordanza e' stato il segnale che qualcosa non andava nella definizione della
+popolazione prima ancora che nei numeri.
 
 **Che cosa questa valutazione non dice.** Non dice se il modello appreso faccia
 arrivare puntuale un passeggero: la perdita logaritmica e la calibrazione misurano
@@ -3003,7 +2740,7 @@ le sezioni precedenti non abbiano gia' introdotto. Usa il pianificatore
 multi-criterio dell'argomento sulla ricerca per produrre la frontiera di Pareto, il
 calcolo di `P(arrivo <= T)` dell'argomento sull'incertezza per sceglierne un elemento,
 e la tabella stimata nell'argomento sull'apprendimento come modello dei ritardi,
-tradotta nel contratto di Fase 2 da `src/delays/bayesiano.py`. Il calcolo e' in
+tradotta nel contratto `ModelloRitardo` da `src/delays/bayesiano.py`. Il calcolo e' in
 **NumPy** [10] e **pandas** [6], la lettura dei dati colonnari in **pyarrow**.
 
 La sola cosa che vale la pena dichiarare e' **come la replica e' costruita**, perche'
@@ -3026,7 +2763,8 @@ puo' accorgersene, e nessuna misura basata sul solo ritardo medio lo prevede.
 
 **Il confronto si fa rigiocando, non chiedendo al modello di giudicare se stesso.**
 *Alternativa scartata:* confrontare la probabilita' attesa delle due scelte, che e'
-cio' che l'esperimento sulla griglia della scadenza misura in Fase 4. E' una misura
+cio' che l'esperimento sulla griglia della scadenza misura nell'argomento
+sull'incertezza. E' una misura
 legittima di quanto la frontiera sia varia, ma non risponde alla domanda di ricerca,
 per la ragione detta nel sommario. *Il prezzo della scelta:* rigiocare costa molto di
 piu' - ogni giornata richiede di ricostruire il grafo, cercare le frontiere e
