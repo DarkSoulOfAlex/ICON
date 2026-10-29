@@ -690,7 +690,10 @@ Tabella 5 — Esecuzione sull'intera rete di ciascuna citta'.
 | di cui accessibili | 0 | 7.382 |
 | di cui utili | 24.554 | 11.439 |
 
-*Fonte: `results/kb_rete_intera.csv`, colonne omonime.*
+*Fonte: `results/kb_rete_intera.csv`, colonne omonime. Esecuzione singola: fatti,
+atomi e trasbordi sono deterministici, mentre i due tempi non hanno deviazione e
+vanno confrontati con le Tabelle 1 e 2, che a duemila fermate la riportano entro il
+3% della media.*
 
 I due problemi hanno taglia paragonabile - 8.301 contro 7.073 fermate, 55.894 contro
 44.187 fatti, un rapporto di circa 1,25 - ma i costi no: 4,5 milioni contro 959 mila
@@ -946,9 +949,11 @@ e differiscono solo per l'euristica o per la chiave di stato.
 **Il costo del grafo.**
 
 Tabella 6 — Dimensione del grafo tempo-espanso al crescere della finestra,
-partenza alle 08:00. Media su tre costruzioni indipendenti; eventi e archi sono
-grandezze deterministiche, quindi la loro deviazione standard e' nulla per
-costruzione e la variabilita' sta nel solo tempo di costruzione.
+partenza alle 08:00. Eventi, archi e memoria sono grandezze deterministiche,
+identiche nelle tre costruzioni indipendenti eseguite per ciascuna finestra, e la
+loro deviazione standard e' nulla per costruzione; i tempi di costruzione, media e
+deviazione sulle tre ripetizioni, sono nel testo. Fonte:
+`results/grafo_finestra.csv`.
 
 | Finestra | Roma: eventi | Roma: archi | Roma: MB | Torino: eventi | Torino: archi | Torino: MB |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -963,8 +968,9 @@ moltiplica gli eventi di Roma per 2,6 e gli archi per 3,0. Una parte cospicua de
 non dipende dalla finestra - i trasbordi a terra derivati dalla base di conoscenza,
 41.266 a Roma e 21.130 a Torino, sono gli stessi a qualunque ora - ed e' quella parte a
 rendere alto il primo punto e bassa la pendenza. Il grafo di due ore di Roma occupa 11,9
-MB e quello di quattro ore 17,0: ricostruirlo a ogni interrogazione e' praticabile, e
-conservarlo non serve.
+MB e quello di quattro ore 17,0, e si costruiscono in 2,10 ± 0,05 e 3,55 ± 0,03 secondi
+(0,68 ± 0,01 e 0,98 ± 0,01 a Torino): ricostruirlo a ogni interrogazione e'
+praticabile, e conservarlo non serve.
 
 Sulle cinquanta coppie la finestra di due ore e' bastata in **43 casi su 50 a Roma e 39
 su 50 a Torino**, cioe' nell'86% e nel 78%; le coppie rimaste corrispondono a
@@ -983,7 +989,9 @@ stesso identico orario di arrivo:
 | `(fermata, cambi)` | 23.597 | 0,57 |
 
 *Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocita' massima
-139,12 m/s misurata da `results/velocita_archi.csv`.*
+139,12 m/s misurata da `results/velocita_archi.csv`. Gli stati espansi sono
+deterministici; i tempi vengono da una sola esecuzione su una sola coppia e vanno
+letti come ordine di grandezza, non come stima con la sua variabilita'.*
 
 Il rapporto e' di 62 volte sugli stati e di 100 sul tempo, perche' la coda di priorita'
 cresce con gli stati aperti. La coincidenza degli orari di arrivo conferma
@@ -1393,25 +1401,14 @@ non ha. *La verifica:* dopo la correzione l'orario di arrivo ricostruito
 dall'itinerario coincide esattamente con quello dell'etichetta di Pareto su tutti
 i 106 candidati esaminati; prima divergeva su tutti quelli con coda a piedi.
 
-**Un test che falliva a intermittenza non e' stato archiviato.** I parametri delle
-distribuzioni sintetiche sono derivati da `hashlib.blake2b` e non dalla funzione
-`hash` incorporata. La ragione merita di essere riportata perche' dice qualcosa
-sul metodo prima che sul codice. Un test deterministico ha cominciato a fallire in
-circa due esecuzioni su tre della suite completa, passando sempre quando eseguito
-da solo. La tentazione naturale, di fronte a un test che "a volte fallisce", e'
-allargarne la tolleranza o dichiararlo instabile. La causa era invece un difetto
-vero: il modello usava `hash((seme, route_id))` per derivare i parametri, e
-**Python randomizza l'hash delle stringhe a ogni processo**, quindi lo stesso
-identificativo di linea produceva parametri diversi a ogni esecuzione. Il modello
-si dichiarava deterministico dato un seme e non lo era, e la verifica fatta
-inizialmente — due chiamate nello stesso processo — era proprio quella incapace di
-rivelarlo. Le conseguenze sarebbero andate ben oltre il test: **ogni esperimento
-di questa sezione sarebbe stato irriproducibile**, e il difetto si sarebbe
-manifestato solo come numeri che cambiano fra un'esecuzione e l'altra senza
-spiegazione, in un progetto che dichiara la riproducibilita' fra i propri
-requisiti. Un test deterministico che fallisce a intermittenza non e' un test
-instabile: e' un programma non deterministico, e la differenza fra le due letture
-e' la differenza fra trovare il difetto e nasconderlo.
+**I parametri sintetici si derivano da `hashlib.blake2b`, non dalla funzione `hash`
+incorporata.** La prima versione usava `hash((seme, route_id))`, e **Python
+randomizza l'hash delle stringhe a ogni processo**: lo stesso identificativo di
+linea produceva parametri diversi a ogni esecuzione, e un test deterministico
+falliva in circa due esecuzioni su tre della suite completa pur passando sempre da
+solo. Allargarne la tolleranza avrebbe nascosto un difetto che rendeva
+**irriproducibile ogni esperimento di questa sezione**; la verifica iniziale, due
+chiamate nello stesso processo, era proprio quella incapace di rivelarlo.
 
 ## Valutazione
 
@@ -1626,7 +1623,13 @@ ogni CSV di questo argomento. Le giornate sono divise in ordine temporale: nove 
 addestramento, tre di taratura della concentrazione e quattro di verifica (6-9
 settembre); le ultime due dell'addestramento fanno da banco di prova per la scelta
 dei bordi e non entrano nella stima finale, cosi' che nessun iperparametro venga
-scelto guardando le giornate su cui il modello e' poi misurato. Il dimensionamento
+scelto guardando le giornate su cui il modello e' poi misurato. Non si usa una
+cross-validation a blocchi casuali: mescolerebbe fra stima e verifica passaggi della
+stessa giornata, che condividono il traffico di quel giorno, e la perdita misurata
+risulterebbe ottimistica. La divisione in ordine temporale e' la forma di
+validazione che rispetta la dipendenza fra le osservazioni, e la variabilita' si
+misura fra le quattro giornate di verifica, ciascuna delle quali fa da insieme di
+prova a se'. Il dimensionamento
 reale della raccolta dentro quella finestra, e cio' che ne sopravvive fino alla
 tabella stimata, e' il seguente.
 
@@ -2077,24 +2080,16 @@ ferma al 9 settembre, quindi nessun risultato di questo capitolo usa quelle gior
 
 ## Valutazione
 
-**Le grandezze, prima di usarle.** La **perdita logaritmica** e' il logaritmo in base
-due della probabilita' che il modello assegnava al bin poi osservato, cambiato di
-segno e mediato sulle coppie: si misura in bit, e' zero per un modello che indovina
-con certezza, e cresce senza limite per un modello che assegna probabilita' vicine a
-zero a cio' che accade. Non e' calcolabile dentro campione senza mentire, quindi si
+**Le grandezze.** La **perdita logaritmica**, in bit, e lo **scarto di
+calibrazione** sono quelli usuali [1, cap. 7 e 10]; la calibrazione raccoglie le
+previsioni in dieci classi di valore simile, pesate per numerosita'. La perdita si
 calcola sulle **quattro giornate di verifica**, che non hanno partecipato ne' alla
-stima ne' alla taratura ne' alla scelta dei bordi; ogni giornata da' un valore, e
-media e deviazione standard sono prese fra giornate, perche' le coppie di uno stesso
-giorno condividono il traffico di quel giorno e non sono indipendenti. L'**entropia
-marginale** e' la perdita di un modello che ignora tutto, contesto e ritardo a monte:
-e' il tetto, e **dipende dai bordi**, per cui due perdite calcolate su
-discretizzazioni diverse non sono confrontabili senza di essa. Il **guadagno** e' la
-differenza fra le due, cioe' quanto il modello aggiunge a chi non sa nulla, ed e' la
-grandezza confrontabile fra bordi diversi. Lo **scarto di calibrazione** e' la
-differenza media, in valore assoluto, fra la probabilita' che il modello attribuisce
-a un bin e la frequenza con cui quel bin poi si verifica, raccogliendo le previsioni
-in dieci classi di valore simile e pesando ciascuna classe per la sua numerosita'.
-La **correlazione implicita** e' la correlazione fra ritardo a monte e ritardo a
+stima ne' alla taratura ne' alla scelta dei bordi; media e deviazione standard sono
+prese fra giornate, perche' le coppie di uno stesso giorno non sono indipendenti.
+Tre grandezze sono invece proprie di questo progetto. L'**entropia marginale** e' la
+perdita di un modello che ignora contesto e ritardo a monte, e **dipende dai bordi**:
+il **guadagno**, la differenza fra le due, e' percio' la grandezza confrontabile fra
+discretizzazioni diverse. La **correlazione implicita** e' la correlazione fra ritardo a monte e ritardo a
 valle che la matrice stimata comporta, calcolata usando come rappresentante di
 ciascun bin il ritardo medio **misurato** dentro di esso e non il punto medio
 dell'intervallo, che per i due bin aperti non esisterebbe.
@@ -2557,7 +2552,9 @@ perche' la scelta sia una scelta vera e non un'assegnazione obbligata, il che e'
 il primo requisito perche' il problema sia interessante.
 
 **Il risultato principale.** Su **244 istanze risolubili, la strategia sequenziale
-ne dichiara infattibili 45, cioe' il 18,4%**: 16,5% a Roma e 20,3% a Torino. Quasi
+ne dichiara infattibili 45, cioe' il 18,4% ± 2,5%**: 16,5% ± 3,4% a Roma e
+20,3% ± 3,6% a Torino, con l'errore standard binomiale descritto sotto la Tabella 12.
+Quasi
 una istanza su cinque richiede di tornare indietro su una scelta gia' fatta. Il
 fenomeno costruito a mano nel sommario non e' dunque una curiosita' di laboratorio:
 e' frequente.
@@ -2565,18 +2562,22 @@ e' frequente.
 Tabella 12 — Effetto del margine sul tetto dei cambi. Il margine e' lo scarto fra
 il tetto imposto e il minimo ottenibile guardando ogni tratta separatamente;
 margine zero significa che ogni tratta deve usare il proprio itinerario con meno
-cambi. Aggregata sui viaggi a due, tre e quattro tappe.
+cambi. Aggregata sui viaggi a due, tre e quattro tratte. Accanto a ogni percentuale
+c'e' il suo errore standard binomiale, `sqrt(p(1-p)/n)` sulle `n` istanze
+risolubili: le istanze ricavate dalla stessa catena non sono del tutto indipendenti,
+quindi va letto come limite inferiore dell'incertezza. Fonte:
+`results/csp_greedy.csv`.
 
 | Citta' | Margine | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Roma | 0 | 47 | 15 | 11 | 4 (26,7%) |
-| Roma | 1 | 47 | 26 | 22 | 4 (15,4%) |
-| Roma | 2 | 47 | 37 | 30 | 7 (18,9%) |
-| Roma | 3 | 47 | 43 | 38 | 5 (11,6%) |
-| Torino | 0 | 44 | 15 | 9 | 6 (40,0%) |
-| Torino | 1 | 44 | 29 | 19 | 10 (34,5%) |
-| Torino | 2 | 44 | 37 | 31 | 6 (16,2%) |
-| Torino | 3 | 44 | 42 | 39 | 3 (7,1%) |
+| Roma | 0 | 47 | 15 | 11 | 4 (26,7% ± 11,4%) |
+| Roma | 1 | 47 | 26 | 22 | 4 (15,4% ± 7,1%) |
+| Roma | 2 | 47 | 37 | 30 | 7 (18,9% ± 6,4%) |
+| Roma | 3 | 47 | 43 | 38 | 5 (11,6% ± 4,9%) |
+| Torino | 0 | 44 | 15 | 9 | 6 (40,0% ± 12,6%) |
+| Torino | 1 | 44 | 29 | 19 | 10 (34,5% ± 8,8%) |
+| Torino | 2 | 44 | 37 | 31 | 6 (16,2% ± 6,1%) |
+| Torino | 3 | 44 | 42 | 39 | 3 (7,1% ± 4,0%) |
 
 La tabella va letta su due colonne insieme. La colonna **risolubili** cresce in
 modo netto con il margine — da 15 a 43 su Roma, da 15 a 42 su Torino — e non
@@ -2606,8 +2607,9 @@ sei o sette punti. Vanno lette come indicazione della direzione, non come stima
 del valore. Le righe a margine due e tre, con denominatori fra 37 e 43, reggono
 invece un'interpretazione quantitativa. La stessa cautela vale per la Tabella 13,
 dove il 33,3% di Roma a quattro tappe sono **quattro casi su dodici**, mentre
-l'11,8% a due tappe poggia su 68: la monotonia della colonna e' significativa
-perche' si presenta identica su entrambe le citta', ma il valore dell'ultima riga
+l'11,8% a due tappe poggia su 68: la monotonia della colonna e' credibile perche'
+si presenta identica su entrambe le citta', benche' gli errori standard delle righe
+adiacenti si sovrappongano, ma il valore dell'ultima riga
 di Roma non lo e' altrettanto. In generale, in queste due tabelle il denominatore
 cala proprio dove la percentuale cresce, e leggere le percentuali senza guardare
 la colonna "risolubili" porterebbe a sopravvalutare gli estremi.
@@ -2622,12 +2624,12 @@ Tabella 13 — Effetto del numero di tappe, aggregata sui quattro margini.
 
 | Citta' | Tappe | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Roma | 2 | 80 | 68 | 60 | 8 (11,8%) |
-| Roma | 3 | 64 | 41 | 33 | 8 (19,5%) |
-| Roma | 4 | 44 | 12 | 8 | 4 (33,3%) |
-| Torino | 2 | 68 | 58 | 48 | 10 (17,2%) |
-| Torino | 3 | 56 | 35 | 28 | 7 (20,0%) |
-| Torino | 4 | 52 | 30 | 22 | 8 (26,7%) |
+| Roma | 2 | 80 | 68 | 60 | 8 (11,8% ± 3,9%) |
+| Roma | 3 | 64 | 41 | 33 | 8 (19,5% ± 6,2%) |
+| Roma | 4 | 44 | 12 | 8 | 4 (33,3% ± 13,6%) |
+| Torino | 2 | 68 | 58 | 48 | 10 (17,2% ± 5,0%) |
+| Torino | 3 | 56 | 35 | 28 | 7 (20,0% ± 6,8%) |
+| Torino | 4 | 52 | 30 | 22 | 8 (26,7% ± 8,1%) |
 
 Questa e' la lettura piu' pulita dell'esperimento, perche' la crescita e'
 **monotona su entrambe le citta' senza eccezioni**: 11,8%, 19,5%, 33,3% a Roma e
@@ -2875,16 +2877,18 @@ Roma e quattro su Torino, per la stessa ragione per cui la giornata magra e' esc
 
 | margine | Roma, piu' veloce | Roma, robusto | Roma, differenza | Torino, piu' veloce | Torino, robusto | Torino, differenza |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 min | 0,3778 +/- 0,1171 | 0,3889 +/- 0,1347 | +0,0111 | 0,5000 +/- 0,0817 | 0,4917 +/- 0,0918 | **-0,0083** |
-| 5 min | 0,5111 +/- 0,0839 | 0,5444 +/- 0,0192 | +0,0333 | 0,7250 +/- 0,0788 | 0,7333 +/- 0,1277 | +0,0083 |
-| 10 min | 0,6222 +/- 0,0694 | 0,6556 +/- 0,0192 | +0,0333 | 0,8250 +/- 0,0569 | 0,8500 +/- 0,0793 | +0,0250 |
-| **15 min** | 0,6778 +/- 0,0694 | **0,7778 +/- 0,0192** | **+0,1000** | 0,8583 +/- 0,0319 | 0,8583 +/- 0,0918 | **0,0000** |
-| **20 min** | 0,7222 +/- 0,0509 | **0,8667 +/- 0,0577** | **+0,1444** | 0,8750 +/- 0,0319 | 0,9167 +/- 0,0793 | +0,0417 |
-| 30 min | 0,8000 +/- 0,0882 | 0,9000 +/- 0,0577 | +0,1000 | 0,9250 +/- 0,0319 | 0,9583 +/- 0,0319 | +0,0333 |
+| 0 min | 0,3778 +/- 0,1171 | 0,3889 +/- 0,1347 | +0,0111 +/- 0,0192 | 0,5000 +/- 0,0817 | 0,4917 +/- 0,0918 | **-0,0083 +/- 0,0167** |
+| 5 min | 0,5111 +/- 0,0839 | 0,5444 +/- 0,0192 | +0,0333 +/- 0,0667 | 0,7250 +/- 0,0788 | 0,7333 +/- 0,1277 | +0,0083 +/- 0,0833 |
+| 10 min | 0,6222 +/- 0,0694 | 0,6556 +/- 0,0192 | +0,0333 +/- 0,0882 | 0,8250 +/- 0,0569 | 0,8500 +/- 0,0793 | +0,0250 +/- 0,0569 |
+| **15 min** | 0,6778 +/- 0,0694 | **0,7778 +/- 0,0192** | **+0,1000 +/- 0,0667** | 0,8583 +/- 0,0319 | 0,8583 +/- 0,0918 | **0,0000 +/- 0,0609** |
+| **20 min** | 0,7222 +/- 0,0509 | **0,8667 +/- 0,0577** | **+0,1444 +/- 0,0385** | 0,8750 +/- 0,0319 | 0,9167 +/- 0,0793 | +0,0417 +/- 0,0569 |
+| 30 min | 0,8000 +/- 0,0882 | 0,9000 +/- 0,0577 | +0,1000 +/- 0,0333 | 0,9250 +/- 0,0319 | 0,9583 +/- 0,0319 | +0,0333 +/- 0,0272 |
 
 *Fonte: `results/backtest_riepilogo.csv`, bordi `ottili`, colonne `quota_entro` e
 `deviazione_entro`; media e deviazione su 3 giornate (Roma) e 4 (Torino), 90 e 120
-istanze per riga.*
+istanze per riga. La differenza e' la media delle differenze giornaliere fra le due
+strategie, con la loro deviazione, ricalcolata da `results/backtest.csv`: e' appaiata,
+quindi piu' stretta di quanto le deviazioni delle due colonne lascerebbero credere.*
 
 **Il prezzo: tempo nominale che il robusto paga.** La stessa tabella, sulle sole
 istanze in cui le due strategie scelgono diversamente.
@@ -2909,7 +2913,11 @@ punti percentuali** in piu' di viaggi arrivati entro la scadenza, e li paga con
 **quattro e sei minuti** di tempo teorico mediano su un terzo delle istanze. Su Torino
 il beneficio e' molto piu' piccolo - fra zero e quattro punti - e il prezzo comparabile,
 fra due e cinque minuti. Lo scambio conviene su Roma nella fascia centrale dei margini,
-e su Torino e' vicino all'indifferenza.
+e su Torino e' vicino all'indifferenza. La deviazione appaiata dice quanto fidarsi di
+queste differenze: su Roma la differenza vale tre volte o piu' la propria deviazione
+fra giornate a venti e trenta minuti e una volta e mezzo a quindici, su Torino la
+supera solo a trenta minuti, e di poco. Su tre e quattro giornate sono rapporti
+indicativi, non test di significativita'.
 
 **Il costo e' quasi sempre dentro il margine dichiarato, e le eccezioni dicono una
 cosa.** Su 315 istanze divergenti a margine non nullo, il robusto sceglie un itinerario
@@ -2925,22 +2933,25 @@ perche' il margine e' zero: e' aritmetica, non un comportamento.
 
 | margine | Roma, piu' veloce | Roma, robusto | Torino, piu' veloce | Torino, robusto |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 min | 0,4222 | 0,3556 | 0,3417 | 0,3250 |
-| 5 min | 0,4222 | 0,3667 | 0,3417 | 0,2583 |
-| 10 min | 0,4222 | 0,3556 | 0,3417 | 0,2250 |
-| 15 min | 0,4222 | 0,3222 | 0,3417 | 0,1667 |
-| 20 min | 0,4222 | **0,2000** | 0,3417 | 0,1583 |
-| 30 min | 0,4222 | **0,1889** | 0,3417 | **0,1167** |
+| 0 min | 0,4222 +/- 0,1171 | 0,3556 +/- 0,0509 | 0,3417 +/- 0,1641 | 0,3250 +/- 0,1596 |
+| 5 min | 0,4222 +/- 0,1171 | 0,3667 +/- 0,0882 | 0,3417 +/- 0,1641 | 0,2583 +/- 0,1101 |
+| 10 min | 0,4222 +/- 0,1171 | 0,3556 +/- 0,1072 | 0,3417 +/- 0,1641 | 0,2250 +/- 0,1287 |
+| 15 min | 0,4222 +/- 0,1171 | 0,3222 +/- 0,1072 | 0,3417 +/- 0,1641 | 0,1667 +/- 0,1305 |
+| 20 min | 0,4222 +/- 0,1171 | **0,2000 +/- 0,0882** | 0,3417 +/- 0,1641 | 0,1583 +/- 0,1258 |
+| 30 min | 0,4222 +/- 0,1171 | **0,1889 +/- 0,1262** | 0,3417 +/- 0,1641 | **0,1167 +/- 0,0694** |
 
-*Fonte: `results/backtest_riepilogo.csv`, colonna `coincidenze_perse`, bordi `ottili`.
-La strategia piu' veloce non dipende dal margine, quindi la sua colonna e' costante:
-e' la scadenza a cambiare, non l'itinerario che minimizza l'orario teorico.*
+*Fonte: `results/backtest_riepilogo.csv`, colonna `coincidenze_perse`, bordi `ottili`;
+le deviazioni sono fra giornate, ricalcolate da `results/backtest.csv`. La strategia
+piu' veloce non dipende dal margine, quindi la sua colonna e' costante: e' la scadenza
+a cambiare, non l'itinerario che minimizza l'orario teorico.*
 
 Su questa grandezza il vantaggio e' piu' netto che sugli arrivi, e cresce col
 margine, in modo monotono su Torino e su Roma dal primo margine non nullo in poi: a
 trenta minuti il robusto perde **meno
 della meta'** delle coincidenze del piu' veloce su Roma (0,1889 contro 0,4222) e **un
-terzo** su Torino (0,1167 contro 0,3417).
+terzo** su Torino (0,1167 contro 0,3417). La differenza appaiata fra giornate vale a
+trenta minuti -0,233 +/- 0,153 su Roma e -0,225 +/- 0,145 su Torino: il segno e'
+stabile, l'ampiezza varia molto da un giorno all'altro.
 
 **Per quale meccanismo, misurato.** La strategia di riferimento ha un numero medio di
 cambi, cioe' di salite secondo la convenzione dell'argomento sulla ricerca, **costante
@@ -3250,8 +3261,8 @@ contro -0,0667, -0,1750 contro -0,1000), a venti e trenta il rapporto si inverte
 punti percentuali o piu'** fra quindici e trenta minuti, con tutte e tre le giornate di
 segno positivo; su Torino resta **fra zero e quattro punti**, e a ogni margine fino a
 venti minuti almeno una giornata su quattro ha segno negativo. A **margine nullo** non e' distinguibile da
-zero su nessuna delle due citta' - deviazioni fra giornate di +/-0,117 e +/-0,135 su
-Roma, +/-0,082 e +/-0,092 su Torino, contro differenze dell'ordine del centesimo -
+zero su nessuna delle due citta' - differenze appaiate di +0,011 +/- 0,019 su Roma e
+-0,008 +/- 0,017 su Torino -
 mentre sulle coincidenze perse il robusto ne perde comunque 0,0667 in meno su Roma e
 0,0167 in meno su Torino.
 
