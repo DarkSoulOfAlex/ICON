@@ -41,7 +41,7 @@
 #const tempo_piedi_max_sedia = 180.
 
 % Numero di trasbordi a piedi oltre il quale una fermata e' sospetta: vedere
-% il vincolo di integrita' 4.
+% il vincolo di integrita' V1.
 #const grado_massimo_plausibile = 40.
 
 % Interruttore dei vincoli di integrita'. Serve alla diagnostica: quando il
