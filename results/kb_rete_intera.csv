@@ -1,3 +1,7 @@
-citta,archivio,fermate_fisiche,fatti,secondi_generazione_fatti,atomi,regole,secondi_grounding,secondi_solving,trasbordi,trasbordi_a_piedi,trasbordi_accessibili,trasbordi_utili,corse
-torino,2026-08-26.zip,7073,44187,0.72,958909,958909,2.36,0.05,21130,21130,7382,11439,62074
-roma,2026-08-26.zip,8301,55894,1.49,4541658,4541658,12.12,0.09,41266,41266,0,24554,179177
+citta,archivio,ripetizione,fermate_fisiche,fatti,secondi_generazione_fatti,atomi,regole,secondi_grounding,secondi_solving,trasbordi,trasbordi_a_piedi,trasbordi_accessibili,trasbordi_utili,corse,macchina
+torino,2026-08-26.zip,1,7073,44187,0.89,958909,958909,3.94,0.06,21130,21130,7382,11439,62074,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7
+torino,2026-08-26.zip,2,7073,44187,0.97,958909,958909,3.11,0.05,21130,21130,7382,11439,62074,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7
+torino,2026-08-26.zip,3,7073,44187,1.01,958909,958909,2.66,0.25,21130,21130,7382,11439,62074,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7
+roma,2026-08-26.zip,1,8301,55894,2.03,4541658,4541658,19.68,0.13,41266,41266,0,24554,179177,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7
+roma,2026-08-26.zip,2,8301,55894,2.02,4541658,4541658,15.65,0.12,41266,41266,0,24554,179177,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7
+roma,2026-08-26.zip,3,8301,55894,1.96,4541658,4541658,15.72,0.15,41266,41266,0,24554,179177,Intel64 Family 6 Model 158 Stepping 10 | Windows 11 | Python 3.14.7

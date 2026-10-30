@@ -11,9 +11,16 @@ scritti nel documento e non erano piu' verificabili da nessuno, che e' esattamen
 difetto da evitare. Undici secondi di grounding non sono un costo che giustifichi
 di non rifare la misura: mancava lo sbocco, non il tempo.
 
+Perche' l'esecuzione si ripete. Un tempo preso una volta sola non dice quanto
+dipenda dal carico della macchina, e il documento non riporta numeri senza la loro
+variabilita'. Si ripetono generazione dei fatti, grounding e solving, ma non la
+lettura dell'archivio, che non e' parte della misura: il CSV ha una riga per
+ripetizione, come ``complessita_kb.csv``. Fatti, atomi e trasbordi devono uscire
+identici a ogni ripetizione, e il programma si ferma se non lo sono.
+
 Uso:
-    python scripts/materializza_transfers.py
-    python scripts/materializza_transfers.py --citta torino
+    python scripts/materializza_transfers.py --archivio 2026-08-26
+    python scripts/materializza_transfers.py --citta torino --ripetizioni 5
 """
 
 from __future__ import annotations
@@ -56,7 +63,16 @@ def archivio_scelto(citta: str, fino_a: str | None = None) -> Path:
     return archivi[-1]
 
 
-def materializza_citta(citta: str, fino_a: str | None = None) -> dict:
+RIPETIZIONI_PREDEFINITE = 3
+"""Le stesse tre ripetizioni della curva di complessita', per poter confrontare."""
+
+DETERMINISTICHE = ("fatti", "atomi", "regole", "trasbordi", "trasbordi_a_piedi",
+                   "trasbordi_accessibili", "trasbordi_utili")
+"""Colonne che non possono cambiare fra ripetizioni: se cambiano, la misura e' rotta."""
+
+
+def materializza_citta(citta: str, fino_a: str | None = None,
+                       ripetizioni: int = RIPETIZIONI_PREDEFINITE) -> list[dict]:
     percorso = archivio_scelto(citta, fino_a)
     inizio = monotonic()
     archivio = carica_archivio(percorso, con_stop_times=True)
@@ -66,7 +82,18 @@ def materializza_citta(citta: str, fino_a: str | None = None) -> dict:
         f"  {len(fermate):,} fermate fisiche, archivio letto in {monotonic() - inizio:.0f}s",
         flush=True,
     )
+    righe = [_esegui_una_volta(citta, percorso, archivio, len(fermate), numero)
+             for numero in range(1, ripetizioni + 1)]
+    for colonna in DETERMINISTICHE:
+        valori = {riga[colonna] for riga in righe}
+        if len(valori) > 1:
+            raise ErroreKB(f"[{citta}] '{colonna}' cambia fra le ripetizioni: {sorted(valori)}")
+    return righe
 
+
+def _esegui_una_volta(citta: str, percorso: Path, archivio, n_fermate: int,
+                      numero: int) -> dict:
+    print(f"  -- ripetizione {numero}", flush=True)
     inizio = monotonic()
     fatti = genera_fatti(archivio)
     tempo_fatti = monotonic() - inizio
@@ -104,7 +131,8 @@ def materializza_citta(citta: str, fino_a: str | None = None) -> dict:
     return {
         "citta": citta,
         "archivio": percorso.name,
-        "fermate_fisiche": len(fermate),
+        "ripetizione": numero,
+        "fermate_fisiche": n_fermate,
         "fatti": fatti.n_fatti,
         "secondi_generazione_fatti": round(tempo_fatti, 2),
         "atomi": risultato.atomi,
@@ -125,9 +153,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     analizzatore.add_argument("--archivio", default=None, metavar="AAAA-MM-GG",
                               help="usa l'archivio GTFS in vigore a questa data "
                                    "invece del piu' recente")
+    analizzatore.add_argument("--ripetizioni", type=int, default=RIPETIZIONI_PREDEFINITE)
     argomenti = analizzatore.parse_args(argv)
-    righe = [materializza_citta(c.strip(), argomenti.archivio)
-             for c in argomenti.citta.split(",")]
+    righe = [riga
+             for c in argomenti.citta.split(",")
+             for riga in materializza_citta(c.strip(), argomenti.archivio,
+                                            argomenti.ripetizioni)]
     if righe:
         RISULTATI.mkdir(parents=True, exist_ok=True)
         destinazione = RISULTATI / "kb_rete_intera.csv"
