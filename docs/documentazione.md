@@ -677,32 +677,33 @@ conclusioni.
 coincidere con la rete intera, che è stata eseguita a parte: i suoi numeri sono una
 misura e non un'estrapolazione.
 
-Tabella 5 — Esecuzione sull'intera rete di ciascuna città.
+Tabella 5 — Esecuzione sull'intera rete di ciascuna città, media e deviazione
+standard su tre ripetizioni.
 
 | | Roma | Torino |
 | --- | ---: | ---: |
 | Fermate | 8.301 | 7.073 |
 | Fatti in ingresso | 55.894 | 44.187 |
-| Atomi generati | 4.541.658 | 958.909 |
-| Tempo di grounding | 12,12 s | 2,36 s |
-| Tempo di solving | 0,09 s | 0,05 s |
+| Atomi generati | 4.541.658 ± 0 | 958.909 ± 0 |
+| Tempo di grounding | 17,02 ± 2,31 s | 3,24 ± 0,65 s |
+| Tempo di solving | 0,13 ± 0,02 s | 0,12 ± 0,11 s |
 | Trasbordi derivati | 41.266 | 21.130 |
 | di cui accessibili | 0 | 7.382 |
 | di cui utili | 24.554 | 11.439 |
 
-*Fonte: `results/kb_rete_intera.csv`, colonne omonime. Esecuzione singola: fatti,
-atomi e trasbordi sono deterministici, mentre i due tempi non hanno deviazione e
-vanno confrontati con le Tabelle 1 e 2, che a duemila fermate la riportano entro il
-3% della media.*
+*Fonte: `results/kb_rete_intera.csv`, colonne omonime, una riga per ripetizione.
+Fatti, atomi e trasbordi sono identici nelle tre ripetizioni, e il programma che li
+misura si ferma se non lo sono; la variabilità sta tutta nei tempi, e la prima
+ripetizione è in entrambe le città la più lenta.*
 
 I due problemi hanno taglia paragonabile - 8.301 contro 7.073 fermate, 55.894 contro
 44.187 fatti, un rapporto di circa 1,25 - ma i costi no: 4,5 milioni contro 959 mila
-atomi, un rapporto di 4,7, e 12,12 contro 2,36 secondi di grounding, un rapporto di 5,1,
-che è l'effetto della densità già discusso. Il solving resta sotto il decimo di
-secondo. I trasbordi derivati, 41.266 e 21.130, sono la relazione che il resto del
-sistema consuma, e il loro rapporto, 1,95, segue le fermate e non il costo; circa tre
+atomi, un rapporto di 4,7, e 17,0 contro 3,2 secondi di grounding, un rapporto di 5,3,
+che è l'effetto della densità già discusso. Il solving resta nell'ordine del decimo di
+secondo, da venti a oltre cento volte sotto il grounding. I trasbordi derivati, 41.266
+e 21.130, sono la relazione che il resto del sistema consuma, e il loro rapporto, 1,95, segue le fermate e non il costo; circa tre
 su cinque sono utili, cioè portano a una linea nuova. L'intera base di conoscenza di
-Roma si istanzia in dodici secondi, un costo sostenibile per un'elaborazione da
+Roma si istanzia in meno di venti secondi, un costo sostenibile per un'elaborazione da
 rieseguire quando l'orario statico cambia. I 4,5 milioni di atomi sono **inferiori** ai
 26 milioni che l'esponente `n^1,70` avrebbe fatto prevedere, perché il campionamento
 per prossimità seleziona la porzione centrale e più densa della rete: la curva misura
@@ -978,29 +979,32 @@ collegamenti che nella finestra non esistono, tipicamente fra periferie opposte.
 sono state escluse dal campione, e delimitano la generalità di ciò che segue alle
 coppie collegate entro due ore.
 
-**La relazione di dominanza vale due ordini di grandezza.** Sulla prima coppia risolta
-del campione di Torino, la 3176 → 3492 estratta con il seme 20260826, togliere l'istante
-dalla chiave dello stato a terra riduce il lavoro di due ordini di grandezza, con lo
-stesso identico orario di arrivo:
+**La relazione di dominanza vale fino a due ordini di grandezza.** Sulle prime dieci
+coppie risolte del campione di Torino, estratte con il seme 20260826, togliere
+l'istante dalla chiave dello stato a terra riduce il lavoro di decine di volte, con lo
+stesso identico orario di arrivo su tutte e dieci:
 
 Tabella 7 — Stati espansi e tempo di ricerca con e senza l'istante nella chiave dello
-stato a terra, sulla coppia 3176 → 3492 di Torino.
+stato a terra, media e deviazione standard sulle prime dieci coppie risolte di Torino.
 
 | Formulazione dello stato a terra | Stati espansi | Secondi |
 | --- | ---: | ---: |
-| `(fermata, istante, cambi)` | 1.464.312 | 57,10 |
-| `(fermata, cambi)` | 23.597 | 0,57 |
+| `(fermata, istante, cambi)` | 623.196 ± 590.474 | 30,54 ± 30,89 |
+| `(fermata, cambi)` | 12.237 ± 7.962 | 0,45 ± 0,25 |
 
-*Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocità massima
-139,12 m/s misurata da `results/velocita_archi.csv`. Gli stati espansi sono
-deterministici; i tempi vengono da una sola esecuzione su una sola coppia e vanno
-letti come ordine di grandezza, non come stima con la sua variabilità.*
+*Fonte: `results/chiave_di_stato.csv`, una riga per coppia e formulazione, archivio del
+26 agosto 2026, velocità massima 139,12 m/s misurata da `results/velocita_archi.csv`.
+Le deviazioni, dello stesso ordine delle medie, misurano la diversa difficoltà delle
+coppie, non l'incertezza della misura.*
 
-Il rapporto è di 62 volte sugli stati e di 100 sul tempo, perché la coda di priorità
-cresce con gli stati aperti. La coincidenza degli orari di arrivo conferma
-sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di progetto; e
-senza questa riformulazione il backtesting, con le sue migliaia di interrogazioni a
-cinquantasette secondi l'una, non sarebbe stato eseguibile.
+Calcolato coppia per coppia, il rapporto vale **37 ± 25 volte sugli stati e 53 ± 42 sul
+tempo**, e cresce con la difficoltà della coppia: dalle 2,6 volte di una coppia che si
+risolve in poche centinaia di stati alle 78 della più impegnativa, dove il tempo si
+riduce di 130 volte. Il tempo guadagna più degli stati perché la coda di priorità
+cresce con gli stati aperti. La coincidenza degli orari di arrivo su tutte le coppie
+conferma sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di
+progetto; e senza questa riformulazione il backtesting, con le sue migliaia di
+interrogazioni a decine di secondi l'una, non sarebbe stato eseguibile.
 
 **L'euristica geografica: un risultato negativo.**
 
