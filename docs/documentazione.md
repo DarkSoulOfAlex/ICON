@@ -15,18 +15,18 @@ AA 2025-2026
 # Introduzione
 
 Chi prende l'autobus non ha lo stesso problema di chi guida. L'automobilista che
-parte in ritardo arriva in ritardo della stessa quantita'; chi viaggia sul
+parte in ritardo arriva in ritardo della stessa quantità; chi viaggia sul
 trasporto pubblico, se perde una coincidenza per un minuto, non arriva un minuto
 dopo ma un quarto d'ora dopo, o mezz'ora, a seconda della frequenza della linea
-successiva. Il tempo di viaggio non e' una grandezza continua, e' una scala a
+successiva. Il tempo di viaggio non è una grandezza continua, è una scala a
 gradini i cui scalini hanno l'altezza degli intervalli fra le corse.
 
-Questo scarto fra il piccolo ritardo e la sua conseguenza e' la ragione per cui un
+Questo scarto fra il piccolo ritardo e la sua conseguenza è la ragione per cui un
 orario pubblicato non basta a pianificare un viaggio. Gli orari che le aziende di
 trasporto distribuiscono nel formato GTFS sono orari **teorici**: dicono quando
 una corsa dovrebbe passare, non quando passa. Le stesse aziende distribuiscono, in
 un formato parallelo chiamato GTFS Real-Time, gli scostamenti osservati rispetto a
-quell'orario, e la distanza fra i due e' abitualmente di minuti. Ogni
+quell'orario, e la distanza fra i due è abitualmente di minuti. Ogni
 pianificatore di viaggi oggi in uso ignora questa distanza: costruisce
 l'itinerario che, secondo l'orario teorico, arriva prima. Se quell'itinerario
 contiene una coincidenza con due minuti di margine su una linea che accumula
@@ -35,85 +35,85 @@ non ha modo di dirlo.
 
 Il progetto affronta questo problema cambiando la grandezza da ottimizzare. Invece
 di minimizzare l'orario di arrivo previsto dall'orario teorico, massimizza la
-**probabilita' di arrivare entro un orario dato**, calcolata componendo lungo la
+**probabilità di arrivare entro un orario dato**, calcolata componendo lungo la
 catena delle coincidenze le distribuzioni dei ritardi effettivamente osservati sul
 campo. Le due grandezze non sono la stessa cosa riscritta: come il documento
-mostra con una misura e non con un esempio, l'itinerario che le massimizza puo'
+mostra con una misura e non con un esempio, l'itinerario che le massimizza può
 essere diverso, e quale sia il migliore dipende da quanto tempo si ha a
 disposizione.
 
-La domanda di ricerca e' percio' questa: **un itinerario scelto massimizzando
+La domanda di ricerca è perciò questa: **un itinerario scelto massimizzando
 P(arrivo ≤ T) perde meno coincidenze di un itinerario scelto minimizzando
-l'orario teorico?** Il progetto e' costruito su due citta' con reti e
+l'orario teorico?** Il progetto è costruito su due città con reti e
 caratteristiche diverse, Roma e Torino, i cui dati aperti sono raccolti in continuo
 da un sistema installato per lo scopo.
 
-**Una clausola della formulazione iniziale e' caduta.** La domanda era stata posta "a
-parita' di tempo di viaggio nominale", ma la strategia di riferimento minimizza per
+**Una clausola della formulazione iniziale è caduta.** La domanda era stata posta "a
+parità di tempo di viaggio nominale", ma la strategia di riferimento minimizza per
 definizione l'orario teorico di arrivo, quindi qualunque altro itinerario arriva
 nominalmente **dopo**: nelle 337 istanze in cui le due strategie scelgono itinerari
-diversi, il robusto e' **sempre** nominalmente piu' lento. Cio' che il progetto misura
-e' percio' uno **scambio** - quanta affidabilita' il criterio probabilistico compri e
+diversi, il robusto è **sempre** nominalmente più lento. Ciò che il progetto misura
+è perciò uno **scambio** - quanta affidabilità il criterio probabilistico compri e
 quanto tempo nominale la paghi, entro il margine che il viaggiatore ha dichiarato
 accettando una scadenza - e prezzo e beneficio sono riportati fianco a fianco nella
 sezione sul backtesting.
 
 # Sommario
 
-Il sistema e' un pianificatore di viaggi che integra cinque moduli, ciascuno
+Il sistema è un pianificatore di viaggi che integra cinque moduli, ciascuno
 fondato su un formalismo diverso e ciascuno responsabile di una parte del
 ragionamento che porta dalla domanda dell'utente all'itinerario proposto.
 
-Il primo modulo e' una **base di conoscenza in Answer Set Programming** che
+Il primo modulo è una **base di conoscenza in Answer Set Programming** che
 deriva, a partire dai dati grezzi del formato GTFS, la relazione di trasbordo fra
 fermate: quali cambi siano possibili, quanto tempo richiedano come minimo, se
-siano accessibili a un passeggero a ridotta mobilita', e quali fermate siano
+siano accessibili a un passeggero a ridotta mobilità, e quali fermate siano
 collegate fra loro da una catena di cambi di lunghezza qualsiasi. Questa relazione
 non esiste nei dati di partenza e viene interamente inferita, con regole che
-esibiscono eredita' con eccezioni, non monotonia, ricorsione e vincoli di
-integrita'.
+esibiscono eredità con eccezioni, non monotonia, ricorsione e vincoli di
+integrità.
 
-Il secondo modulo e' una **ricerca su grafo tempo-espanso** che, data una coppia
+Il secondo modulo è una **ricerca su grafo tempo-espanso** che, data una coppia
 origine-destinazione e un orario di partenza, produce l'insieme degli itinerari
 non dominati su tre criteri: orario di arrivo, numero di cambi e minuti trascorsi
 a piedi. Consuma la relazione di trasbordo prodotta dal primo modulo per costruire
 gli archi di cambio, e restituisce al terzo un insieme di candidati fra cui
 scegliere.
 
-Il terzo modulo e' il **ragionamento in condizioni di incertezza** che assegna a
-ciascun candidato la probabilita' di arrivare entro la scadenza, componendo le
+Il terzo modulo è il **ragionamento in condizioni di incertezza** che assegna a
+ciascun candidato la probabilità di arrivare entro la scadenza, componendo le
 distribuzioni dei ritardi lungo la successione delle coincidenze e tenendo conto
-del fatto che una coincidenza persa non annulla il viaggio ma lo ritarda. E' il
+del fatto che una coincidenza persa non annulla il viaggio ma lo ritarda. È il
 modulo che realizza l'obiettivo del progetto, e quello rispetto al quale tutti gli
 altri sono infrastruttura.
 
-Il quarto modulo e' l'**apprendimento delle distribuzioni di ritardo** dai dati
-raccolti sul campo, che sostituisce il modello sintetico con cui il terzo modulo e'
+Il quarto modulo è l'**apprendimento delle distribuzioni di ritardo** dai dati
+raccolti sul campo, che sostituisce il modello sintetico con cui il terzo modulo è
 stato collaudato prima che i dati fossero disponibili.
 
-Il quinto modulo formula come **soddisfacimento di vincoli** il viaggio con piu'
+Il quinto modulo formula come **soddisfacimento di vincoli** il viaggio con più
 tappe obbligate e finestre temporali: le tratte sono le variabili, gli itinerari
 non dominati prodotti dal secondo modulo sono i domini, e due budget globali — sul
 numero totale di cambi e sui minuti totali a piedi — legano fra loro scelte che
 altrimenti sarebbero indipendenti.
 
-I cinque moduli sono deliberatamente eterogenei, e la scelta non e' di comodo: il
-problema si spezza lungo linee che corrispondono a formalismi diversi, perche'
+I cinque moduli sono deliberatamente eterogenei, e la scelta non è di comodo: il
+problema si spezza lungo linee che corrispondono a formalismi diversi, perché
 derivare una relazione da regole con eccezioni, cercare in uno spazio di stati,
-comporre distribuzioni di probabilita', stimare quelle distribuzioni dai dati e
-soddisfare vincoli che legano scelte gia' compiute sono compiti che nessun singolo
+comporre distribuzioni di probabilità, stimare quelle distribuzioni dai dati e
+soddisfare vincoli che legano scelte già compiute sono compiti che nessun singolo
 formalismo affronta bene. Ogni modulo
-espone agli altri un'interfaccia stretta ed e' collaudato e misurato per conto
+espone agli altri un'interfaccia stretta ed è collaudato e misurato per conto
 proprio prima di essere composto; le cinque sezioni degli argomenti che seguono
-sono percio' leggibili anche separatamente.
+sono perciò leggibili anche separatamente.
 
 **Dove sono stati misurati i numeri di questo documento.** Tutte le misure sul
 grafo statico - la base di conoscenza, la costruzione del grafo, la ricerca, il
 soddisfacimento di vincoli - sono calcolate sull'archivio GTFS in vigore il **26
 agosto 2026**, e ogni file in `results/` ne porta la colonna `archivio`. I tempi di
 esecuzione vengono tutti dalla stessa macchina, **Intel64 Family 6 Model 158
-Stepping 10 | Windows 11 | Python 3.14.7**, dichiarata qui perche' un tempo senza
-l'hardware su cui e' stato preso non e' confrontabile con nessun altro. Le misure
+Stepping 10 | Windows 11 | Python 3.14.7**, dichiarata qui perché un tempo senza
+l'hardware su cui è stato preso non è confrontabile con nessun altro. Le misure
 sui dati raccolti sul
 campo seguono invece una finestra temporale, dichiarata nella colonna `finestra` e
 discussa dove serve.
@@ -126,28 +126,28 @@ adottato nel corso [1].
 
 **Argomento 1 — Rappresentazione e ragionamento relazionale (cap. 15) e
 rappresentazione della conoscenza proposizionale (cap. 5).** La relazione di
-trasbordo fra fermate e' rappresentata da un programma logico in Answer Set
-Programming che ne deriva l'esistenza, il tempo minimo, l'accessibilita' e la
-chiusura transitiva. Il programma esibisce le proprieta' che distinguono una base
-di conoscenza da una interrogazione su una base di dati: eredita' con default ed
-eccezioni, non monotonia, ricorsione e vincoli di integrita' che rifiutano il
-modello anziche' filtrare righe. La valutazione misura il costo di istanziazione
-al crescere della rete su due citta' e individua quale regola lo domina.
+trasbordo fra fermate è rappresentata da un programma logico in Answer Set
+Programming che ne deriva l'esistenza, il tempo minimo, l'accessibilità e la
+chiusura transitiva. Il programma esibisce le proprietà che distinguono una base
+di conoscenza da una interrogazione su una base di dati: eredità con default ed
+eccezioni, non monotonia, ricorsione e vincoli di integrità che rifiutano il
+modello anziché filtrare righe. La valutazione misura il costo di istanziazione
+al crescere della rete su due città e individua quale regola lo domina.
 
 **Argomento 2 — Ricerca di soluzioni (cap. 3).** La costruzione di un itinerario
-e' formulata come ricerca su un grafo tempo-espanso in cui i nodi sono gli eventi
+è formulata come ricerca su un grafo tempo-espanso in cui i nodi sono gli eventi
 di passaggio e il costo di un arco dipende dall'istante in cui lo si percorre.
-Sono impiegati A* con un'euristica geografica di cui si dimostrano ammissibilita'
+Sono impiegati A* con un'euristica geografica di cui si dimostrano ammissibilità
 e consistenza su questi dati, e una ricerca multi-criterio a etichette che
 restituisce la frontiera delle soluzioni non dominate. La valutazione confronta A*
 con Dijkstra, misura il costo della rappresentazione dello stato e quantifica il
 guadagno di una relazione di dominanza fra stati.
 
-**Argomento 3 — Ragionamento e incertezza (cap. 9).** La probabilita' di arrivare
-entro una scadenza e' calcolata componendo le distribuzioni di ritardo lungo la
+**Argomento 3 — Ragionamento e incertezza (cap. 9).** La probabilità di arrivare
+entro una scadenza è calcolata componendo le distribuzioni di ritardo lungo la
 catena delle coincidenze, con una struttura markoviana in cui il ritardo si
 propaga dentro una corsa e si azzera attraversando un cambio, e in cui una
-coincidenza persa e' un ritardo anziche' un fallimento. La quantita' e' calcolata
+coincidenza persa è un ritardo anziché un fallimento. La quantità è calcolata
 in due modi indipendenti, per convoluzione numerica e per campionamento, e i due
 sono confrontati fra loro. La valutazione confronta il criterio probabilistico con
 tre strategie di riferimento su una griglia di scadenze.
@@ -156,26 +156,26 @@ tre strategie di riferimento su una griglia di scadenze.
 incertezza (cap. 10).** Le distribuzioni di ritardo che il terzo modulo compone
 sono stimate dai dati raccolti sul campo, condizionatamente alla linea, alla fascia
 oraria, al tipo di giorno e al bin del ritardo osservato a monte sulla stessa corsa.
-La stima e' organizzata come una scala di risalita a cinque gradini in cui ciascun
-livello di contesto fa da priore di Dirichlet al livello immediatamente piu' fine.
+La stima è organizzata come una scala di risalita a cinque gradini in cui ciascun
+livello di contesto fa da priore di Dirichlet al livello immediatamente più fine.
 La valutazione misura la perdita logaritmica fuori campione contro i due estremi
-della scala, la calibrazione delle probabilita' prodotte, e la correlazione reale
+della scala, la calibrazione delle probabilità prodotte, e la correlazione reale
 lungo la corsa contro il valore sintetico assunto nell'argomento precedente.
 
-**Argomento 5 — Soddisfacimento di vincoli (cap. 4).** Il viaggio con piu' tappe
-obbligate e' formulato come problema di vincoli: le variabili sono le tratte, i
+**Argomento 5 — Soddisfacimento di vincoli (cap. 4).** Il viaggio con più tappe
+obbligate è formulato come problema di vincoli: le variabili sono le tratte, i
 domini gli itinerari non dominati che le percorrono, e i vincoli la precedenza fra
 tappe consecutive, le finestre temporali a due estremi sulle tappe intermedie,
 due budget globali sul numero di cambi e sui minuti a piedi e la scadenza
 sull'arrivo finale. La valutazione
 verifica, prima di ogni altra cosa, che il problema non sia risolubile tappa per
-tappa senza tornare indietro: e' la condizione perche' la formulazione a vincoli
+tappa senza tornare indietro: è la condizione perché la formulazione a vincoli
 sia giustificata invece che decorativa.
 
 Alle cinque sezioni degli argomenti ne segue una sesta, sul **backtesting**, che non
-introduce un formalismo nuovo e non e' percio' un argomento del programma: mette
-insieme i moduli gia' descritti e li mette alla prova sui ritardi realmente osservati.
-E' li' che il progetto risponde alla propria domanda di ricerca, e le altre sezioni
+introduce un formalismo nuovo e non è perciò un argomento del programma: mette
+insieme i moduli già descritti e li mette alla prova sui ritardi realmente osservati.
+È lì che il progetto risponde alla propria domanda di ricerca, e le altre sezioni
 vanno lette sapendo che quella misura esiste e le giudica.
 
 # Sezione Argomento 1 — Rappresentazione e ragionamento relazionale
@@ -184,51 +184,51 @@ vanno lette sapendo che quella misura esiste e le giudica.
 
 Il problema si formula come **derivazione di una relazione a partire da regole con
 eccezioni**, nella forma trattata dal testo del corso per la rappresentazione
-proposizionale e per quella relazionale [1, cap. 5 e cap. 15]. La particolarita'
-di questo caso e' che la relazione da derivare — quali cambi fra fermate siano
+proposizionale e per quella relazionale [1, cap. 5 e cap. 15]. La particolarità
+di questo caso è che la relazione da derivare — quali cambi fra fermate siano
 possibili, quanto durino, per chi siano accessibili — non compare da nessuna parte
-nei dati di partenza, e nessuna sua istanza puo' essere letta: ognuna e' una
-conclusione. Il modulo e' percio' il punto in cui il progetto e' piu' esposto
+nei dati di partenza, e nessuna sua istanza può essere letta: ognuna è una
+conclusione. Il modulo è perciò il punto in cui il progetto è più esposto
 all'obiezione che una base di conoscenza sia un database interrogato con un'altra
-sintassi, ed e' anche il punto in cui quell'obiezione e' piu' facile da respingere.
+sintassi, ed è anche il punto in cui quell'obiezione è più facile da respingere.
 
 Un pianificatore di viaggi ha bisogno di sapere, per ogni coppia di fermate, se un
 passeggero possa passare dall'una all'altra e quanto tempo gli occorra come
-minimo. Questa relazione, che chiameremo di *trasbordo*, e' il fondamento su cui
+minimo. Questa relazione, che chiameremo di *trasbordo*, è il fondamento su cui
 poggia il resto del sistema: la ricerca degli itinerari la usa per costruire gli
-archi di cambio, e il calcolo di probabilita' la usa per stabilire quando una
+archi di cambio, e il calcolo di probabilità la usa per stabilire quando una
 coincidenza sia da considerarsi persa.
 
 Lo standard GTFS [5] prevede un file facoltativo, `transfers.txt`, in cui
-un'azienda puo' dichiarare quali cambi siano possibili e con quale tempo minimo.
-Il contenuto degli archivi di entrambe le aziende del progetto e' stato
-verificato: ne' Roma Mobilita' [14] ne' GTT di Torino [15] lo pubblica.
+un'azienda può dichiarare quali cambi siano possibili e con quale tempo minimo.
+Il contenuto degli archivi di entrambe le aziende del progetto è stato
+verificato: né Roma Mobilità [14] né GTT di Torino [15] lo pubblica.
 L'archivio di Roma contiene `agency.txt`, `calendar_dates.txt`, `routes.txt`,
 `shapes.txt`,
 `stop_times.txt`, `stops.txt` e `trips.txt`; quello di Torino aggiunge alcuni file
 non standard sulle tariffe e sui quadri orari, ma neppure lui contiene i
-trasbordi. L'intera relazione va dunque derivata da cio' che i dati contengono
+trasbordi. L'intera relazione va dunque derivata da ciò che i dati contengono
 davvero: le coordinate delle fermate, la gerarchia che lega le banchine alle
-stazioni, l'accessibilita' dichiarata di ciascuna fermata e l'elenco delle linee
+stazioni, l'accessibilità dichiarata di ciascuna fermata e l'elenco delle linee
 che vi transitano.
 
 **I fatti in ingresso.** La base di conoscenza riceve dal GTFS otto predicati: le
 fermate fisiche con la loro posizione e la cella dell'indice spaziale a cui
 appartengono; il legame fra una banchina e la stazione che la contiene; il valore
-di accessibilita' dichiarato secondo la codifica dello standard, dove lo zero
+di accessibilità dichiarato secondo la codifica dello standard, dove lo zero
 significa "informazione non disponibile" e non "non accessibile"; l'elenco delle
 coppie linea-fermata; e, quando esistono, i trasbordi dichiarati dall'azienda e le
 segnalazioni contingenti di ascensori fuori servizio.
 
-**Il tempo minimo di trasbordo, e la gerarchia delle fonti.** La regola piu'
+**Il tempo minimo di trasbordo, e la gerarchia delle fonti.** La regola più
 significativa del modulo stabilisce quanto tempo occorra come minimo per un
-cambio. Il valore non e' memorizzato da nessuna parte e non e' unico: dipende dal
+cambio. Il valore non è memorizzato da nessuna parte e non è unico: dipende dal
 tipo di trasbordo, e le fonti di informazione hanno una gerarchia di
 autorevolezza. Se l'azienda ha dichiarato un tempo per quella coppia vale quello;
 altrimenti, se le due fermate sono banchine della stessa stazione, vale il tempo
-di percorrenza interno, piu' lungo del semplice cammino perche' comprende
+di percorrenza interno, più lungo del semplice cammino perché comprende
 sottopassi, scale e tornelli; in assenza di entrambe le condizioni vale il tempo
-di cammino all'aperto piu' un margine.
+di cammino all'aperto più un margine.
 
 ```prolog
 tempo_minimo_trasbordo(F1, F2, T) :-
@@ -244,28 +244,28 @@ tempo_minimo_trasbordo(F1, F2, T + margine_piedi) :-
     not stessa_stazione(F1, F2).
 ```
 
-La priorita' e' interamente affidata ai tre `not`: una regola di livello inferiore
-si applica soltanto quando nessuna regola piu' specifica ha gia' concluso. E' la
-forma che il testo del corso chiama eredita' con default ed eccezioni
-[1, cap. 5], e non serve rispiegarla qui; cio' che vale la pena argomentare e' che
+La priorità è interamente affidata ai tre `not`: una regola di livello inferiore
+si applica soltanto quando nessuna regola più specifica ha già concluso. È la
+forma che il testo del corso chiama eredità con default ed eccezioni
+[1, cap. 5], e non serve rispiegarla qui; ciò che vale la pena argomentare è che
 in **questo** problema non sia riducibile a un'interrogazione.
 
-Un'interrogazione relazionale puo' riprodurre il risultato, ma solo scrivendo la
-gerarchia delle priorita' dentro la query, tipicamente come catena di `COALESCE` o
-sequenza ordinata di `LEFT JOIN`. La differenza non e' di eleganza ma di
+Un'interrogazione relazionale può riprodurre il risultato, ma solo scrivendo la
+gerarchia delle priorità dentro la query, tipicamente come catena di `COALESCE` o
+sequenza ordinata di `LEFT JOIN`. La differenza non è di eleganza ma di
 collocazione della conoscenza: in quel caso la gerarchia vive nel codice
 dell'interrogazione, e aggiungere un livello significa riscrivere la query; qui la
-gerarchia e' dichiarata nella base di conoscenza, e aggiungere un livello
+gerarchia è dichiarata nella base di conoscenza, e aggiungere un livello
 significa aggiungere una regola senza toccare le altre. Il collaudo verifica
 esattamente la parte non riducibile: dichiarando un tempo per la sola direzione da
 `A1` verso `A2`, quella direzione assume il valore dichiarato mentre la direzione
 opposta, non dichiarata, resta governata dalla regola della stazione. La
-sovrascrittura e' **puntuale**, come dev'essere un default, e non totale come
+sovrascrittura è **puntuale**, come dev'essere un default, e non totale come
 sarebbe l'effetto di un `COALESCE` scritto su un intero insieme di righe.
 
-**L'accessibilita', e la direzione in cui cambiano le conclusioni.** La seconda
-regola riguarda l'accessibilita' di un trasbordo per un passeggero a ridotta
-mobilita'.
+**L'accessibilità, e la direzione in cui cambiano le conclusioni.** La seconda
+regola riguarda l'accessibilità di un trasbordo per un passeggero a ridotta
+mobilità.
 
 ```prolog
 accessibile(F1, F2) :-
@@ -283,24 +283,24 @@ eccezione_accessibilita(F1, F2) :-
     ascensore_fuori_servizio(F1).
 ```
 
-Il comportamento che interessa e' misurabile e viene misurato: dichiarando che
-l'ascensore della fermata `A1` e' fuori servizio, **quattro** trasbordi che
+Il comportamento che interessa è misurabile e viene misurato: dichiarando che
+l'ascensore della fermata `A1` è fuori servizio, **quattro** trasbordi che
 risultavano accessibili smettono di esserlo, e **nessuno** ne prende il posto.
-Aggiungere un fatto ha rimosso conclusioni. Il confronto vale perche' e' fatto
+Aggiungere un fatto ha rimosso conclusioni. Il confronto vale perché è fatto
 sull'insieme completo delle conclusioni prima e dopo, e controlla entrambe le
 direzioni: che quattro siano sparite e che nessuna sia comparsa. Nessuna
-interrogazione relazionale positiva puo' comportarsi cosi', perche' in algebra
+interrogazione relazionale positiva può comportarsi così, perché in algebra
 relazionale l'aggiunta di tuple non riduce mai il risultato di una query positiva
 [1, cap. 5].
 
-Va notato che le eccezioni non sono tutte dichiarate: la prima e' **derivata**,
-perche' un trasbordo a piedi diventa inaccessibile in forza della propria
+Va notato che le eccezioni non sono tutte dichiarate: la prima è **derivata**,
+perché un trasbordo a piedi diventa inaccessibile in forza della propria
 distanza, senza che nessuno debba annotarlo. Anche l'antecedente
-`fermata_accessibile` e' a sua volta un'eredita' con default, perche' lo standard
+`fermata_accessibile` è a sua volta un'eredità con default, perché lo standard
 GTFS prescrive che il valore zero su una banchina significhi "eredita dalla
-stazione": le due gerarchie sono percio' annidate, e la seconda alimenta la prima.
+stazione": le due gerarchie sono perciò annidate, e la seconda alimenta la prima.
 
-**La raggiungibilita', e perche' la profondita' non e' nota in anticipo.**
+**La raggiungibilità, e perché la profondità non è nota in anticipo.**
 
 ```prolog
 raggiungibile(F, F) :- fermata(F).
@@ -311,21 +311,21 @@ raggiungibile(F1, F3) :-
 ```
 
 Due fermate sono collegate se esiste una catena di trasbordi di lunghezza
-qualsiasi. La ricorsione non e' un artificio stilistico: il numero di cambi
-necessari a collegare due punti di una rete non e' noto in anticipo e dipende
-dalla topologia della citta', quindi nessun numero fissato di giunzioni puo'
-sostituirla. Il collaudo verifica la parte che solo la ricorsione puo' produrre,
+qualsiasi. La ricorsione non è un artificio stilistico: il numero di cambi
+necessari a collegare due punti di una rete non è noto in anticipo e dipende
+dalla topologia della città, quindi nessun numero fissato di giunzioni può
+sostituirla. Il collaudo verifica la parte che solo la ricorsione può produrre,
 disponendo quattro fermate in fila a duecento metri l'una dall'altra: la distanza
-e' sotto la soglia di duecentocinquanta metri per le coppie adiacenti e sopra per
+è sotto la soglia di duecentocinquanta metri per le coppie adiacenti e sopra per
 quelle a un posto di distanza, quindi nessun trasbordo diretto collega la prima
 alla terza, eppure la chiusura le collega, e collega anche la prima alla quarta.
 Una variante della stessa regola calcola la chiusura sui soli trasbordi
-accessibili; non e' una duplicazione ma un'altra domanda, perche' un percorso
-esistente per un passeggero qualsiasi puo' non esistere per un passeggero in sedia
-a rotelle, e distinguere le due raggiungibilita' e' precisamente il tipo di
+accessibili; non è una duplicazione ma un'altra domanda, perché un percorso
+esistente per un passeggero qualsiasi può non esistere per un passeggero in sedia
+a rotelle, e distinguere le due raggiungibilità è precisamente il tipo di
 conoscenza che il modulo vuole rappresentare.
 
-**I vincoli di integrita', e perche' questi quattro.**
+**I vincoli di integrità, e perché questi quattro.**
 
 ```prolog
 :- fermata(F),
@@ -334,129 +334,129 @@ conoscenza che il modulo vuole rappresentare.
 :- trasbordo_ammissibile(F1, F2, T), tempo_piedi(F1, F2, TP), T < TP.
 ```
 
-Un vincolo di integrita' rifiuta il modello anziche' filtrare righe, ed e' percio'
-di natura diversa da qualunque clausola `WHERE` [1, cap. 5]. Cio' che vale la pena
-riportare e' il criterio con cui i quattro presenti sono stati scelti: **devono
+Un vincolo di integrità rifiuta il modello anziché filtrare righe, ed è perciò
+di natura diversa da qualunque clausola `WHERE` [1, cap. 5]. Ciò che vale la pena
+riportare è il criterio con cui i quattro presenti sono stati scelti: **devono
 poter scattare**. Alcuni vincoli inizialmente formulati sono stati scartati, per
-esempio il divieto per una fermata di essere trasbordo di se stessa, perche' la
+esempio il divieto per una fermata di essere trasbordo di se stessa, perché la
 costruzione delle regole li rende impossibili per definizione, e un vincolo che
-non puo' mai essere violato non e' logica ma un commento travestito da logica.
+non può mai essere violato non è logica ma un commento travestito da logica.
 Ciascuno dei quattro rimasti corrisponde a un difetto documentato dei dati aperti:
 il primo dei due riportati intercetta le fermate prive di coordinate, che nei feed
 reali finiscono tutte nello stesso punto e formerebbero un nodo di scambio
-inesistente ma enorme; il secondo intercetta i tempi di trasbordo dichiarati piu'
+inesistente ma enorme; il secondo intercetta i tempi di trasbordo dichiarati più
 brevi del tempo materialmente necessario a percorrere la distanza a piedi, che
 renderebbero il pianificatore sistematicamente troppo fiducioso e produrrebbero
 coincidenze perse senza spiegazione apparente.
 
 **La verifica che il programma sia stratificato.** Il programma ammette un unico
 modello stabile, e non un insieme di risposte alternative fra cui scegliere,
-purche' nessun predicato negato dipenda dal predicato che lo nega [1, cap. 5][3].
-La condizione va verificata su questo programma, e la verifica e' diretta. La
+purché nessun predicato negato dipenda dal predicato che lo nega [1, cap. 5][3].
+La condizione va verificata su questo programma, e la verifica è diretta. La
 negazione compare in cinque punti: nelle due regole di sovrascrittura del tempo
-minimo, nella regola dell'accessibilita' e nella definizione di trasbordo utile,
+minimo, nella regola dell'accessibilità e nella definizione di trasbordo utile,
 che chiede l'esistenza di una linea servita dalla fermata di arrivo e non da
-quella di partenza. `dichiarato` e' un fatto in ingresso e non dipende da nulla;
+quella di partenza. `dichiarato` è un fatto in ingresso e non dipende da nulla;
 `stessa_stazione` dipende soltanto da `in_stazione`, anch'esso in ingresso;
 `eccezione_accessibilita` dipende da `tempo_piedi`, da `trasbordo_ammissibile` e
-dal fatto contingente sugli ascensori, ma **non** da `accessibile`; `serve` e' un
+dal fatto contingente sugli ascensori, ma **non** da `accessibile`; `serve` è un
 fatto in ingresso. Nessuno dei predicati negati dipende, nemmeno per via
 indiretta, dal predicato che lo nega, quindi il grafo delle dipendenze non
 contiene cicli che attraversino una negazione. L'unica ricorsione presente, quella
-della raggiungibilita', e' puramente positiva e non interferisce.
+della raggiungibilità, è puramente positiva e non interferisce.
 
-**L'indice spaziale, e perche' non altera l'insieme delle conclusioni.** La regola
+**L'indice spaziale, e perché non altera l'insieme delle conclusioni.** La regola
 del trasbordo a piedi confronta coppie di fermate. Confrontarle tutte significa
 istanziare un numero di atomi quadratico: sulle 8.301 fermate di Roma sono circa
 69 milioni di coppie, e il grounding non termina in tempo utile. Ogni fermata
-riceve percio' la cella di una griglia regolare, calcolata dalle sue coordinate, e
+riceve perciò la cella di una griglia regolare, calcolata dalle sue coordinate, e
 la regola confronta soltanto le fermate nella stessa cella o in una delle otto
 adiacenti.
 
-Va dichiarato che cosa questo accorgimento **non** e': non e' clustering, perche'
-non c'e' nulla di appreso, nessun centroide, nessuna funzione obiettivo e nessuna
-scelta dipendente dai dati; e' un'indicizzazione deterministica sulle coordinate.
-Soprattutto non altera l'insieme delle conclusioni, e la ragione e' geometrica.
+Va dichiarato che cosa questo accorgimento **non** è: non è clustering, perché
+non c'è nulla di appreso, nessun centroide, nessuna funzione obiettivo e nessuna
+scelta dipendente dai dati; è un'indicizzazione deterministica sulle coordinate.
+Soprattutto non altera l'insieme delle conclusioni, e la ragione è geometrica.
 Sia `s` la soglia di cammino e sia `s` anche il lato della cella. Due fermate che
 distino meno di `s` differiscono in ciascuna coordinata di meno di `s`, quindi i
-loro indici di cella differiscono al piu' di uno in ciascuna delle due direzioni:
-le loro celle sono percio' coincidenti o adiacenti, e la coppia viene confrontata.
-Nessun trasbordo puo' sfuggire al confronto, e l'insieme derivato coincide con
-quello della formulazione esaustiva. La scelta del lato non e' dunque libera: un
+loro indici di cella differiscono al più di uno in ciascuna delle due direzioni:
+le loro celle sono perciò coincidenti o adiacenti, e la coppia viene confrontata.
+Nessun trasbordo può sfuggire al confronto, e l'insieme derivato coincide con
+quello della formulazione esaustiva. La scelta del lato non è dunque libera: un
 lato inferiore alla soglia spezzerebbe coppie che devono essere confrontate, e la
-semantica cambierebbe. Poiche' un'argomentazione geometrica puo' sempre nascondere
-un errore, la proprieta' e' anche verificata sperimentalmente, come riportato
+semantica cambierebbe. Poiché un'argomentazione geometrica può sempre nascondere
+un errore, la proprietà è anche verificata sperimentalmente, come riportato
 nella valutazione.
 
 **I dati di calendario, e una circostanza che ha cambiato il modulo.** La base di
 conoscenza lavora sulla topologia della rete e non sul calendario, ma il
-calendario e' un prerequisito di tutto il resto. Lo standard GTFS prevede due modi
+calendario è un prerequisito di tutto il resto. Lo standard GTFS prevede due modi
 complementari di dichiarare quando una corsa circoli: `calendar.txt` esprime una
-regola settimanale con un periodo di validita', `calendar_dates.txt` esprime
+regola settimanale con un periodo di validità, `calendar_dates.txt` esprime
 eccezioni puntuali, additive o sottrattive. Lo standard richiede che almeno uno
 dei due sia presente, non entrambi. Le due aziende usano i regimi opposti: Torino
 pubblica `calendar.txt` con 1.106 servizi e `calendar_dates.txt` con 34.758
-eccezioni, cioe' la forma canonica; Roma **non pubblica affatto** `calendar.txt`,
-e ogni singolo giorno di servizio e' elencato come eccezione additiva nelle 4.707
+eccezioni, cioè la forma canonica; Roma **non pubblica affatto** `calendar.txt`,
+e ogni singolo giorno di servizio è elencato come eccezione additiva nelle 4.707
 righe di `calendar_dates.txt`. Entrambe le scelte sono conformi.
 
 Un modulo scritto sull'assunzione implicita che `calendar.txt` esista
 funzionerebbe su Torino e restituirebbe **zero corse attive su Roma**, senza
 sollevare alcuna eccezione e senza somigliare in alcun modo a un errore. Avere due
-citta' con regimi opposti ha trasformato una possibile fonte di errore silenzioso
+città con regimi opposti ha trasformato una possibile fonte di errore silenzioso
 in un caso di prova: la funzione che determina i servizi attivi parte da un
 insieme vuoto quando la regola settimanale manca, applica le aggiunte e infine le
-rimozioni, in quest'ordine, perche' una rimozione deve poter cancellare anche un
+rimozioni, in quest'ordine, perché una rimozione deve poter cancellare anche un
 servizio introdotto da un'aggiunta dello stesso giorno.
 
 Alla stessa categoria appartiene il trattamento degli orari oltre la mezzanotte.
 Il GTFS ammette e usa regolarmente valori come `25:30:00`, che indicano l'una e
 mezza di notte del giorno successivo ma appartengono al giorno di servizio
-precedente. Riportarli sotto le ventiquattro ore, che e' la normalizzazione
+precedente. Riportarli sotto le ventiquattro ore, che è la normalizzazione
 istintiva, sposta silenziosamente tutte le corse notturne sul giorno sbagliato. Il
-modulo li conserva percio' come secondi non normalizzati e traduce un orario in un
+modulo li conserva perciò come secondi non normalizzati e traduce un orario in un
 istante reale seguendo la definizione della specifica, secondo cui i tempi si
 misurano da "mezzogiorno meno dodici ore" del giorno di servizio: nei giorni
 ordinari coincide con la mezzanotte, nei due giorni all'anno in cui cambia l'ora
-legale no, e la differenza e' esattamente un'ora su tutte le corse della giornata.
+legale no, e la differenza è esattamente un'ora su tutte le corse della giornata.
 
 ## Strumenti utilizzati
 
-La base di conoscenza e' scritta in **Answer Set Programming** [2] e valutata con
+La base di conoscenza è scritta in **Answer Set Programming** [2] e valutata con
 il sistema **clingo** [4], che ne esegue il grounding e la risoluzione. Il
-formalismo e' impiegato nella sua forma standard — regole normali con negazione
-per fallimento, ricorsione, vincoli di integrita' e aggregati `#count` — e la
-semantica dei modelli stabili con le relative condizioni di stratificazione e'
+formalismo è impiegato nella sua forma standard — regole normali con negazione
+per fallimento, ricorsione, vincoli di integrità e aggregati `#count` — e la
+semantica dei modelli stabili con le relative condizioni di stratificazione è
 quella usuale [3], trattata nel testo del corso [1, cap. 5]. La rappresentazione
 per predicati e variabili, con la quantificazione implicita sulle regole, segue
 l'impostazione relazionale del medesimo testo [1, cap. 15]. La lettura degli
 archivi GTFS [5] e la preparazione dei fatti usano **pandas** [6]; il collegamento
 fra programma logico e Python usa l'API Python di clingo.
 
-L'unico elemento non riconducibile a un modello noto e' l'argomentazione
+L'unico elemento non riconducibile a un modello noto è l'argomentazione
 geometrica che stabilisce l'equivalenza fra la regola indicizzata e quella
 esaustiva, esposta nel sommario e verificata sperimentalmente nella valutazione.
 
 ## Decisioni di Progetto
 
-**L'indice spaziale a griglia, con lato pari alla soglia.** Il lato della cella e'
+**L'indice spaziale a griglia, con lato pari alla soglia.** Il lato della cella è
 di **250 metri**, uguale alla soglia di cammino, e la regola confronta ogni
 fermata con quelle della propria cella e delle otto adiacenti. *Alternative
 scartate:* il confronto esaustivo di tutte le coppie, che su Roma richiederebbe di
-istanziare 69 milioni di coppie e non termina in tempo utile; e una griglia piu'
-fitta, che sarebbe stata piu' selettiva ma avrebbe richiesto di ispezionare un
-intorno piu' ampio di celle per conservare la correttezza, annullando il
-vantaggio. *Perche' questo valore:* legare il lato alla soglia e' cio' che rende
+istanziare 69 milioni di coppie e non termina in tempo utile; e una griglia più
+fitta, che sarebbe stata più selettiva ma avrebbe richiesto di ispezionare un
+intorno più ampio di celle per conservare la correttezza, annullando il
+vantaggio. *Perché questo valore:* legare il lato alla soglia è ciò che rende
 l'equivalenza dimostrabile invece che sperimentale, come argomentato nel sommario;
 un lato inferiore alla soglia cambierebbe la semantica, uno superiore
 allargherebbe inutilmente i confronti. Il programma espone l'interruttore
 `con_indice`, che sostituisce la regola indicizzata con quella esaustiva, e la sua
-esistenza e' cio' che rende possibile la verifica sperimentale dell'equivalenza.
+esistenza è ciò che rende possibile la verifica sperimentale dell'equivalenza.
 
-**La soglia di cammino: 250 metri.** E' la distanza massima entro cui due fermate
-distinte sono considerate collegate a piedi. *Alternative scartate:* valori piu'
+**La soglia di cammino: 250 metri.** È la distanza massima entro cui due fermate
+distinte sono considerate collegate a piedi. *Alternative scartate:* valori più
 generosi, dell'ordine dei 400-500 metri, che sono la scelta abituale nella
-letteratura sull'accessibilita' pedonale. *Perche' 250:* la distanza e' misurata
+letteratura sull'accessibilità pedonale. *Perché 250:* la distanza è misurata
 in linea d'aria e non lungo la rete stradale, quindi sottostima sistematicamente
 il percorso reale; una soglia stretta limita l'errore di quella
 approssimazione. Il valore governa anche il lato della cella, quindi il costo di
@@ -464,111 +464,111 @@ grounding, e la Tabella 4 ne mostra l'effetto sul numero di coppie candidate.
 
 **Il tempo di percorrenza interno a una stazione: 180 secondi.** *Alternativa
 scartata:* usare anche qui il tempo di cammino calcolato dalle coordinate.
-*Perche' no:* due banchine della stessa stazione possono distare pochi metri in
+*Perché no:* due banchine della stessa stazione possono distare pochi metri in
 linea d'aria ed essere separate da sottopassi, scale e tornelli, quindi la
-distanza euclidea le farebbe apparire immediate; un valore fisso e piu' alto e'
-meno preciso ma non e' sistematicamente ottimistico. Il valore incide oggi su due
+distanza euclidea le farebbe apparire immediate; un valore fisso e più alto è
+meno preciso ma non è sistematicamente ottimistico. Il valore incide oggi su due
 sole fermate dell'intero progetto, come riportato nella valutazione.
 
 **Il margine aggiunto al cammino all'aperto: 60 secondi.** Rappresenta il tempo
-che non e' cammino — orientarsi, attraversare, individuare la banchina giusta.
-*Alternativa scartata:* nessun margine, cioe' tempo di trasbordo uguale al solo
-tempo di cammino. *Perche' no:* renderebbe il pianificatore ottimista proprio
+che non è cammino — orientarsi, attraversare, individuare la banchina giusta.
+*Alternativa scartata:* nessun margine, cioè tempo di trasbordo uguale al solo
+tempo di cammino. *Perché no:* renderebbe il pianificatore ottimista proprio
 sulle coincidenze strette, che sono quelle su cui l'intero progetto misura la
 robustezza.
 
 **Il tempo massimo di cammino per un passeggero in sedia a rotelle: 180 secondi.**
-E' la soglia oltre la quale un trasbordo a piedi viene derivato come non
-accessibile, ed e' l'eccezione *derivata* della regola dell'accessibilita'. Cade
-fra le bande di cammino e rende inaccessibili i trasbordi della banda piu' lunga,
+È la soglia oltre la quale un trasbordo a piedi viene derivato come non
+accessibile, ed è l'eccezione *derivata* della regola dell'accessibilità. Cade
+fra le bande di cammino e rende inaccessibili i trasbordi della banda più lunga,
 fra 200 e 250 metri; una soglia pari o superiore ai 240 secondi della banda massima
 non scatterebbe mai, e l'eccezione sarebbe un commento travestito da regola.
 *Alternativa scartata:* considerare accessibile qualunque trasbordo fra due
-fermate entrambe dichiarate accessibili. *Perche' no:* l'accessibilita' di un
-cambio non e' solo una proprieta' delle due fermate ma anche della distanza fra
+fermate entrambe dichiarate accessibili. *Perché no:* l'accessibilità di un
+cambio non è solo una proprietà delle due fermate ma anche della distanza fra
 loro, e trascurarlo avrebbe reso la regola una semplice congiunzione di due fatti,
-cioe' esattamente cio' che un'interrogazione relazionale sa gia' fare.
+cioè esattamente ciò che un'interrogazione relazionale sa già fare.
 
-**Il grado massimo plausibile di trasbordi a piedi per fermata: 40.** E' la soglia
-del primo vincolo di integrita'. *Perche' quel valore:* il grado medio e' di circa
+**Il grado massimo plausibile di trasbordi a piedi per fermata: 40.** È la soglia
+del primo vincolo di integrità. *Perché quel valore:* il grado medio è di circa
 cinque trasbordi per fermata sulla rete intera di Roma e tre su quella di Torino
 (Tabella 5), e sale a sette e a poco meno di cinque nei campioni centrali di
 duemila fermate; soprattutto, con il vincolo attivo il programma resta
 soddisfacibile su entrambe le reti intere, quindi nessuna fermata reale supera
-quaranta. La soglia sta percio' sopra il caso peggiore legittimo, che e' cio' che
+quaranta. La soglia sta perciò sopra il caso peggiore legittimo, che è ciò che
 conta per un vincolo sul massimo, e scatta solo in presenza dell'anomalia che deve
-intercettare, cioe' le fermate prive di coordinate che collassano tutte sullo
+intercettare, cioè le fermate prive di coordinate che collassano tutte sullo
 stesso punto. Una soglia
 vicina al grado osservato avrebbe prodotto falsi allarmi su ogni nodo di scambio
 denso.
 
 **Identificativi interi e coordinate in metri.** Gli identificativi testuali delle
 fermate diventano numeri interi e le coordinate geografiche diventano metri interi
-su una proiezione piana locale centrata sul baricentro delle fermate della citta'.
+su una proiezione piana locale centrata sul baricentro delle fermate della città.
 *Alternativa scartata:* passare al programma logico le stringhe e le coordinate in
-gradi. *Perche' no:* il grounding su stringhe e' sensibilmente piu' lento, e i
+gradi. *Perché no:* il grounding su stringhe è sensibilmente più lento, e i
 confronti di distanza in gradi richiederebbero aritmetica in virgola mobile dentro
-le regole. *Perche' non sposta conoscenza fuori dalla base:* la corrispondenza e'
+le regole. *Perché non sposta conoscenza fuori dalla base:* la corrispondenza è
 biunivoca e viene conservata, il risultato si ritraduce esattamente, e il cambio
-di unita' e' l'analogo del conservare gli orari in secondi anziche' nella forma
+di unità è l'analogo del conservare gli orari in secondi anziché nella forma
 `HH:MM:SS`; la regola che stabilisce *quali* coppie costituiscano un trasbordo
-resta interamente dentro il programma logico e opera sulle coordinate cosi' come
+resta interamente dentro il programma logico e opera sulle coordinate così come
 le riceve.
 
-**Il tempo di cammino e' discretizzato in quattro bande.** *Alternativa scartata:*
-il calcolo continuo del tempo dalla distanza. *Perche' no:* produrrebbe un valore
+**Il tempo di cammino è discretizzato in quattro bande.** *Alternativa scartata:*
+il calcolo continuo del tempo dalla distanza. *Perché no:* produrrebbe un valore
 distinto per quasi ogni coppia, moltiplicando gli atomi da istanziare senza
 aggiungere informazione utile, dato che un tempo di trasbordo ha senso al mezzo
 minuto e non al metro. Resta un'approssimazione, dichiarata come tale fra i limiti
 nelle conclusioni.
 
-**I vincoli di integrita' sono scelti perche' possano essere violati.** Il
-criterio e' esposto nel sommario. Sul piano del collaudo, tutti e quattro sono
+**I vincoli di integrità sono scelti perché possano essere violati.** Il
+criterio è esposto nel sommario. Sul piano del collaudo, tutti e quattro sono
 verificati costruendo il dato che li viola, controllando che il programma diventi
 insoddisfacibile e che torni soddisfacibile disattivando i soli vincoli:
-altrimenti l'insoddisfacibilita' potrebbe venire da qualunque altra parte del
+altrimenti l'insoddisfacibilità potrebbe venire da qualunque altra parte del
 programma e il test non proverebbe nulla.
 
-**Il campionamento per prossimita' dal baricentro geometrico.** Le sottoreti su
-cui si misura la complessita' sono ottenute prendendo le N fermate piu' vicine a
-un centro fisso, derivato dai dati come la fermata piu' vicina al baricentro
-geometrico di tutte le fermate della citta': per Roma la **70841, S.
+**Il campionamento per prossimità dal baricentro geometrico.** Le sottoreti su
+cui si misura la complessità sono ottenute prendendo le N fermate più vicine a
+un centro fisso, derivato dai dati come la fermata più vicina al baricentro
+geometrico di tutte le fermate della città: per Roma la **70841, S.
 SABA/AVENTINO**, per Torino la **962, Fermata 1873 - PUGLIA C.3**. *Alternativa
-scartata:* il campionamento casuale. *Perche' no:* cinquanta fermate estratte a
+scartata:* il campionamento casuale. *Perché no:* cinquanta fermate estratte a
 sorte fra le ottomila di Roma finirebbero sparse a chilometri l'una dall'altra e
 non genererebbero quasi nessun trasbordo a piedi, quindi la curva misurerebbe il
-costo di un problema che non somiglia a quello vero. *Perche' il centro non e'
+costo di un problema che non somiglia a quello vero. *Perché il centro non è
 scelto a mano:* un centro scelto a occhio renderebbe il campione una decisione
-degli autori invece che una proprieta' dei dati. *Il prezzo, che va dichiarato:*
+degli autori invece che una proprietà dei dati. *Il prezzo, che va dichiarato:*
 i risultati valgono per una porzione connessa e densa di rete e non sono
-estrapolabili a un campione sparso di pari cardinalita'; la valutazione mostra che
-questo limite si manifesta davvero, perche' la curva sovrastima il costo sulla
+estrapolabili a un campione sparso di pari cardinalità; la valutazione mostra che
+questo limite si manifesta davvero, perché la curva sovrastima il costo sulla
 rete completa.
 
-**Tre ripetizioni per ogni combinazione.** *Perche' tre e non una:* i tempi
+**Tre ripetizioni per ogni combinazione.** *Perché tre e non una:* i tempi
 dipendono dal carico della macchina e una singola esecuzione non ne
-documenterebbe la variabilita'. *Perche' non di piu':* il numero di atomi e quello
+documenterebbe la variabilità. *Perché non di più:* il numero di atomi e quello
 di regole sono deterministici, quindi le ripetizioni informano solo sui tempi, la
-cui dispersione risulta gia' contenuta a tre ripetizioni.
+cui dispersione risulta già contenuta a tre ripetizioni.
 
 **La materializzazione per la ricerca esclude la chiusura transitiva.** La
-relazione `raggiungibile` risponde a domande di connettivita' globale che il
+relazione `raggiungibile` risponde a domande di connettività globale che il
 pianificatore pone di rado, mentre `trasbordo_ammissibile`, quella effettivamente
-consumata dal grafo tempo-espanso, e' molto piu' piccola e cresce linearmente. La
-materializzazione destinata alla ricerca esclude percio' la chiusura, riducendo il
+consumata dal grafo tempo-espanso, è molto più piccola e cresce linearmente. La
+materializzazione destinata alla ricerca esclude perciò la chiusura, riducendo il
 costo di un ordine di grandezza, e la calcola soltanto quando serva davvero. Che
 la scelta si possa compiere a valle, disattivando l'interruttore `con_chiusura`
-invece di riformulare le regole, e' una conseguenza diretta della natura
+invece di riformulare le regole, è una conseguenza diretta della natura
 dichiarativa della rappresentazione.
 
 ## Valutazione
 
 La misura risponde a due domande: fino a che dimensione di rete la base di conoscenza
 resta utilizzabile, e quale delle sue regole ne determina il costo. Sono state misurate
-cinque dimensioni, da cinquanta a duemila fermate, su entrambe le citta', con tre
+cinque dimensioni, da cinquanta a duemila fermate, su entrambe le città, con tre
 ripetizioni indipendenti; per ciascuna si registrano gli atomi generati, il tempo di
-grounding, cioe' il costo di istanziare le regole sui dati, e il tempo di solving,
-cioe' quello di risolvere il programma istanziato. Gli atomi sono deterministici, e la
+grounding, cioè il costo di istanziare le regole sui dati, e il tempo di solving,
+cioè quello di risolvere il programma istanziato. Gli atomi sono deterministici, e la
 loro deviazione nulla documenta soltanto che le ripetizioni sono state eseguite.
 
 Tabella 1 — Roma, media e deviazione standard su tre ripetizioni.
@@ -591,30 +591,30 @@ Tabella 2 — Torino, media e deviazione standard su tre ripetizioni.
 | 1000 | 136.729 ± 0 | 0,240 ± 0,005 | 0,0074 ± 0,0009 | 4.498 |
 | 2000 | 438.374 ± 0 | 0,916 ± 0,023 | 0,0179 ± 0,0008 | 9.542 |
 
-Il salto e' fra quattrocento e mille fermate. Fino a quattrocento la crescita e' quasi
+Il salto è fra quattrocento e mille fermate. Fino a quattrocento la crescita è quasi
 lineare: da 50 a 400 fermate gli atomi di Roma passano da 7.334 a 70.612, meno di dieci
 volte. Da 400 a 1000 decuplicano, da 70.612 a 724.410, e da 1000 a 2000 triplicano con
 un semplice raddoppio delle fermate. Torino mostra la stessa forma, attenuata: da
 34.018 a 136.729 atomi fra 400 e 1000, e a duemila fermate 438.374 contro i 2.358.444
 di Roma, un fattore 5,4. I trasbordi derivati crescono invece quasi linearmente in
-entrambe le citta' - 7.232 e poi 13.938 su Roma, quasi un raddoppio - e questo
+entrambe le città - 7.232 e poi 13.938 su Roma, quasi un raddoppio - e questo
 localizza il fenomeno: non sono i trasbordi a esplodere, ma qualcos'altro che li usa.
 Il solving resta tre ordini di grandezza sotto il grounding.
 
 ![**Figura 1.** Costo della base di conoscenza al crescere del numero di fermate, in
-scala doppio logaritmica, per le due citta'. I pannelli (a), (b) e (c) riportano
+scala doppio logaritmica, per le due città. I pannelli (a), (b) e (c) riportano
 rispettivamente gli atomi generati, il tempo di grounding e il tempo di solving,
 come media su tre ripetizioni indipendenti con barre di deviazione standard; sugli
 atomi le barre sono nulle per costruzione, trattandosi di una grandezza
 deterministica. Il pannello (d) confronta la variante con indice spaziale, a linea
 continua, con quella che confronta tutte le coppie di fermate, a linea tratteggiata,
-eseguita solo fino a quattrocento fermate perche' oltre quella soglia il suo costo
+eseguita solo fino a quattrocento fermate perché oltre quella soglia il suo costo
 quadratico non aggiunge informazione. Dati grezzi in
 `results/complessita_kb.csv`.](../results/complessita_kb.png)
 
 **Da dove nasce la crescita.** Su tutto l'intervallo gli atomi crescono come `n^1,59` a
 Roma e `n^1,30` a Torino, ma la pendenza **aumenta con la dimensione**: sull'ultimo
-raddoppio entrambe le citta' si assestano attorno a `n^1,70`. Disattivando la sola
+raddoppio entrambe le città si assestano attorno a `n^1,70`. Disattivando la sola
 ricorsione e rieseguendo la stessa istanza si ottiene l'attribuzione diretta.
 
 Tabella 3 — Quota di atomi generata dalla chiusura transitiva.
@@ -627,29 +627,29 @@ Tabella 3 — Quota di atomi generata dalla chiusura transitiva.
 | 1000 | 88,0% | 54,9% |
 | 2000 | 92,9% | 70,4% |
 
-A cinquanta fermate le due citta' sono indistinguibili, 31,5% e 32,2%, e il costo e'
+A cinquanta fermate le due città sono indistinguibili, 31,5% e 32,2%, e il costo è
 dominato dalla generazione delle coppie candidate. Il salto avviene fra 400 e 1000 su
-Roma, dal 52,6% all'88,0%, e fra 1000 e 2000 su Torino, dal 54,9% al 70,4%: e' la
+Roma, dal 52,6% all'88,0%, e fra 1000 e 2000 su Torino, dal 54,9% al 70,4%: è la
 stessa transizione, traslata di un punto della griglia. A duemila fermate, su Roma, il
-92,9% degli atomi nasce dalla sola chiusura transitiva. La ragione e' strutturale: la
-chiusura e' quadratica nella dimensione della componente connessa, e allargando la
+92,9% degli atomi nasce dalla sola chiusura transitiva. La ragione è strutturale: la
+chiusura è quadratica nella dimensione della componente connessa, e allargando la
 sottorete le fermate finiscono quasi tutte nella stessa componente, mentre le altre
 regole restano lineari nel numero di coppie candidate, che l'indice spaziale mantiene
 proporzionale alle fermate. Il solving conferma la lettura: con la negazione
-stratificata e la ricorsione positiva il modello e' unico, e il risolutore non esplora
-alcuno spazio di ricerca. **Il costo di questa base di conoscenza e' interamente un
+stratificata e la ricorsione positiva il modello è unico, e il risolutore non esplora
+alcuno spazio di ricerca. **Il costo di questa base di conoscenza è interamente un
 costo di istanziazione, non di ricerca**, e ogni ottimizzazione va rivolta alla forma
 delle regole e non alla configurazione del risolutore.
 
-**Perche' le due reti si comportano in modo diverso.** A parita' di fermate Roma costa
-piu' di Torino, e il rapporto fra gli atomi sale da 2,3 a cinquanta fermate a 5,4 a
+**Perché le due reti si comportano in modo diverso.** A parità di fermate Roma costa
+più di Torino, e il rapporto fra gli atomi sale da 2,3 a cinquanta fermate a 5,4 a
 duemila. Le due reti hanno dimensioni confrontabili, 8.301 fermate contro 7.073: a
-differire e' la **densita' locale**, circa sette trasbordi per fermata su Roma contro
+differire è la **densità locale**, circa sette trasbordi per fermata su Roma contro
 poco meno di cinque su Torino nei campioni di duemila fermate, e un rapporto di
-densita' di circa 1,5 diventa un rapporto di 5,4 sugli atomi proprio per via della
-chiusura transitiva. Con una sola citta' non si
+densità di circa 1,5 diventa un rapporto di 5,4 sugli atomi proprio per via della
+chiusura transitiva. Con una sola città non si
 sarebbe potuto distinguere un costo intrinseco della formulazione da uno dovuto alla
-topologia; con due si vede che la forma della crescita e' la stessa e cambia solo la
+topologia; con due si vede che la forma della crescita è la stessa e cambia solo la
 costante.
 
 **Il costo dell'indice spaziale, e la verifica della sua semantica.**
@@ -663,21 +663,21 @@ Tabella 4 — Atomi generati con e senza indice spaziale.
 | 400 | 70.612 | 375.992 | 34.018 | 345.082 |
 
 Il risparmio **cresce con il numero di fermate**, da 1,4 e 2,3 volte a cinquanta fermate
-fino a 5,3 e 10,1 a quattrocento, perche' la variante esaustiva genera un numero di
+fino a 5,3 e 10,1 a quattrocento, perché la variante esaustiva genera un numero di
 coppie quadratico mentre quella indicizzata lo mantiene proporzionale alle fermate; ed
-e' maggiore su Torino, dove le fermate sono piu' sparse. Sulla rete intera di Roma la
-variante esaustiva dovrebbe istanziare circa 69 milioni di coppie, ed e' per questo che
-le righe a mille e duemila fermate mancano. La verifica che conta e' pero' quella sulla
+è maggiore su Torino, dove le fermate sono più sparse. Sulla rete intera di Roma la
+variante esaustiva dovrebbe istanziare circa 69 milioni di coppie, ed è per questo che
+le righe a mille e duemila fermate mancano. La verifica che conta è però quella sulla
 semantica: a ogni dimensione in cui entrambe le varianti sono state eseguite l'insieme
-dei trasbordi derivati e' risultato **identico**, con gli stessi tempi minimi e gli
+dei trasbordi derivati è risultato **identico**, con gli stessi tempi minimi e gli
 stessi attributi. L'indice restringe l'ordine di istanziazione, non l'insieme delle
 conclusioni.
 
-**La rete intera.** Oltre duemila fermate il campionamento per prossimita' comincia a
-coincidere con la rete intera, che e' stata eseguita a parte: i suoi numeri sono una
+**La rete intera.** Oltre duemila fermate il campionamento per prossimità comincia a
+coincidere con la rete intera, che è stata eseguita a parte: i suoi numeri sono una
 misura e non un'estrapolazione.
 
-Tabella 5 — Esecuzione sull'intera rete di ciascuna citta'.
+Tabella 5 — Esecuzione sull'intera rete di ciascuna città.
 
 | | Roma | Torino |
 | --- | ---: | ---: |
@@ -698,33 +698,33 @@ vanno confrontati con le Tabelle 1 e 2, che a duemila fermate la riportano entro
 I due problemi hanno taglia paragonabile - 8.301 contro 7.073 fermate, 55.894 contro
 44.187 fatti, un rapporto di circa 1,25 - ma i costi no: 4,5 milioni contro 959 mila
 atomi, un rapporto di 4,7, e 12,12 contro 2,36 secondi di grounding, un rapporto di 5,1,
-che e' l'effetto della densita' gia' discusso. Il solving resta sotto il decimo di
+che è l'effetto della densità già discusso. Il solving resta sotto il decimo di
 secondo. I trasbordi derivati, 41.266 e 21.130, sono la relazione che il resto del
 sistema consuma, e il loro rapporto, 1,95, segue le fermate e non il costo; circa tre
-su cinque sono utili, cioe' portano a una linea nuova. L'intera base di conoscenza di
+su cinque sono utili, cioè portano a una linea nuova. L'intera base di conoscenza di
 Roma si istanzia in dodici secondi, un costo sostenibile per un'elaborazione da
 rieseguire quando l'orario statico cambia. I 4,5 milioni di atomi sono **inferiori** ai
-26 milioni che l'esponente `n^1,70` avrebbe fatto prevedere, perche' il campionamento
-per prossimita' seleziona la porzione centrale e piu' densa della rete: la curva misura
+26 milioni che l'esponente `n^1,70` avrebbe fatto prevedere, perché il campionamento
+per prossimità seleziona la porzione centrale e più densa della rete: la curva misura
 correttamente le porzioni dense e sovrastima la rete completa, come dichiarato fra le
 decisioni di progetto.
 
-**Un risultato negativo sulla poverta' dei dati.** Delle 8.301 fermate di Roma **tutte**
-dichiarano `wheelchair_boarding` uguale a zero, cioe' "informazione non disponibile", e
+**Un risultato negativo sulla povertà dei dati.** Delle 8.301 fermate di Roma **tutte**
+dichiarano `wheelchair_boarding` uguale a zero, cioè "informazione non disponibile", e
 lo stesso vale per tutte le 179.177 corse; **nessuna** fermata dichiara una
 `parent_station`. Torino ha 2.722 fermate dichiarate accessibili, 1.075 non accessibili
 e 3.276 senza informazione, e 47.023 corse su 60.580 dichiarate accessibili, ma anche
-li' soltanto due fermate su 7.073 appartengono a una stazione. Ne segue la riga "di cui
-accessibili" della Tabella 5: su Roma la regola dell'accessibilita' deriva **zero**
-trasbordi, perche' il suo antecedente non e' mai soddisfatto, mentre su Torino ne deriva
+lì soltanto due fermate su 7.073 appartengono a una stazione. Ne segue la riga "di cui
+accessibili" della Tabella 5: su Roma la regola dell'accessibilità deriva **zero**
+trasbordi, perché il suo antecedente non è mai soddisfatto, mentre su Torino ne deriva
 7.382 su 21.130. Della gerarchia dei tempi minimi il primo livello non riceve fatti,
-perche' nessuna azienda pubblica `transfers.txt`, e il secondo si applica a due sole
-fermate: sul campo l'eredita' con default collassa quasi ovunque sul terzo livello.
-Questo **dimostra** che la formulazione e' piu' generale dei dati, scritta per il
+perché nessuna azienda pubblica `transfers.txt`, e il secondo si applica a due sole
+fermate: sul campo l'eredità con default collassa quasi ovunque sul terzo livello.
+Questo **dimostra** che la formulazione è più generale dei dati, scritta per il
 formato GTFS e non per due archivi, e che su un'azienda che pubblichi `transfers.txt` e
 una gerarchia di stazioni i primi due livelli entrerebbero in funzione senza cambiare
 una riga; **non dimostra** che quei livelli siano utili su Roma e Torino, e il loro
-collaudo e' affidato a dati costruiti. Ogni risultato sull'accessibilita' va percio'
+collaudo è affidato a dati costruiti. Ogni risultato sull'accessibilità va perciò
 riferito alla sola Torino.
 
 # Sezione Argomento 2 — Ricerca di soluzioni
@@ -732,101 +732,101 @@ riferito alla sola Torino.
 ## Sommario
 
 Il problema si formula come **ricerca su grafo di stati** [1, cap. 3], con tre
-particolarita' che lo distinguono dal caso trattato nel testo del corso e che sono
-l'oggetto di questa sezione. La prima e' che il costo di un arco dipende
-dall'istante in cui lo si percorre, perche' fra una corsa e la successiva si
-aspetta: lo stato deve percio' includere il tempo, e la rappresentazione adottata
-e' quella tempo-espansa, in cui i nodi sono gli eventi di passaggio anziche' le
-fermate [7]. La seconda e' che lo stato deve includere anche il numero di cambi
-gia' effettuati, che e' insieme un criterio di valutazione e un vincolo. La terza
-e' che non esiste una funzione di costo scalare: i criteri sono tre e non
+particolarità che lo distinguono dal caso trattato nel testo del corso e che sono
+l'oggetto di questa sezione. La prima è che il costo di un arco dipende
+dall'istante in cui lo si percorre, perché fra una corsa e la successiva si
+aspetta: lo stato deve perciò includere il tempo, e la rappresentazione adottata
+è quella tempo-espansa, in cui i nodi sono gli eventi di passaggio anziché le
+fermate [7]. La seconda è che lo stato deve includere anche il numero di cambi
+già effettuati, che è insieme un criterio di valutazione e un vincolo. La terza
+è che non esiste una funzione di costo scalare: i criteri sono tre e non
 commensurabili, quindi la ricerca non restituisce una soluzione ma un insieme di
 soluzioni non dominate [9].
 
-La domanda a cui il pianificatore deve rispondere non e' "qual e' il percorso piu'
-corto fra A e B" ma "partendo da A alle otto, qual e' il primo momento in cui posso
+La domanda a cui il pianificatore deve rispondere non è "qual è il percorso più
+corto fra A e B" ma "partendo da A alle otto, qual è il primo momento in cui posso
 essere in B". Gli archi di cambio fra fermate diverse sono quelli derivati dalla
 base di conoscenza descritta nell'argomento precedente, che stabilisce quali
 trasbordi esistano e quanto tempo richiedano come minimo. Il costo che si
-minimizza e' l'**orario di arrivo**, non la durata del viaggio: partire piu' tardi
-non e' peggio se si arriva prima, mentre minimizzando la durata si preferirebbe un
+minimizza è l'**orario di arrivo**, non la durata del viaggio: partire più tardi
+non è peggio se si arriva prima, mentre minimizzando la durata si preferirebbe un
 viaggio di venti minuti che parte fra due ore a uno di venticinque che parte
-adesso, il che non e' quello che chiede chi sta alla fermata.
+adesso, il che non è quello che chiede chi sta alla fermata.
 
-**Perche' la terna non basta, e come lo stato si sdoppia.** Lo stato naturale
+**Perché la terna non basta, e come lo stato si sdoppia.** Lo stato naturale
 sarebbe la terna `(fermata, istante, cambi effettuati)`, ma la terna da sola non
-e' sufficiente a contare correttamente i cambi. Stando a una fermata a un dato
+è sufficiente a contare correttamente i cambi. Stando a una fermata a un dato
 istante, "restare a bordo" e "salire di nuovo" sono situazioni indistinguibili se
 non si sa su quale corsa ci si trovi: un viaggiatore che percorre dieci fermate
 senza mai scendere passerebbe per dieci stati successivi, ciascuno dei quali
 sembrerebbe una salita, e la ricerca gli attribuirebbe dieci cambi. Il conteggio
-dei cambi, che e' uno dei tre criteri, sarebbe sistematicamente sbagliato senza
+dei cambi, che è uno dei tre criteri, sarebbe sistematicamente sbagliato senza
 che nulla lo segnali: non produrrebbe un errore ma itinerari valutati male.
 
-Lo stato si sdoppia percio' in due forme che condividono la terna come parte
-osservabile. **A terra** si e' a una fermata, a un certo istante, dopo un certo
-numero di cambi, e da li' si puo' salire su una corsa, trasbordare verso una
-fermata vicina o camminare. **A bordo** si e' su una corsa specifica, appena
-arrivati a un suo passaggio, e da li' si puo' proseguire senza cambiare oppure
-scendere. L'identita' della corsa e' l'unica informazione aggiuntiva rispetto alla
-terna, ed e' quella che rende il conteggio corretto per costruzione anziche' per
+Lo stato si sdoppia perciò in due forme che condividono la terna come parte
+osservabile. **A terra** si è a una fermata, a un certo istante, dopo un certo
+numero di cambi, e da lì si può salire su una corsa, trasbordare verso una
+fermata vicina o camminare. **A bordo** si è su una corsa specifica, appena
+arrivati a un suo passaggio, e da lì si può proseguire senza cambiare oppure
+scendere. L'identità della corsa è l'unica informazione aggiuntiva rispetto alla
+terna, ed è quella che rende il conteggio corretto per costruzione anziché per
 convenzione. Il cambio si conta alla **salita** e non alla discesa: scendere a
 destinazione costerebbe altrimenti un cambio che il viaggiatore non percepisce, e
 due itinerari identici tranne che per la fermata finale risulterebbero diversi su
 un criterio. Ne segue una convenzione che vale per tutto il documento: il numero di
-**cambi** di un itinerario conta le salite a bordo, prima compresa, cioe' le sue
+**cambi** di un itinerario conta le salite a bordo, prima compresa, cioè le sue
 tratte. Un viaggio diretto ha un cambio, uno con una sola coincidenza ne ha due, e
-il tetto di quattro cambi della ricerca ammette al piu' tre trasbordi.
+il tetto di quattro cambi della ricerca ammette al più tre trasbordi.
 
-**La dimostrazione che questa euristica e' ammissibile.** La ricerca mono-criterio
+**La dimostrazione che questa euristica è ammissibile.** La ricerca mono-criterio
 usa A* [1, cap. 3][8] con un'euristica che divide la distanza in linea d'aria fra
-la fermata corrente e la destinazione per la velocita' massima presente nella
-rete. L'ammissibilita' non e' una proprieta' generale di questa forma: dipende da
-come `V` viene scelto su questi dati, e va percio' dimostrata.
+la fermata corrente e la destinazione per la velocità massima presente nella
+rete. L'ammissibilità non è una proprietà generale di questa forma: dipende da
+come `V` viene scelto su questi dati, e va perciò dimostrata.
 
 Sia `n` uno stato la cui fermata dista `d` metri in linea d'aria dalla
-destinazione, e sia `V` la velocita' massima fra due fermate consecutive presente
-nell'orario. Ogni itinerario che porti da `n` alla destinazione e' una successione
-finita di spostamenti fra fermate. La somma delle loro lunghezze non puo' essere
-inferiore a `d`, perche' il segmento e' il cammino piu' breve fra due punti del
-piano e la spezzata che li congiunge e' almeno altrettanto lunga. Ciascuno di
-quegli spostamenti impiega almeno la propria lunghezza divisa `V`, perche' `V` e'
-per costruzione un limite superiore alla velocita' di ogni spostamento della rete.
-Il tempo residuo reale e' percio' almeno `d / V`, che e' il valore restituito
+destinazione, e sia `V` la velocità massima fra due fermate consecutive presente
+nell'orario. Ogni itinerario che porti da `n` alla destinazione è una successione
+finita di spostamenti fra fermate. La somma delle loro lunghezze non può essere
+inferiore a `d`, perché il segmento è il cammino più breve fra due punti del
+piano e la spezzata che li congiunge è almeno altrettanto lunga. Ciascuno di
+quegli spostamenti impiega almeno la propria lunghezza divisa `V`, perché `V` è
+per costruzione un limite superiore alla velocità di ogni spostamento della rete.
+Il tempo residuo reale è perciò almeno `d / V`, che è il valore restituito
 dall'euristica. Le attese alle fermate e i tempi minimi di trasbordo si sommano a
 quel tempo e possono solo aumentarlo, quindi non intaccano il limite. L'euristica
-non sovrastima mai il costo residuo, ed e' percio' ammissibile.
+non sovrastima mai il costo residuo, ed è perciò ammissibile.
 
-L'euristica e' inoltre **consistente**, perche' e' della forma `d(x)/V` con `d`
+L'euristica è inoltre **consistente**, perché è della forma `d(x)/V` con `d`
 distanza euclidea, che soddisfa la disuguaglianza triangolare: per ogni arco da
 `x` a `y` di costo `c` vale `h(x) ≤ c + h(y)`, dal momento che la distanza
 euclidea fra `x` e la destinazione non supera la somma della distanza fra `x` e
-`y` e di quella fra `y` e la destinazione, e che `c` non e' inferiore al tempo
+`y` e di quella fra `y` e la destinazione, e che `c` non è inferiore al tempo
 minimo per coprire il tratto da `x` a `y`. Ne segue che ogni stato viene estratto
-dalla coda gia' con il suo costo definitivo e non e' necessario riaprirlo.
+dalla coda già con il suo costo definitivo e non è necessario riaprirlo.
 
-La dimostrazione e' verificata anche per campionamento: un test estrae stati a
+La dimostrazione è verificata anche per campionamento: un test estrae stati a
 caso, calcola il costo residuo reale con una ricerca esaustiva e controlla che
-l'euristica non lo superi mai. La verifica serve perche' un'euristica non
+l'euristica non lo superi mai. La verifica serve perché un'euristica non
 ammissibile non solleverebbe alcun errore e non rallenterebbe nulla: restituirebbe
 semplicemente itinerari peggiori, in silenzio.
 
-**Perche' i tre criteri non si riducono a uno.** Ogni itinerario e' valutato su
+**Perché i tre criteri non si riducono a uno.** Ogni itinerario è valutato su
 orario di arrivo, numero di cambi e minuti trascorsi a piedi. Ridurli a una sola
 grandezza richiederebbe di decidere quanto valga un cambio espresso in minuti, e
 la risposta dipende da chi viaggia: chi porta una valigia, chi ha poco tempo e chi
-ha difficolta' motorie darebbero tre risposte diverse, e nessuna e' piu' corretta
-delle altre. Un itinerario che arriva cinque minuti prima ma con un cambio in piu'
-non e' migliore ne' peggiore, e' un altro compromesso. Cio' che si puo' invece
-affermare senza arbitrio e' che un itinerario non serve a nessuno se ne esiste un
+ha difficoltà motorie darebbero tre risposte diverse, e nessuna è più corretta
+delle altre. Un itinerario che arriva cinque minuti prima ma con un cambio in più
+non è migliore né peggiore, è un altro compromesso. Ciò che si può invece
+affermare senza arbitrio è che un itinerario non serve a nessuno se ne esiste un
 altro non peggiore su tutti e tre i criteri e strettamente migliore su almeno uno:
-la ricerca restituisce percio' l'insieme delle soluzioni non dominate [9],
+la ricerca restituisce perciò l'insieme delle soluzioni non dominate [9],
 lasciando la scelta finale a chi viaggia — o, nel caso di questo progetto, al
 criterio probabilistico dell'argomento successivo, che consuma esattamente
 quell'insieme.
 
 **Il modello dei ritardi non entra in questa fase.** Va detto esplicitamente,
-perche' e' una scelta di perimetro e non un'omissione: la ricerca descritta qui
+perché è una scelta di perimetro e non un'omissione: la ricerca descritta qui
 lavora sull'orario **programmato** e non usa in alcun modo i ritardi.
 
 ## Strumenti utilizzati
@@ -834,16 +834,16 @@ lavora sull'orario **programmato** e non usa in alcun modo i ritardi.
 La ricerca mono-criterio impiega **A\*** [8] e, come termine di paragone senza
 euristica, l'algoritmo di **Dijkstra**; entrambi sono usati nella loro forma
 standard e sono trattati nel testo del corso [1, cap. 3], insieme alle nozioni di
-ammissibilita' e consistenza di un'euristica. La rappresentazione tempo-espansa
-del problema di orario e' quella descritta da Pyrga e altri [7]. La ricerca
-multi-criterio e' una ricerca a etichette con potatura per dominanza, nella forma
-abituale per i problemi di cammino multi-obiettivo [9]. La coda di priorita' e'
+ammissibilità e consistenza di un'euristica. La rappresentazione tempo-espansa
+del problema di orario è quella descritta da Pyrga e altri [7]. La ricerca
+multi-criterio è una ricerca a etichette con potatura per dominanza, nella forma
+abituale per i problemi di cammino multi-obiettivo [9]. La coda di priorità è
 quella della libreria standard di Python, `heapq`; il calcolo delle distanze e la
 manipolazione delle strutture del grafo usano **numpy** [10]; le figure sono
 prodotte con **matplotlib** [16].
 
 Sono originali di questo progetto, e per questo esposti nel sommario e fra le
-decisioni di progetto anziche' qui, la dimostrazione di ammissibilita' e
+decisioni di progetto anziché qui, la dimostrazione di ammissibilità e
 consistenza dell'euristica geografica su questi dati e la relazione di dominanza
 fra stati a terra su cui si fonda la scelta della chiave di stato.
 
@@ -853,96 +853,96 @@ fra stati a terra su cui si fonda la scelta della chiave di stato.
 parte dall'orario di partenza richiesto e dura un orizzonte prefissato.
 *Alternative scartate:* costruire il grafo dell'intera giornata di servizio,
 oppure adottare la rappresentazione tempo-dipendente, che comprime il tempo negli
-archi anziche' espanderlo nei nodi. *Perche' no alla giornata:* l'orario di Roma
-contiene 5,6 milioni di passaggi al giorno, e il grafo corrispondente non e' un
-oggetto che si costruisca per rispondere a una singola interrogazione. *Perche'
-120 minuti:* e' anche cio' che una interrogazione usa davvero, perche' nessuno
+archi anziché espanderlo nei nodi. *Perché no alla giornata:* l'orario di Roma
+contiene 5,6 milioni di passaggi al giorno, e il grafo corrispondente non è un
+oggetto che si costruisca per rispondere a una singola interrogazione. *Perché
+120 minuti:* è anche ciò che una interrogazione usa davvero, perché nessuno
 accetta di attendere quattro ore alla fermata; la Tabella 6 mostra che l'orizzonte
-di due ore costa dodici megabyte su Roma, cioe' abbastanza poco da poter
+di due ore costa dodici megabyte su Roma, cioè abbastanza poco da poter
 ricostruire il grafo a ogni interrogazione invece di conservarlo. *Il prezzo, che
-e' una limitazione dei risultati e non una nota implementativa:* la ricerca trova
+è una limitazione dei risultati e non una nota implementativa:* la ricerca trova
 l'ottimo **dentro la finestra**, e un itinerario che richiedesse di attendere
 oltre l'orizzonte non verrebbe trovato affatto. La valutazione riporta su quante
-coppie la finestra si sia rivelata sufficiente, e quel numero e' esso stesso un
+coppie la finestra si sia rivelata sufficiente, e quel numero è esso stesso un
 risultato.
 
-**La chiave di stato a terra non contiene l'istante.** E' la decisione che ha
-avuto l'effetto piu' grande sul costo della ricerca. *Alternativa scartata:* la
+**La chiave di stato a terra non contiene l'istante.** È la decisione che ha
+avuto l'effetto più grande sul costo della ricerca. *Alternativa scartata:* la
 lettura letterale della terna, che era l'implementazione iniziale e che tratta
-come distinti due arrivi alla stessa fermata in istanti diversi. E' corretta, ma
+come distinti due arrivi alla stessa fermata in istanti diversi. È corretta, ma
 su una finestra di due ore produce centinaia di stati per ogni fermata, uno per
 ogni orario a cui vi si possa arrivare.
 
-*Perche' si puo' fare a meno dell'istante.* Vale una relazione di dominanza:
-trovarsi alla stessa fermata, con lo stesso numero di cambi, ma **prima**, e'
-sempre almeno altrettanto buono. Ogni prosecuzione disponibile allo stato piu'
-tardivo e' disponibile anche a quello piu' precoce, perche' le corse partono agli
+*Perché si può fare a meno dell'istante.* Vale una relazione di dominanza:
+trovarsi alla stessa fermata, con lo stesso numero di cambi, ma **prima**, è
+sempre almeno altrettanto buono. Ogni prosecuzione disponibile allo stato più
+tardivo è disponibile anche a quello più precoce, perché le corse partono agli
 stessi orari per entrambi e le azioni possibili da una fermata dipendono
-dall'istante solo attraverso il vincolo di non poter salire su una corsa gia'
+dall'istante solo attraverso il vincolo di non poter salire su una corsa già
 partita; un istante anteriore rilassa quel vincolo senza irrigidirne altri, e
-attendere non costa nulla. Gli stati con istante posteriore sono percio' dominati.
+attendere non costa nulla. Gli stati con istante posteriore sono perciò dominati.
 Identificando uno stato a terra con la sola coppia `(fermata, cambi)` e
-conservando l'istante di arrivo piu' precoce, quegli stati spariscono senza che
-alcuna soluzione vada perduta: non e' un'approssimazione, e l'ottimo resta
-garantito. Le due formulazioni convivono nel codice, perche' altrimenti il
+conservando l'istante di arrivo più precoce, quegli stati spariscono senza che
+alcuna soluzione vada perduta: non è un'approssimazione, e l'ottimo resta
+garantito. Le due formulazioni convivono nel codice, perché altrimenti il
 confronto non sarebbe riproducibile: il parametro `istante_nella_chiave` riattiva
 quella storica.
 
-**Il tetto sul numero di cambi: quattro.** *Perche' esiste:* e' un vincolo di
-realismo prima che di costo, perche' un itinerario con sei cambi non verrebbe
-scelto da nessuno. *Perche' quattro:* sulle reti esaminate la frontiera di Pareto
+**Il tetto sul numero di cambi: quattro.** *Perché esiste:* è un vincolo di
+realismo prima che di costo, perché un itinerario con sei cambi non verrebbe
+scelto da nessuno. *Perché quattro:* sulle reti esaminate la frontiera di Pareto
 contiene mediamente cinque soluzioni con un numero di cambi ben inferiore, quindi
 il tetto non taglia soluzioni che sarebbero state scelte. *La conseguenza non
 ovvia:* il tetto interagisce con la rappresentazione dello stato, e la valutazione
 mostra che rimuovere i cambi dalla chiave di stato in sua presenza produce
 itinerari sbagliati.
 
-**L'euristica usa il massimo vero delle velocita', difetti dell'orario compresi.**
-`V` e' il massimo effettivo delle velocita' fra fermate consecutive presenti
+**L'euristica usa il massimo vero delle velocità, difetti dell'orario compresi.**
+`V` è il massimo effettivo delle velocità fra fermate consecutive presenti
 nell'orario: **297,1 km/h a Roma e 500,8 a Torino**. *Alternativa scartata:* un
-valore fisicamente plausibile per un mezzo urbano, per esempio 80 km/h. *Perche'
+valore fisicamente plausibile per un mezzo urbano, per esempio 80 km/h. *Perché
 no:* il limite deve valere per il grafo che si sta cercando, non per la fisica;
 se l'orario dichiara un movimento, quel movimento nel grafo esiste, e
-un'euristica tarata su una velocita' inferiore lo sovrastimerebbe, perdendo
-l'ammissibilita' dimostrata nel sommario. *Alternativa scartata, la seconda:*
-correggere l'orario eliminando gli archi anomali. *Perche' no:* significherebbe
+un'euristica tarata su una velocità inferiore lo sovrastimerebbe, perdendo
+l'ammissibilità dimostrata nel sommario. *Alternativa scartata, la seconda:*
+correggere l'orario eliminando gli archi anomali. *Perché no:* significherebbe
 modificare il dato in ingresso per far funzionare meglio un algoritmo, e il
 progetto misura il comportamento del metodo sui dati reali, difetti compresi. La
-valutazione riporta il costo di questa scelta, che e' alto.
+valutazione riporta il costo di questa scelta, che è alto.
 
 **Una variante non ammissibile, come confronto e solo come confronto.** Per
-quantificare quanto costi l'ammissibilita' e' stata implementata anche una
-variante con `V` pari al **99,9-esimo percentile** delle velocita' invece che al
-massimo: 55,2 km/h a Roma e 82,0 a Torino. *Perche' il p99,9 e non un altro
-percentile:* e' il valore piu' alto fra quelli fisicamente plausibili, quindi
+quantificare quanto costi l'ammissibilità è stata implementata anche una
+variante con `V` pari al **99,9-esimo percentile** delle velocità invece che al
+massimo: 55,2 km/h a Roma e 82,0 a Torino. *Perché il p99,9 e non un altro
+percentile:* è il valore più alto fra quelli fisicamente plausibili, quindi
 massimizza il confronto restando difendibile come scelta ingegneristica; un
-percentile piu' basso avrebbe reso l'euristica piu' aggressiva ma il confronto
-meno informativo. *Perche' non diventa la variante predefinita:* **non e'
-ammissibile** e A* non garantisce piu' l'ottimo. E' dichiarata come tale ovunque
+percentile più basso avrebbe reso l'euristica più aggressiva ma il confronto
+meno informativo. *Perché non diventa la variante predefinita:* **non è
+ammissibile** e A* non garantisce più l'ottimo. È dichiarata come tale ovunque
 compaia — nel codice, nella colonna `tipo_velocita` di
 `results/ricerca_astar.csv`, che marca ogni riga con il valore di `V` usato e con
 la sua natura, e nella didascalia della Figura 2. La variante ammissibile resta
 l'unica che produce risultati ufficiali del progetto.
 
-**Cinquanta coppie origine-destinazione per citta', estratte con un seme
-dichiarato.** *Perche' un campione e non tutte le coppie:* le coppie possibili su
-Roma sono circa 34 milioni. *Perche' cinquanta:* e' il numero che rende
+**Cinquanta coppie origine-destinazione per città, estratte con un seme
+dichiarato.** *Perché un campione e non tutte le coppie:* le coppie possibili su
+Roma sono circa 34 milioni. *Perché cinquanta:* è il numero che rende
 l'esperimento completo eseguibile in pochi minuti anche nella variante storica
-della chiave di stato, che impiega decine di secondi per interrogazione. *Perche'
+della chiave di stato, che impiega decine di secondi per interrogazione. *Perché
 un seme dichiarato:* il campione dev'essere riproducibile, altrimenti il confronto
 fra varianti misurerebbe anche la fortuna dell'estrazione. Le coppie sono estratte
-fra le fermate effettivamente servite nella finestra, perche' una fermata senza
+fra le fermate effettivamente servite nella finestra, perché una fermata senza
 corse nella finestra produrrebbe un'interrogazione senza soluzione per ragioni che
 non riguardano la ricerca.
 
 **Le coppie irrisolte non vengono escluse dal campione.** *Alternativa scartata:*
-riestrarre finche' tutte le cinquanta coppie sono risolvibili. *Perche' no:*
+riestrarre finché tutte le cinquanta coppie sono risolvibili. *Perché no:*
 darebbe una falsa impressione di completezza e nasconderebbe proprio il limite
-della finestra temporale, che e' un risultato da riportare.
+della finestra temporale, che è un risultato da riportare.
 
 ## Valutazione
 
-Il confronto e' stato eseguito su cinquanta coppie origine-destinazione per citta', con
+Il confronto è stato eseguito su cinquanta coppie origine-destinazione per città, con
 partenza alle 08:00 e orizzonte di 120 minuti; le varianti condividono lo stesso codice
 e differiscono solo per l'euristica o per la chiave di stato.
 
@@ -951,7 +951,7 @@ e differiscono solo per l'euristica o per la chiave di stato.
 Tabella 6 — Dimensione del grafo tempo-espanso al crescere della finestra,
 partenza alle 08:00. Eventi, archi e memoria sono grandezze deterministiche,
 identiche nelle tre costruzioni indipendenti eseguite per ciascuna finestra, e la
-loro deviazione standard e' nulla per costruzione; i tempi di costruzione, media e
+loro deviazione standard è nulla per costruzione; i tempi di costruzione, media e
 deviazione sulle tre ripetizioni, sono nel testo. Fonte:
 `results/grafo_finestra.csv`.
 
@@ -963,19 +963,19 @@ deviazione sulle tre ripetizioni, sono nel testo. Fonte:
 | 120 min | 212.788 | 566.576 | 11,9 | 83.121 | 227.023 | 5,1 |
 | 240 min | 315.000 | 871.117 | 17,0 | 118.263 | 330.877 | 6,8 |
 
-La crescita e' **fortemente sublineare**: sedici volte la finestra, da 15 a 240 minuti,
+La crescita è **fortemente sublineare**: sedici volte la finestra, da 15 a 240 minuti,
 moltiplica gli eventi di Roma per 2,6 e gli archi per 3,0. Una parte cospicua del grafo
 non dipende dalla finestra - i trasbordi a terra derivati dalla base di conoscenza,
-41.266 a Roma e 21.130 a Torino, sono gli stessi a qualunque ora - ed e' quella parte a
+41.266 a Roma e 21.130 a Torino, sono gli stessi a qualunque ora - ed è quella parte a
 rendere alto il primo punto e bassa la pendenza. Il grafo di due ore di Roma occupa 11,9
 MB e quello di quattro ore 17,0, e si costruiscono in 2,10 ± 0,05 e 3,55 ± 0,03 secondi
-(0,68 ± 0,01 e 0,98 ± 0,01 a Torino): ricostruirlo a ogni interrogazione e'
+(0,68 ± 0,01 e 0,98 ± 0,01 a Torino): ricostruirlo a ogni interrogazione è
 praticabile, e conservarlo non serve.
 
-Sulle cinquanta coppie la finestra di due ore e' bastata in **43 casi su 50 a Roma e 39
-su 50 a Torino**, cioe' nell'86% e nel 78%; le coppie rimaste corrispondono a
+Sulle cinquanta coppie la finestra di due ore è bastata in **43 casi su 50 a Roma e 39
+su 50 a Torino**, cioè nell'86% e nel 78%; le coppie rimaste corrispondono a
 collegamenti che nella finestra non esistono, tipicamente fra periferie opposte. Non
-sono state escluse dal campione, e delimitano la generalita' di cio' che segue alle
+sono state escluse dal campione, e delimitano la generalità di ciò che segue alle
 coppie collegate entro due ore.
 
 **La relazione di dominanza vale due ordini di grandezza.** Sulla prima coppia risolta
@@ -991,12 +991,12 @@ stato a terra, sulla coppia 3176 → 3492 di Torino.
 | `(fermata, istante, cambi)` | 1.464.312 | 57,10 |
 | `(fermata, cambi)` | 23.597 | 0,57 |
 
-*Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocita' massima
+*Fonte: `results/chiave_di_stato.csv`, archivio del 26 agosto 2026, velocità massima
 139,12 m/s misurata da `results/velocita_archi.csv`. Gli stati espansi sono
 deterministici; i tempi vengono da una sola esecuzione su una sola coppia e vanno
-letti come ordine di grandezza, non come stima con la sua variabilita'.*
+letti come ordine di grandezza, non come stima con la sua variabilità.*
 
-Il rapporto e' di 62 volte sugli stati e di 100 sul tempo, perche' la coda di priorita'
+Il rapporto è di 62 volte sugli stati e di 100 sul tempo, perché la coda di priorità
 cresce con gli stati aperti. La coincidenza degli orari di arrivo conferma
 sperimentalmente l'argomentazione di dominanza esposta fra le decisioni di progetto; e
 senza questa riformulazione il backtesting, con le sue migliaia di interrogazioni a
@@ -1007,10 +1007,10 @@ cinquantasette secondi l'una, non sarebbe stato eseguibile.
 Tabella 8 — Confronto delle varianti di ricerca. Media e deviazione standard sulle
 coppie risolte: 43 per Roma, 39 per Torino. La colonna "non ottime" conta le
 interrogazioni in cui la variante restituisce un orario di arrivo diverso da
-quello di Dijkstra, che non usando euristiche non puo' essere influenzato da una
+quello di Dijkstra, che non usando euristiche non può essere influenzato da una
 stima sbagliata.
 
-| Citta' | Variante | V (m/s) | Stati espansi | Secondi | Risparmio | Non ottime |
+| Città | Variante | V (m/s) | Stati espansi | Secondi | Risparmio | Non ottime |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | Roma | Dijkstra | - | 37.156 ± 32.062 | 0,484 ± 0,370 | - | 0 / 43 |
 | Roma | A* ammissibile | 82,5 | 34.391 ± 29.851 | 0,724 ± 0,520 | 7,7% ± 2,6% | 0 / 43 |
@@ -1020,68 +1020,68 @@ stima sbagliata.
 | Torino | A* p99,9 *(non amm.)* | 22,8 | 11.070 ± 8.532 | 0,264 ± 0,170 | 20,6% ± 6,8% | 0 / 39 |
 
 Su **Roma** A* ammissibile espande il 7,7% di stati in meno di Dijkstra ma impiega il 49%
-di tempo in **piu'**, 0,724 secondi contro 0,484; su **Torino** risparmia il 3,8% e
-impiega il 59% in piu'. Il risultato e' negativo, e va enunciato senza attenuazioni:
+di tempo in **più**, 0,724 secondi contro 0,484; su **Torino** risparmia il 3,8% e
+impiega il 59% in più. Il risultato è negativo, e va enunciato senza attenuazioni:
 **l'euristica ammissibile risparmia meno del dieci per cento degli stati e fa impiegare
-ad A\* piu' tempo di Dijkstra**. Le deviazioni standard, dello stesso ordine delle medie,
-misurano la diversa difficolta' delle coppie e non l'incertezza della misura: il
+ad A\* più tempo di Dijkstra**. Le deviazioni standard, dello stesso ordine delle medie,
+misurano la diversa difficoltà delle coppie e non l'incertezza della misura: il
 risparmio, che confronta le varianti sulla stessa interrogazione, ha deviazione molto
-piu' contenuta.
+più contenuta.
 
-La colonna `V` spiega il fallimento. L'ammissibilita' obbliga a usare il massimo vero
-delle velocita', 82,5 m/s a Roma e 139,1 a Torino, cioe' **297,1 e 500,8 km/h**, e quei
+La colonna `V` spiega il fallimento. L'ammissibilità obbliga a usare il massimo vero
+delle velocità, 82,5 m/s a Roma e 139,1 a Torino, cioè **297,1 e 500,8 km/h**, e quei
 valori vengono dalla tabella oraria: archi di duecento o quattrocento metri percorsi in
 **tre secondi di orario programmato**. Con un `V` simile l'euristica resta quasi ovunque
-prossima a zero, e A* si comporta come Dijkstra pagando in piu' il calcolo della
+prossima a zero, e A* si comporta come Dijkstra pagando in più il calcolo della
 distanza.
 
-Tabella 9 — Distribuzione delle velocita' fra fermate consecutive, misurata
+Tabella 9 — Distribuzione delle velocità fra fermate consecutive, misurata
 sull'orario programmato.
 
-| Citta' | Archi | Mediana | p99 | p99,9 | Massimo | Sopra 150 km/h |
+| Città | Archi | Mediana | p99 | p99,9 | Massimo | Sopra 150 km/h |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Roma | 5.343.307 | 15,6 km/h | 34,4 km/h | 55,2 km/h | 297,1 km/h | 1.063 |
 | Torino | 1.752.603 | 16,4 km/h | 56,2 km/h | 82,0 km/h | 500,8 km/h | 135 |
 
-Mediane, p99 e p99,9 sono plausibili per un mezzo urbano; il massimo e' fuori scala, e
+Mediane, p99 e p99,9 sono plausibili per un mezzo urbano; il massimo è fuori scala, e
 sta in 1.063 archi su 5,3 milioni a Roma e 135 su 1,75 milioni a Torino. **Meno di un
 arco su cinquemila determina il valore di `V`, e con esso l'efficacia dell'euristica su
-tutti gli altri**: il risultato negativo non e' un fallimento del metodo, ma il metodo
+tutti gli altri**: il risultato negativo non è un fallimento del metodo, ma il metodo
 che funziona correttamente su dati imperfetti.
 
 La variante non ammissibile, tarata sul p99,9, risparmia il 35,8% e il 20,6% degli
 stati, e **su nessuna delle 82 interrogazioni risolte ha restituito un orario di arrivo
-diverso dall'ottimo**. Cio' non autorizza a rinunciare alla garanzia: ottantadue
-interrogazioni senza controesempi non dimostrano che non ne esistano, ed e' esattamente
+diverso dall'ottimo**. Ciò non autorizza a rinunciare alla garanzia: ottantadue
+interrogazioni senza controesempi non dimostrano che non ne esistano, ed è esattamente
 la differenza fra una misura e una dimostrazione.
 
-**Il costo dei cambi nello stato, e perche' non e' spreco.** La variante che identifica
+**Il costo dei cambi nello stato, e perché non è spreco.** La variante che identifica
 uno stato a terra con la sola fermata espande **11.734 stati contro 34.391 a Roma** e
 **4.817 contro 13.301 a Torino**, circa un terzo, ma **sbaglia su 8 interrogazioni
 su 43 a Roma e su 4 su 39 a Torino**, quasi una su sette: a Roma restituisce un orario
 di arrivo diverso dall'ottimo in cinque casi e in altri tre non trova alcun
-itinerario la' dove Dijkstra lo trova, a Torino sbaglia l'orario in quattro casi. Gli
+itinerario là dove Dijkstra lo trova, a Torino sbaglia l'orario in quattro casi. Gli
 stati espansi sono mediati sulle sole interrogazioni in cui la variante trova una
-soluzione. La causa e' il tetto di quattro cambi: uno stato raggiunto per primo con quattro
-cambi gia' spesi viene marcato come visitato, e un percorso successivo che vi arrivi con
-un cambio solo viene scartato benche' avrebbe potuto proseguire. Ripetendo l'esperimento
-con un tetto di dodici cambi le discrepanze scendono a **zero** su entrambe le citta'.
-Il fattore tre non e' dunque spreco, ma il **prezzo della correttezza** in presenza di un
+soluzione. La causa è il tetto di quattro cambi: uno stato raggiunto per primo con quattro
+cambi già spesi viene marcato come visitato, e un percorso successivo che vi arrivi con
+un cambio solo viene scartato benché avrebbe potuto proseguire. Ripetendo l'esperimento
+con un tetto di dodici cambi le discrepanze scendono a **zero** su entrambe le città.
+Il fattore tre non è dunque spreco, ma il **prezzo della correttezza** in presenza di un
 vincolo sul numero di cambi.
 
 **La frontiera di Pareto sui dati reali.** La ricerca multi-criterio restituisce in
 media **5,72 ± 2,83 soluzioni non dominate a Roma** e **5,05 ± 2,89 a Torino**. Se
 esistesse un itinerario ottimo unico la frontiera ne conterrebbe uno solo: su una tipica
-coppia ci sono invece piu' compromessi genuinamente diversi fra rapidita', cambi e
-cammino, ed e' questo che rende la domanda di ricerca non banale, perche' altrimenti
-massimizzare la probabilita' di arrivo non avrebbe nulla fra cui scegliere.
+coppia ci sono invece più compromessi genuinamente diversi fra rapidità, cambi e
+cammino, ed è questo che rende la domanda di ricerca non banale, perché altrimenti
+massimizzare la probabilità di arrivo non avrebbe nulla fra cui scegliere.
 
 ![**Figura 2.** Costo del grafo ed effetto dell'euristica, su cinquanta coppie
-origine-destinazione per citta' con partenza alle 08:00 e finestra di 120 minuti. Il
+origine-destinazione per città con partenza alle 08:00 e finestra di 120 minuti. Il
 pannello (a) riporta la crescita del grafo con l'orizzonte temporale, in scala
 doppio logaritmica. Il pannello (b) confronta gli stati espansi da A* ammissibile
 con quelli di Dijkstra sulle stesse interrogazioni: la nuvola aderisce alla
-bisettrice, che e' la rappresentazione visiva del risparmio quasi nullo. Il pannello
+bisettrice, che è la rappresentazione visiva del risparmio quasi nullo. Il pannello
 (c) confronta la distribuzione del risparmio per le due varianti; **le scatole
 tratteggiate corrispondono all'euristica NON ammissibile**, che non garantisce
 l'ottimo e non produce alcun risultato ufficiale del progetto. Il pannello (d)
@@ -1098,17 +1098,17 @@ calcolati sull'orario programmato pubblicato dalle due aziende.
 
 ## Sommario
 
-Il problema si formula come **calcolo di una probabilita' su una successione di
-eventi dipendenti** [1, cap. 9]. La particolarita' di questo caso e' triplice. La
-variabile aleatoria non e' l'esito di una coincidenza ma l'orario di arrivo, che
-e' continuo e va discretizzato. Le dipendenze non hanno la forma usuale, perche'
+Il problema si formula come **calcolo di una probabilità su una successione di
+eventi dipendenti** [1, cap. 9]. La particolarità di questo caso è triplice. La
+variabile aleatoria non è l'esito di una coincidenza ma l'orario di arrivo, che
+è continuo e va discretizzato. Le dipendenze non hanno la forma usuale, perché
 il ritardo si propaga *dentro* una corsa e si azzera *attraversando* un cambio, il
 che rende la catena markoviana ma con una struttura di condizionamento che va
-esplicitata. E soprattutto una coincidenza persa non e' un fallimento assorbente
-ma un ritardo, perche' chi perde l'autobus prende quello dopo: l'evento negativo
+esplicitata. E soprattutto una coincidenza persa non è un fallimento assorbente
+ma un ritardo, perché chi perde l'autobus prende quello dopo: l'evento negativo
 non termina il processo, lo sposta.
 
-Il modulo assegna a ciascun itinerario la probabilita' di arrivare a destinazione
+Il modulo assegna a ciascun itinerario la probabilità di arrivare a destinazione
 entro una scadenza `T`, e sceglie quello che la massimizza. Riceve come candidati
 gli itinerari non dominati prodotti dalla ricerca multi-criterio descritta
 nell'argomento precedente — mediamente fra cinque e sei per ogni coppia
@@ -1118,8 +1118,8 @@ alla linea, alla posizione lungo la corsa e al ritardo osservato a monte.
 **Su quale rete valgano i risultati di questo argomento, e da dove cambia.** I
 numeri riportati qui sotto sono calcolati su **ritardi sintetici**, che coprono
 l'intera rete descritta dall'orario: metropolitana compresa. Dal momento in cui il
-modulo lavora sui ritardi appresi dai dati - cioe' dall'argomento sull'apprendimento
-in avanti, e soprattutto nel backtesting - quella copertura si restringe, perche' il
+modulo lavora sui ritardi appresi dai dati - cioè dall'argomento sull'apprendimento
+in avanti, e soprattutto nel backtesting - quella copertura si restringe, perché il
 tempo reale non descrive la stessa rete dell'orario.
 
 Tabella 10 — Linee osservate nel feed real-time su linee programmate nell'orario, per
@@ -1131,34 +1131,34 @@ tipo di mezzo.
 | Torino | 8 su 9 | **0 su 1** | 65-100 su 213-215 | 0 su 1 |
 
 *Fonte: `results/copertura_orario.csv`, colonna `copertura_per_tipo`, sedici
-giornate per citta' nella finestra `2026-09-09`, cioe' dal 25 agosto al 9
+giornate per città nella finestra `2026-09-09`, cioè dal 25 agosto al 9
 settembre 2026: la colonna `finestra` dei CSV porta la sola data di chiusura; gli
 intervalli sono i valori minimo
-e massimo fra le giornate, e i denominatori variano perche' l'orario cambia. I
+e massimo fra le giornate, e i denominatori variano perché l'orario cambia. I
 codici sono i `route_type` della specifica GTFS [5].*
 
-La lettura giusta non e' che i due feed siano **incompleti**, ma che descrivano una
+La lettura giusta non è che i due feed siano **incompleti**, ma che descrivano una
 **rete diversa** da quella dell'orario, e in modo diverso l'uno dall'altro. Roma
 pubblica il tempo reale dei soli **autobus di superficie**, quasi tutti, e non
 pubblica nulla della metropolitana: nelle sedici giornate osservate le sue quattro
 linee metropolitane non compaiono **mai**. Torino fa l'opposto sul ferro e sulla
-gomma: porta otto tram su nove ma **meno della meta' degli autobus**, e neanche lei
+gomma: porta otto tram su nove ma **meno della metà degli autobus**, e neanche lei
 la metropolitana. Ne segue che ogni affermazione sperimentale sul pianificatore
 romano fondata su dati reali riguarda i soli autobus, e che il confronto fra le due
-citta' e' fra due sottoreti scelte dai produttori e non da noi. E' un limite dei
+città è fra due sottoreti scelte dai produttori e non da noi. È un limite dei
 dati disponibili, non una scelta di progetto, e nessun accorgimento nel nostro
-codice puo' rimuoverlo.
+codice può rimuoverlo.
 
-**Perche' l'obiettivo probabilistico non e' una penalizzazione del tempo.** La
-tentazione naturale, di fronte al problema, e' evitare la probabilita' e
+**Perché l'obiettivo probabilistico non è una penalizzazione del tempo.** La
+tentazione naturale, di fronte al problema, è evitare la probabilità e
 correggere l'orario: penalizzare gli itinerari con coincidenze tese, per esempio
 sommando al tempo di viaggio un termine proporzionale alla strettezza dei margini.
-Sarebbe piu' semplice e non richiederebbe alcun modello dei ritardi. Non funziona,
-e la ragione non e' di accuratezza ma di struttura. Una penalizzazione della forma
-"tempo di viaggio piu' lambda per la tensione delle coincidenze" induce **un solo
-ordinamento** sugli itinerari: fissato lambda esiste un migliore, ed e' sempre lo
-stesso. La quantita' P(arrivo ≤ T) induce invece **una famiglia di ordinamenti
-indicizzata da T**, e nessuna scelta di lambda puo' riprodurre una famiglia con un
+Sarebbe più semplice e non richiederebbe alcun modello dei ritardi. Non funziona,
+e la ragione non è di accuratezza ma di struttura. Una penalizzazione della forma
+"tempo di viaggio più lambda per la tensione delle coincidenze" induce **un solo
+ordinamento** sugli itinerari: fissato lambda esiste un migliore, ed è sempre lo
+stesso. La quantità P(arrivo ≤ T) induce invece **una famiglia di ordinamenti
+indicizzata da T**, e nessuna scelta di lambda può riprodurre una famiglia con un
 elemento solo.
 
 L'inversione si vede su due itinerari costruiti apposta. Il primo, A, arriva
@@ -1166,7 +1166,7 @@ cinquanta minuti dopo la partenza secondo l'orario, ma la sua unica coincidenza 
 due minuti di margine. Il secondo, B, arriva cinquantacinque minuti dopo, con
 dodici minuti di margine.
 
-Tabella 11 — Probabilita' di arrivo entro la scadenza dei due itinerari costruiti A e B.
+Tabella 11 — Probabilità di arrivo entro la scadenza dei due itinerari costruiti A e B.
 
 | Scadenza T | P(A) | P(B) | Migliore |
 | ---: | ---: | ---: | :---: |
@@ -1177,73 +1177,73 @@ Tabella 11 — Probabilita' di arrivo entro la scadenza dei due itinerari costru
 | +120 min | 0,998 | 1,000 | **B** |
 
 Le righe mostrano l'inversione avvenire fra i cinquantacinque e i sessanta minuti.
-A cinquanta minuti B ha probabilita' esattamente nulla, perche' il suo orario di
-arrivo programmato cade gia' oltre la scadenza e nemmeno la puntualita' perfetta
+A cinquanta minuti B ha probabilità esattamente nulla, perché il suo orario di
+arrivo programmato cade già oltre la scadenza e nemmeno la puntualità perfetta
 basterebbe; A ha 0,078, poco, ma non zero. A cinquantacinque A conduce ancora,
-0,337 contro 0,236. A sessanta l'ordine si e' rovesciato e il distacco e' ampio,
+0,337 contro 0,236. A sessanta l'ordine si è rovesciato e il distacco è ampio,
 0,498 contro 0,827: B ha ormai margine sufficiente e la sua coincidenza tiene,
-mentre quella di A continua a saltare in circa la meta' dei casi. A settanta e a
-centoventi B resta davanti ma le due probabilita' convergono verso uno, e la
-scelta smette di contare. Nessun ordinamento fisso puo' contenere entrambe le
+mentre quella di A continua a saltare in circa la metà dei casi. A settanta e a
+centoventi B resta davanti ma le due probabilità convergono verso uno, e la
+scelta smette di contare. Nessun ordinamento fisso può contenere entrambe le
 risposte. L'esempio rende immediato il meccanismo ma resta un caso costruito: la
-dimostrazione empirica su un campione e' nella valutazione.
+dimostrazione empirica su un campione è nella valutazione.
 
-**Perche' il prodotto ingenuo delle probabilita' sarebbe sbagliato in questa
+**Perché il prodotto ingenuo delle probabilità sarebbe sbagliato in questa
 catena.** Calcolare P(arrivo ≤ T) richiede di comporre le distribuzioni di
 ritardo lungo la successione delle tappe. La composizione ovvia — il prodotto
-delle probabilita' di prendere ciascuna coincidenza — e' sbagliata per due ragioni
-di **segno opposto**, e nessuna delle due e' trascurabile. Che siano di segno
-opposto e' cio' che rende l'errore insidioso: non c'e' garanzia che si compensino,
+delle probabilità di prendere ciascuna coincidenza — è sbagliata per due ragioni
+di **segno opposto**, e nessuna delle due è trascurabile. Che siano di segno
+opposto è ciò che rende l'errore insidioso: non c'è garanzia che si compensino,
 e la loro somma algebrica dipende dall'itinerario, quindi il prodotto ingenuo non
-e' nemmeno una stima distorta in modo uniforme, che si potrebbe correggere.
+è nemmeno una stima distorta in modo uniforme, che si potrebbe correggere.
 
-**Sovrastima**, perche' tratta come indipendenti eventi che non lo sono. Il
-ritardo con cui un mezzo arriva alla fermata di discesa non e' indipendente da
-quello con cui e' partito: e' lo stesso veicolo, e i ritardi si accumulano lungo
-il percorso. Se un autobus e' gia' in ritardo di cinque minuti alla quinta
-fermata, e' verosimilmente in ritardo anche alla dodicesima. Il prodotto delle
-marginali assume invece che ogni coincidenza sia un'estrazione nuova, e cosi'
-facendo attribuisce all'itinerario una capacita' di recuperare che il veicolo non
-ha. Il meccanismo e' preciso: il ritardo del mezzo su cui si sale aiuta a
-prenderlo, ma lo stesso ritardo si ritrova alla discesa e rende piu' difficile la
+**Sovrastima**, perché tratta come indipendenti eventi che non lo sono. Il
+ritardo con cui un mezzo arriva alla fermata di discesa non è indipendente da
+quello con cui è partito: è lo stesso veicolo, e i ritardi si accumulano lungo
+il percorso. Se un autobus è già in ritardo di cinque minuti alla quinta
+fermata, è verosimilmente in ritardo anche alla dodicesima. Il prodotto delle
+marginali assume invece che ogni coincidenza sia un'estrazione nuova, e così
+facendo attribuisce all'itinerario una capacità di recuperare che il veicolo non
+ha. Il meccanismo è preciso: il ritardo del mezzo su cui si sale aiuta a
+prenderlo, ma lo stesso ritardo si ritrova alla discesa e rende più difficile la
 coincidenza successiva, quindi tenere la prima coincidenza e tenere la seconda sono
 eventi correlati negativamente. Nel caso limite di correlazione perfetta lungo la
-corsa la probabilita' congiunta scende a `max(0, p1 + p2 - 1)`, che e' minore del
+corsa la probabilità congiunta scende a `max(0, p1 + p2 - 1)`, che è minore del
 prodotto `p1 * p2`: il prodotto delle marginali la sovrastima.
 
-**Sottostima**, perche' considera fallimento definitivo una coincidenza persa. Chi
-perde un autobus prende quello successivo e arriva piu' tardi, il che puo'
+**Sottostima**, perché considera fallimento definitivo una coincidenza persa. Chi
+perde un autobus prende quello successivo e arriva più tardi, il che può
 benissimo essere ancora entro T. Ignorare il recupero cancella proprio il fenomeno
-che la domanda di ricerca vuole misurare: un itinerario e' robusto anche perche',
-quando perde una coincidenza, ne trova un'altra presto. E' una proprieta' della
+che la domanda di ricerca vuole misurare: un itinerario è robusto anche perché,
+quando perde una coincidenza, ne trova un'altra presto. È una proprietà della
 **rete** e non del singolo itinerario, e senza il recupero due itinerari con la
 stessa coincidenza tesa ma frequenze molto diverse — una linea ogni cinque minuti
 e una ogni quaranta — risulterebbero identici, mentre sono l'uno robusto e
 l'altro fragile.
 
-La struttura corretta e' **markoviana con azzeramento**. Presa una coincidenza,
+La struttura corretta è **markoviana con azzeramento**. Presa una coincidenza,
 l'arrivo a valle dipende dal ritardo del nuovo mezzo e non da quanto per poco la
-si e' presa: l'informazione sul ritardo precedente si perde attraversando il
-cambio, perche' il veicolo su cui si sale non sa nulla di quello da cui si e'
-scesi. Il ritardo si propaga percio' dentro una corsa, non fra una corsa e la
+si è presa: l'informazione sul ritardo precedente si perde attraversando il
+cambio, perché il veicolo su cui si sale non sa nulla di quello da cui si è
+scesi. Il ritardo si propaga perciò dentro una corsa, non fra una corsa e la
 successiva, e la catena va rappresentata come una successione di tappe in cui, a
 ciascuna, si sceglie quale corsa si riesca effettivamente a prendere fra quella
-pianificata e i recuperi disponibili. Il condizionamento fra salita e discesa e'
+pianificata e i recuperi disponibili. Il condizionamento fra salita e discesa è
 esplicito: la distribuzione del ritardo alla discesa viene richiesta al modello
-passandogli il ritardo alla salita. E' il punto in cui il calcolo smette di
-trattare come indipendenti eventi che non lo sono, ed e' anche la ragione per cui
+passandogli il ritardo alla salita. È il punto in cui il calcolo smette di
+trattare come indipendenti eventi che non lo sono, ed è anche la ragione per cui
 l'interfaccia del modello dei ritardi prevede fin dalla prima versione un campo
 per il ritardo a monte.
 
-**Due calcoli indipendenti della stessa quantita'.** La probabilita' e' calcolata
+**Due calcoli indipendenti della stessa quantità.** La probabilità è calcolata
 sia per convoluzione numerica su griglia sia per campionamento [1, cap. 9][11].
-Averne due non e' ridondanza: sulla catena a piu' coincidenze non esiste una forma
+Averne due non è ridondanza: sulla catena a più coincidenze non esiste una forma
 chiusa contro cui verificare il risultato, e la concordanza fra due
-implementazioni che calcolano la stessa quantita' con procedure numeriche
-indipendenti e' l'unica verifica non circolare disponibile. L'unico caso con
+implementazioni che calcolano la stessa quantità con procedure numeriche
+indipendenti è l'unica verifica non circolare disponibile. L'unico caso con
 soluzione analitica — una sola tappa, senza
-correlazione, con la corsa sempre prendibile — e' usato come ancoraggio nei test,
-e li' entrambi i metodi coincidono con la ripartizione del ritardo entro due punti
+correlazione, con la corsa sempre prendibile — è usato come ancoraggio nei test,
+e lì entrambi i metodi coincidono con la ripartizione del ritardo entro due punti
 percentuali.
 
 ## Strumenti utilizzati
@@ -1258,155 +1258,155 @@ inizializzati da un seme dichiarato; le figure sono prodotte con **matplotlib**
 [16].
 
 Sono originali di questo progetto, e per questo esposti nel sommario e fra le
-decisioni di progetto anziche' qui: l'argomentazione sulla non riducibilita'
+decisioni di progetto anziché qui: l'argomentazione sulla non riducibilità
 dell'obiettivo probabilistico a una penalizzazione del tempo di viaggio, l'analisi
-delle due ragioni di segno opposto per cui il prodotto ingenuo delle probabilita'
+delle due ragioni di segno opposto per cui il prodotto ingenuo delle probabilità
 sbaglia su questa catena, e la struttura markoviana con azzeramento e recupero con
-cui la successione delle coincidenze e' modellata.
+cui la successione delle coincidenze è modellata.
 
 ## Decisioni di Progetto
 
-**L'interfaccia del modello dei ritardi e' fissata prima dei dati.** Il contratto
-fra il calcolo di probabilita' e il modello dei ritardi e' stato progettato prima
+**L'interfaccia del modello dei ritardi è fissata prima dei dati.** Il contratto
+fra il calcolo di probabilità e il modello dei ritardi è stato progettato prima
 che i dati reali fossero disponibili, e comprende fin dall'inizio il campo per il
-ritardo a monte che rende esprimibile il condizionamento. *Perche' cosi':*
+ritardo a monte che rende esprimibile il condizionamento. *Perché così:*
 aggiungere quel campo a posteriori avrebbe richiesto di riscrivere il calcolo, e
-il campo esiste per una ragione di modello, non per una disponibilita' di dato.
+il campo esiste per una ragione di modello, non per una disponibilità di dato.
 *La contromisura che ne discende:* esiste un'implementazione **sintetica** che
 soddisfa l'interfaccia, usata per far girare e collaudare il codice mentre la
-raccolta era in corso, e un modello sintetico e' per costruzione indistinguibile da
-uno vero attraverso l'interfaccia. E' esattamente questo a renderlo pericoloso:
+raccolta era in corso, e un modello sintetico è per costruzione indistinguibile da
+uno vero attraverso l'interfaccia. È esattamente questo a renderlo pericoloso:
 senza un controllo esplicito, una dimenticanza basterebbe a pubblicare numeri
 calcolati su ritardi inventati senza che nulla lo segnali. Il presidio ha tre
 livelli — ogni modello espone un attributo che dichiara se sia sintetico; ogni
 script che scriva in `results/` invoca un controllo che solleva un errore a meno
 che non sia stato concesso il permesso esplicito; e ogni file di risultati porta
-il nome del modello che lo ha prodotto, cosi' l'origine resta leggibile anche a
+il nome del modello che lo ha prodotto, così l'origine resta leggibile anche a
 distanza di mesi.
 
-**Una coincidenza persa e' un ritardo, non un fallimento, con un tetto di due
+**Una coincidenza persa è un ritardo, non un fallimento, con un tetto di due
 recuperi.** Quando la catena perde una coincidenza, il calcolo prosegue sulla
 corsa successiva della stessa linea dalla stessa fermata. *Alternativa scartata:*
-il fallimento secco, in cui perdere una coincidenza azzera la probabilita' di
-arrivo. *Perche' no:* e' molto piu' semplice da calcolare ma rende
+il fallimento secco, in cui perdere una coincidenza azzera la probabilità di
+arrivo. *Perché no:* è molto più semplice da calcolare ma rende
 P(arrivo ≤ T) sistematicamente pessimistica e, soprattutto, cancella il fenomeno
-che la domanda di ricerca vuole misurare, come argomentato nel sommario. *Perche'
-il tetto e' due:* il numero di corse successive da considerare va limitato perche'
+che la domanda di ricerca vuole misurare, come argomentato nel sommario. *Perché
+il tetto è due:* il numero di corse successive da considerare va limitato perché
 il calcolo termini, e due recuperi coprono, sulle frequenze urbane osservate, un
 orizzonte confrontabile con i margini della griglia di scadenze. *Il tetto va
 dichiarato e misurato:* sulle 1.920 valutazioni della griglia sperimentale la
-quota media di massa di probabilita' che esaurisce i recuperi e' del **9,2%**,
-circa un caso su undici. E' abbastanza da meritare questa menzione e non
-abbastanza da governare i risultati; oltre un quarto il tetto direbbe piu' sul
+quota media di massa di probabilità che esaurisce i recuperi è del **9,2%**,
+circa un caso su undici. È abbastanza da meritare questa menzione e non
+abbastanza da governare i risultati; oltre un quarto il tetto direbbe più sul
 proprio valore che sul mondo, e andrebbe alzato.
 
 **La griglia temporale della convoluzione: passo di 10 secondi su un orizzonte di
 4 ore.** *Alternative valutate e misurate:* passi di 5, 30 e 60 secondi, riportati
-nella Tabella 12. *Perche' 10:* e' il punto in cui l'errore smette di scendere in
+nella Tabella 12. *Perché 10:* è il punto in cui l'errore smette di scendere in
 modo apprezzabile — da 0,0049 a passo 10 a 0,0039 a passo 5 — mentre il costo
-resta praticamente invariato. *Perche' l'orizzonte e' 4 ore:* deve contenere la
+resta praticamente invariato. *Perché l'orizzonte è 4 ore:* deve contenere la
 coda della distribuzione dell'orario di arrivo anche dopo due recuperi su una
 linea a bassa frequenza, e quattro ore la contengono con margine.
 
 **La griglia dei ritardi per il condizionamento: da -300 a +1800 secondi, passo
-10.** E' la griglia su cui si discretizza il ritardo alla salita per richiedere al
-modello la distribuzione condizionata alla discesa. *Perche' vale per entrambi i
+10.** È la griglia su cui si discretizza il ritardo alla salita per richiedere al
+modello la distribuzione condizionata alla discesa. *Perché vale per entrambi i
 metodi:* usarla anche nel Monte Carlo isola, nel confronto fra i due, l'errore
-della sola griglia **temporale** della convoluzione, che e' cio' che interessa
-misurare, invece di mescolarlo con quello del condizionamento. *Perche' il limite
-inferiore e' negativo:* un mezzo puo' passare in anticipo, e troncare a zero
-introdurrebbe una distorsione sistematica a favore della puntualita'.
+della sola griglia **temporale** della convoluzione, che è ciò che interessa
+misurare, invece di mescolarlo con quello del condizionamento. *Perché il limite
+inferiore è negativo:* un mezzo può passare in anticipo, e troncare a zero
+introdurrebbe una distorsione sistematica a favore della puntualità.
 
 **Una guardia sulla conservazione della massa.** Il calcolo verifica che la massa
-di probabilita' si conservi lungo la catena e solleva un errore altrimenti.
-*Perche' esiste:* una prima versione restituiva probabilita' maggiori di uno,
-perche' usava la massa **discretizzata** per la probabilita' di prendere una
+di probabilità si conservi lungo la catena e solleva un errore altrimenti.
+*Perché esiste:* una prima versione restituiva probabilità maggiori di uno,
+perché usava la massa **discretizzata** per la probabilità di prendere una
 corsa e la ripartizione **continua** per quella di mancarla; le due non sommano a
-uno, e l'errore si accumulava lungo la catena. *Perche' e' collaudata di
+uno, e l'errore si accumulava lungo la catena. *Perché è collaudata di
 proposito:* un test sbilancia deliberatamente la ripartizione e verifica che la
-guardia scatti, perche' senza quel test la guardia sarebbe codice di cui non
+guardia scatti, perché senza quel test la guardia sarebbe codice di cui non
 sappiamo se funziona.
 
-**La correlazione lungo la corsa e' un parametro, non una costante.** Il modello
+**La correlazione lungo la corsa è un parametro, non una costante.** Il modello
 accetta un parametro in [0, 1] che governa quanto il ritardo osservato a monte si
-trasferisca alla fermata di discesa; il valore usato negli esperimenti e' **0,7**.
+trasferisca alla fermata di discesa; il valore usato negli esperimenti è **0,7**.
 *Alternative scartate:* ignorare del tutto il ritardo a monte, oppure cablare un
-valore fisso. *Perche' no alla prima:* renderebbe la catena artificialmente
-ottimistica, perche' tratterebbe come indipendenti il ritardo alla salita e quello
-alla discesa dello stesso mezzo, che e' precisamente la sovrastima descritta nel
-sommario. *Perche' no alla seconda:* significherebbe scrivere il resto del
+valore fisso. *Perché no alla prima:* renderebbe la catena artificialmente
+ottimistica, perché tratterebbe come indipendenti il ritardo alla salita e quello
+alla discesa dello stesso mezzo, che è precisamente la sovrastima descritta nel
+sommario. *Perché no alla seconda:* significherebbe scrivere il resto del
 progetto attorno a un numero inventato, mentre il modello appreso dai dati ha la
 correlazione che i dati mostrano, e l'argomento sull'apprendimento la misura molto
 diversa: 0,96 su Roma e 0,91 su Torino. *Una
-proprieta' utile del parametro:* a correlazione nulla il condizionamento non ha
+proprietà utile del parametro:* a correlazione nulla il condizionamento non ha
 effetto e P(arrivo ≤ T) di una singola tappa coincide con la ripartizione del
-ritardo, ed e' esattamente l'ancoraggio analitico usato nei test.
+ritardo, ed è esattamente l'ancoraggio analitico usato nei test.
 
-**L'insieme candidato e' la frontiera di Pareto, e la misura che lo giustifica.**
-*Il limite, che e' piu' affilato di quanto sembri:* la frontiera e' calcolata su
+**L'insieme candidato è la frontiera di Pareto, e la misura che lo giustifica.**
+*Il limite, che è più affilato di quanto sembri:* la frontiera è calcolata su
 criteri deterministici — orario di arrivo, numero di cambi, minuti a piedi — e
 **collassa fra loro gli itinerari che differiscono solo per il margine sulle
-coincidenze**, che e' precisamente la dimensione da cui dipende la robustezza.
+coincidenze**, che è precisamente la dimensione da cui dipende la robustezza.
 Massimizzare su un insieme privo delle alternative rilevanti non sarebbe un limite
 da dichiarare in una nota: sarebbe un esperimento incapace di rispondere alla
 domanda posta. *La contromisura preparata:* generare, per ogni soluzione della
 frontiera, le varianti che partono con la corsa precedente o successiva sulla
-stessa linea, allargando l'insieme nella dimensione dei margini. *Perche' non e'
-stata implementata:* il dubbio e' stato risolto misurando quanto P vari lungo la
-frontiera. La risposta e' che varia molto: sulle 339 combinazioni di coppia e
+stessa linea, allargando l'insieme nella dimensione dei margini. *Perché non è
+stata implementata:* il dubbio è stato risolto misurando quanto P vari lungo la
+frontiera. La risposta è che varia molto: sulle 339 combinazioni di coppia e
 margine non nullo della griglia sperimentale in cui la frontiera contiene almeno
 due itinerari nominalmente fattibili, l'ampiezza fra il migliore e il peggiore vale
 in media **0,42 ± 0,28**, e solo il 6,8% sta sotto 0,05 (*fonte:
-`results/robusto_griglia_T.csv`, colonna `ampiezza_frontiera`*). La frontiera e'
-quindi gia' abbastanza ricca.
+`results/robusto_griglia_T.csv`, colonna `ampiezza_frontiera`*). La frontiera è
+quindi già abbastanza ricca.
 
 *Una distinzione metodologica che vale la pena riportare.* La prima versione di
-questa misura, su un campione pilota, dava un'ampiezza sensibilmente piu' alta, ed
+questa misura, su un campione pilota, dava un'ampiezza sensibilmente più alta, ed
 era viziata: includeva fra i
-candidati anche gli itinerari il cui arrivo *programmato* cadeva gia' dopo la
-scadenza, che hanno probabilita' prossima a zero per costruzione. Quella misura
-non rispondeva alla domanda posta, perche' registrava soprattutto che un
-itinerario piu' lento arriva piu' tardi — il che non e' una scoperta — invece di
-quanto due itinerari ugualmente plausibili si distinguano in affidabilita'.
+candidati anche gli itinerari il cui arrivo *programmato* cadeva già dopo la
+scadenza, che hanno probabilità prossima a zero per costruzione. Quella misura
+non rispondeva alla domanda posta, perché registrava soprattutto che un
+itinerario più lento arriva più tardi — il che non è una scoperta — invece di
+quanto due itinerari ugualmente plausibili si distinguano in affidabilità.
 Restringendo ai soli itinerari **nominalmente fattibili**, come fa la misura
-riportata sopra, il valore scende, ed e' quello a rispondere: la differenza fra le
-due misure e' esattamente la velocita' travestita da robustezza.
+riportata sopra, il valore scende, ed è quello a rispondere: la differenza fra le
+due misure è esattamente la velocità travestita da robustezza.
 
-**La scadenza e' relativa all'itinerario piu' veloce.** T e' definita come orario
-di arrivo dell'itinerario piu' veloce piu' un margine, e il margine varia su una
+**La scadenza è relativa all'itinerario più veloce.** T è definita come orario
+di arrivo dell'itinerario più veloce più un margine, e il margine varia su una
 griglia di **0, 5, 10, 15, 20 e 30 minuti**. *Alternativa scartata:* una scadenza
-assoluta, per esempio l'orario di un appuntamento. *Perche' no:* introdurrebbe una
+assoluta, per esempio l'orario di un appuntamento. *Perché no:* introdurrebbe una
 scelta arbitraria sull'appuntamento, e i risultati dipenderebbero da quella invece
-che dal metodo. *Perche' la definizione relativa:* non rende uguale il
-tempo nominale delle due scelte - nessuna definizione potrebbe, perche' la
+che dal metodo. *Perché la definizione relativa:* non rende uguale il
+tempo nominale delle due scelte - nessuna definizione potrebbe, perché la
 strategia di riferimento prende per costruzione l'arrivo nominale minimo - ma
 **mette un tetto a quanto tempo nominale il criterio probabilistico possa
-comprare**, ed e' questo che rende lo scambio governabile dal viaggiatore invece
-che dal metodo. Il margine e' il prezzo massimo che si e' disposti a pagare, e la
+comprare**, ed è questo che rende lo scambio governabile dal viaggiatore invece
+che dal metodo. Il margine è il prezzo massimo che si è disposti a pagare, e la
 misura riporta quanto se ne paghi davvero.
-*Perche' una griglia e non un valore:* le tre grandezze in funzione del margine
-sono la dimostrazione empirica di non riducibilita', e un valore solo non
-mostrerebbe alcuna dipendenza da T. *Perche' il margine zero e' incluso benche'
-degenere:* e' il punto in cui il criterio probabilistico non puo' guadagnare
-nulla, e serve a delimitare il campo di applicabilita' dal basso. *Il prezzo, da
-dichiarare:* la definizione e' **severa verso il criterio probabilistico**, perche'
-ogni itinerario piu' lento di un certo scarto sull'orario deve recuperare quello
-scarto prima ancora di poter competere; e' aritmetica della definizione, non una
-proprieta' del modello, e implica che il vantaggio misurato vada letto come un
+*Perché una griglia e non un valore:* le tre grandezze in funzione del margine
+sono la dimostrazione empirica di non riducibilità, e un valore solo non
+mostrerebbe alcuna dipendenza da T. *Perché il margine zero è incluso benché
+degenere:* è il punto in cui il criterio probabilistico non può guadagnare
+nulla, e serve a delimitare il campo di applicabilità dal basso. *Il prezzo, da
+dichiarare:* la definizione è **severa verso il criterio probabilistico**, perché
+ogni itinerario più lento di un certo scarto sull'orario deve recuperare quello
+scarto prima ancora di poter competere; è aritmetica della definizione, non una
+proprietà del modello, e implica che il vantaggio misurato vada letto come un
 limite inferiore.
 
 **Il tratto a piedi finale entra nel tempo di viaggio.** L'itinerario porta un
 campo con i secondi di cammino dopo l'ultima discesa, e tutti i calcoli ne tengono
-conto. *Perche' e' stato necessario:* la prima versione del convertitore
+conto. *Perché è stato necessario:* la prima versione del convertitore
 costruiva le tappe dai soli tratti percorsi a bordo, quindi calcolava la
-probabilita' di arrivare **alla fermata di discesa** invece che a destinazione;
+probabilità di arrivare **alla fermata di discesa** invece che a destinazione;
 sul campione di Torino il **54% dei candidati termina con un tratto a piedi**,
-quindi per piu' della meta' degli itinerari il tempo di viaggio era sottostimato,
-e sistematicamente a favore proprio di quelli che camminano di piu'. Il confronto
-fra strategie ne sarebbe uscito falsato nella direzione peggiore, perche' la
-strategia del margine fisso tende a scegliere itinerari con piu' cammino. *Perche'
-resta separato dalle tappe:* non e' soggetto a ritardi, si cammina sempre alla
-stessa velocita', e trattarlo come una tappa gli attribuirebbe una varianza che
+quindi per più della metà degli itinerari il tempo di viaggio era sottostimato,
+e sistematicamente a favore proprio di quelli che camminano di più. Il confronto
+fra strategie ne sarebbe uscito falsato nella direzione peggiore, perché la
+strategia del margine fisso tende a scegliere itinerari con più cammino. *Perché
+resta separato dalle tappe:* non è soggetto a ritardi, si cammina sempre alla
+stessa velocità, e trattarlo come una tappa gli attribuirebbe una varianza che
 non ha. *La verifica:* dopo la correzione l'orario di arrivo ricostruito
 dall'itinerario coincide esattamente con quello dell'etichetta di Pareto su tutti
 i 106 candidati esaminati; prima divergeva su tutti quelli con coda a piedi.
@@ -1422,9 +1422,9 @@ chiamate nello stesso processo, era proprio quella incapace di rivelarlo.
 
 ## Valutazione
 
-**Avvertenza sui risultati di questa sezione.** Il modello dei ritardi utilizzato qui e'
+**Avvertenza sui risultati di questa sezione.** Il modello dei ritardi utilizzato qui è
 **sintetico**: le distribuzioni sono inventate, non apprese dai dati raccolti sul
-campo. I numeri qualificano il **metodo** - se il calcolo e' corretto, quanto costa, in
+campo. I numeri qualificano il **metodo** - se il calcolo è corretto, quanto costa, in
 quali condizioni il criterio probabilistico cambia la scelta - e non dicono nulla sul
 trasporto pubblico di Roma o di Torino; i risultati sui ritardi reali sono nella
 sezione sul backtesting. Ogni file di risultato porta il nome del modello in una
@@ -1432,7 +1432,7 @@ colonna, e gli script si rifiutano di scrivere senza un permesso esplicito.
 
 **Accuratezza e costo dei due metodi di calcolo.**
 
-Tabella 12 — Accuratezza e costo. L'errore e' lo scarto rispetto a un Monte Carlo
+Tabella 12 — Accuratezza e costo. L'errore è lo scarto rispetto a un Monte Carlo
 con 200.000 campioni; errore e costo sono media e deviazione standard sulle 136
 valutazioni della griglia. La deviazione del costo misura soprattutto la diversa
 lunghezza delle catene valutate, da zero a tre coincidenze, e non il rumore della
@@ -1449,42 +1449,42 @@ misura. Fonte: `results/conv_vs_montecarlo.csv`, colonne `errore` e `secondi`.
 | Monte Carlo | 10.000 campioni | 0,0026 ± 0,0021 | 23 ± 12 ms |
 | Monte Carlo | 100.000 campioni | 0,0011 ± 0,0008 | 146 ± 69 ms |
 
-Nella convoluzione la griglia temporale non e' cio' che costa: raffinando il passo da
+Nella convoluzione la griglia temporale non è ciò che costa: raffinando il passo da
 60 a 5 secondi l'errore migliora di quasi dieci volte, da 0,0385 a 0,0039, ma il costo
-sale da 79 a 88 millisecondi, **nove millisecondi in tutto**. Il costo di base e' speso
+sale da 79 a 88 millisecondi, **nove millisecondi in tutto**. Il costo di base è speso
 nelle interrogazioni al modello dei ritardi, una per ogni bin di ritardo alla salita e
 per ogni corsa candidata. Il Monte Carlo segue invece la legge della radice:
 centuplicando i campioni da 100 a 10.000 l'errore scende da 0,0271 a 0,0026.
 
-Il confronto fra i due blocchi e' **il risultato non atteso** della sezione. Ci si
+Il confronto fra i due blocchi è **il risultato non atteso** della sezione. Ci si
 aspettava che la convoluzione fosse il metodo esatto e il campionamento
 l'approssimazione economica, e accade il contrario: il Monte Carlo con 10.000
 campioni ha **0,0026 di errore contro 0,0049, in 23 millisecondi contro 83**, e non
 esiste una scelta dei parametri per cui la convoluzione risulti preferibile su
-entrambi gli assi. La convoluzione resta pero' il metodo del pianificatore, per una
-proprieta' che la Tabella 12 non misura: e' **deterministica**. Con un errore tipico
-di 0,0026, due itinerari le cui probabilita' distino meno di quel valore potrebbero
+entrambi gli assi. La convoluzione resta però il metodo del pianificatore, per una
+proprietà che la Tabella 12 non misura: è **deterministica**. Con un errore tipico
+di 0,0026, due itinerari le cui probabilità distino meno di quel valore potrebbero
 scambiarsi di posto cambiando il seme del generatore. Fissare il seme rende la scelta
 riproducibile, ma non meno arbitraria: a decidere fra i due sarebbe il seme e non la
-differenza fra gli itinerari, e poiche' il pianificatore confronta fra loro pochi
-candidati e ne sceglie uno, e' un difetto peggiore di tre millesimi di errore. Il
-campionamento e' percio' relegato al ruolo di verifica.
+differenza fra gli itinerari, e poiché il pianificatore confronta fra loro pochi
+candidati e ne sceglie uno, è un difetto peggiore di tre millesimi di errore. Il
+campionamento è perciò relegato al ruolo di verifica.
 
 ![**Figura 3.** Accuratezza e costo dei due metodi di calcolo, su distribuzioni
 sintetiche. Nel pannello (a) l'asse orizzontale porta il parametro di ciascun
 metodo, che ha significato diverso per i due: passo della griglia in secondi per la
-convoluzione, numero di campioni per il Monte Carlo. Il pannello (b) e' quello che
+convoluzione, numero di campioni per il Monte Carlo. Il pannello (b) è quello che
 conta: mette accuratezza e costo sugli stessi assi, e mostra che la curva del Monte
 Carlo giace interamente in basso a sinistra rispetto a quella della convoluzione.
 Dati grezzi in `results/conv_vs_montecarlo.csv`.](../results/conv_vs_montecarlo.png)
 
-**La griglia della scadenza, e la dimostrazione empirica di non riducibilita'.**
+**La griglia della scadenza, e la dimostrazione empirica di non riducibilità.**
 
 Tabella 13 — Le tre grandezze al variare del margine sulla scadenza, su quaranta
-coppie origine-destinazione per citta'. Il guadagno e' la differenza media fra la
-probabilita' della scelta robusta e quella della baseline piu' veloce.
+coppie origine-destinazione per città. Il guadagno è la differenza media fra la
+probabilità della scelta robusta e quella della baseline più veloce.
 
-| Citta' | Margine | Ampiezza sulla frontiera | Coincidenza | Guadagno su piu' veloce |
+| Città | Margine | Ampiezza sulla frontiera | Coincidenza | Guadagno su più veloce |
 | --- | ---: | ---: | ---: | ---: |
 | Roma | 0 min | 0,026 ± 0,042 | 85% | 0,001 ± 0,003 |
 | Roma | 5 min | 0,279 ± 0,266 | 82% | 0,040 ± 0,123 |
@@ -1499,78 +1499,78 @@ probabilita' della scelta robusta e quella della baseline piu' veloce.
 | Torino | 20 min | 0,429 ± 0,265 | 68% | 0,096 ± 0,191 |
 | Torino | 30 min | 0,478 ± 0,271 | 55% | 0,061 ± 0,120 |
 
-**L'ampiezza sulla frontiera** cresce col margine su entrambe le citta', da 0,026 e 0,024
+**L'ampiezza sulla frontiera** cresce col margine su entrambe le città, da 0,026 e 0,024
 a margine zero fino a 0,562 e 0,478 a trenta minuti - in modo monotono su Roma, su
-Torino con una flessione fra quindici e venti minuti - e il salto piu' forte e' il primo,
+Torino con una flessione fra quindici e venti minuti - e il salto più forte è il primo,
 fra zero e cinque minuti, dove si decuplica: a margine nullo tutti i candidati hanno
-probabilita' prossima a zero, e appena la scadenza si allarga gli itinerari si
-differenziano. E' la misura che giustifica la frontiera di Pareto come insieme
+probabilità prossima a zero, e appena la scadenza si allarga gli itinerari si
+differenziano. È la misura che giustifica la frontiera di Pareto come insieme
 candidato.
 
-**La coincidenza fra la scelta robusta e quella piu' veloce scende**, dall'85% al 62% su
-Roma e dall'88% al 55% su Torino, senza una sola inversione. E' la dimostrazione
-empirica di non riducibilita' annunciata nel sommario: a parita' di rete, di orario e di
+**La coincidenza fra la scelta robusta e quella più veloce scende**, dall'85% al 62% su
+Roma e dall'88% al 55% su Torino, senza una sola inversione. È la dimostrazione
+empirica di non riducibilità annunciata nel sommario: a parità di rete, di orario e di
 modello dei ritardi, al variare della sola scadenza il criterio probabilistico cambia
 scelta su una frazione crescente delle coppie, dal 12-15% al 38-45%, e nessun
-ordinamento fisso sugli itinerari puo' produrre questo comportamento.
+ordinamento fisso sugli itinerari può produrre questo comportamento.
 
-**Il guadagno non e' monotono**, e la sua forma a campana e' il risultato piu'
+**Il guadagno non è monotono**, e la sua forma a campana è il risultato più
 informativo della sezione: sale fino a 0,084 su Roma e 0,098 su Torino fra i quindici e
-i venti minuti, e ricade a 0,049 e 0,061 a trenta. A margine nullo non c'e' niente da
-guadagnare perche' tutti falliscono, a trenta minuti perche' quasi tutti riescono; e il
-massimo del guadagno **non coincide** con quello dell'ampiezza, perche' distinguere gli
+i venti minuti, e ricade a 0,049 e 0,061 a trenta. A margine nullo non c'è niente da
+guadagnare perché tutti falliscono, a trenta minuti perché quasi tutti riescono; e il
+massimo del guadagno **non coincide** con quello dell'ampiezza, perché distinguere gli
 itinerari e sceglierne uno che valga la pena sono due cose diverse. Le deviazioni
 standard del guadagno, grandi rispetto alle medie, vengono da una distribuzione con una
-massa in zero - le coppie in cui la scelta robusta coincide con la piu' veloce - e una
-coda positiva. Non e' un limite del metodo ma il suo **campo di applicabilita'**: il
-ragionamento probabilistico serve quando la scadenza e' abbastanza stretta da rendere il
+massa in zero - le coppie in cui la scelta robusta coincide con la più veloce - e una
+coda positiva. Non è un limite del metodo ma il suo **campo di applicabilità**: il
+ragionamento probabilistico serve quando la scadenza è abbastanza stretta da rendere il
 fallimento possibile e abbastanza larga da rendere il successo raggiungibile.
 
 ![**Figura 4.** Le tre grandezze in funzione del margine sulla scadenza, su quaranta
-coppie per citta' e con modello dei ritardi sintetico. Il pannello (b) e' la
-dimostrazione di non riducibilita': la coincidenza fra scelta robusta e scelta piu'
+coppie per città e con modello dei ritardi sintetico. Il pannello (b) è la
+dimostrazione di non riducibilità: la coincidenza fra scelta robusta e scelta più
 veloce scende al crescere del margine, quindi l'ordinamento fra itinerari dipende
 dalla scadenza. Il pannello (c) mostra la forma a campana del guadagno. Le barre di
 deviazione standard del pannello (c) scendono sotto lo zero, ma si tratta di un
-artefatto: la deviazione standard e' simmetrica mentre la distribuzione non lo e', e
-la differenza per singola coppia non e' **mai** negativa, in nessuna delle 480
+artefatto: la deviazione standard è simmetrica mentre la distribuzione non lo è, e
+la differenza per singola coppia non è **mai** negativa, in nessuna delle 480
 combinazioni esaminate. Dati grezzi in
 `results/robusto_griglia_T.csv`.](../results/robusto_griglia_T.png)
 
-**Il confronto con le strategie di riferimento.** Le tre baseline rappresentano cio' che
-si fa in assenza di un modello dei ritardi. La **piu' veloce** e' il pianificatore di
-qualunque applicazione di viaggio; **meno cambi** e' la regola di chi sa per esperienza
-che ogni trasbordo e' un'occasione di perdere una coincidenza; il **margine fisso** -
-solo itinerari con almeno cinque minuti su ogni coincidenza, e fra quelli il piu'
-veloce - e' la regola ragionevole che il pianificatore probabilistico deve battere, e
+**Il confronto con le strategie di riferimento.** Le tre baseline rappresentano ciò che
+si fa in assenza di un modello dei ritardi. La **più veloce** è il pianificatore di
+qualunque applicazione di viaggio; **meno cambi** è la regola di chi sa per esperienza
+che ogni trasbordo è un'occasione di perdere una coincidenza; il **margine fisso** -
+solo itinerari con almeno cinque minuti su ogni coincidenza, e fra quelli il più
+veloce - è la regola ragionevole che il pianificatore probabilistico deve battere, e
 quando nessun itinerario la soddisfa allenta il vincolo invece di rinunciare. Tutte e
 quattro le strategie scelgono dallo stesso insieme di candidati e sono valutate con lo
 stesso calcolo di P(arrivo ≤ T), quindi il confronto misura la strategia di scelta e
 non il metodo di valutazione.
 
-Tabella 14 — Probabilita' media di arrivo entro la scadenza, su tutte le coppie e
+Tabella 14 — Probabilità media di arrivo entro la scadenza, su tutte le coppie e
 tutti i margini della griglia.
 
 | Strategia | Roma | Torino |
 | --- | ---: | ---: |
 | robusto | **0,555 ± 0,374** | **0,570 ± 0,367** |
-| piu' veloce | 0,501 ± 0,363 | 0,509 ± 0,373 |
+| più veloce | 0,501 ± 0,363 | 0,509 ± 0,373 |
 | meno cambi | 0,429 ± 0,411 | 0,388 ± 0,418 |
 | margine fisso | 0,403 ± 0,418 | 0,426 ± 0,420 |
 
-Il robusto supera la piu' veloce di cinque-sei punti mediati su tutta la griglia, 0,555
+Il robusto supera la più veloce di cinque-sei punti mediati su tutta la griglia, 0,555
 contro 0,501 su Roma e 0,570 contro 0,509 su Torino, comprese le scadenze degeneri agli
 estremi; nell'intervallo utile la Tabella 13 mostra otto-dieci punti. Il robusto **non
-perde mai** contro nessuna baseline, su tutte e 480 le combinazioni di citta', coppia e
-margine, ma questo **non e' un risultato: e' un controllo di correttezza**, perche' le
+perde mai** contro nessuna baseline, su tutte e 480 le combinazioni di città, coppia e
+margine, ma questo **non è un risultato: è un controllo di correttezza**, perché le
 strategie scelgono dallo stesso insieme e il robusto massimizza per definizione la
-grandezza con cui tutte vengono valutate. Il risultato e' semmai di quanto vince.
+grandezza con cui tutte vengono valutate. Il risultato è semmai di quanto vince.
 
-Inatteso e' invece che il **margine fisso sia la peggiore delle tre baseline su Roma**,
+Inatteso è invece che il **margine fisso sia la peggiore delle tre baseline su Roma**,
 0,403 contro 0,429 di "meno cambi", e la penultima su Torino. Con la scadenza ancorata
-all'arrivo del piu' veloce, imporre cinque minuti su **ogni** coincidenza costringe a
-itinerari sensibilmente piu' lenti, e lo svantaggio di partenza supera il beneficio: la
-regola si difende dalle coincidenze perse **senza guardare alla scadenza**, che e' il
+all'arrivo del più veloce, imporre cinque minuti su **ogni** coincidenza costringe a
+itinerari sensibilmente più lenti, e lo svantaggio di partenza supera il beneficio: la
+regola si difende dalle coincidenze perse **senza guardare alla scadenza**, che è il
 vincolo del problema, mentre P(arrivo ≤ T) contiene T. Le deviazioni standard delle
 ultime due righe, oltre 0,41, confermano che sono strategie che funzionano molto bene su
 alcune coppie e molto male su altre.
@@ -1580,39 +1580,39 @@ alcune coppie e molto male su altre.
 ## Sommario
 
 Il problema si formula come **stima di una distribuzione condizionata a partire da
-esempi osservati** [1, cap. 7 e cap. 10]. La particolarita' di questo caso e' che
-la grandezza da apprendere non e' un'etichetta ne' un valore atteso, ma l'intera
-distribuzione del ritardo: al modulo che compone le probabilita' lungo la catena
+esempi osservati** [1, cap. 7 e cap. 10]. La particolarità di questo caso è che
+la grandezza da apprendere non è un'etichetta né un valore atteso, ma l'intera
+distribuzione del ritardo: al modulo che compone le probabilità lungo la catena
 delle coincidenze non basta sapere che una linea accumula in media tre minuti,
-perche' una linea che ritarda sempre di tre minuti e una che ritarda di zero o di
-dieci a giorni alterni producono probabilita' di coincidenza molto diverse. La
-seconda particolarita' e' che gli esempi non sono indipendenti: due passaggi della
+perché una linea che ritarda sempre di tre minuti e una che ritarda di zero o di
+dieci a giorni alterni producono probabilità di coincidenza molto diverse. La
+seconda particolarità è che gli esempi non sono indipendenti: due passaggi della
 stessa corsa a fermate consecutive sono osservazioni dello stesso veicolo, e la
-loro dipendenza e' precisamente cio' che il modello deve catturare, non un
+loro dipendenza è precisamente ciò che il modello deve catturare, non un
 disturbo da eliminare.
 
-**Che cosa si stima.** La grandezza appresa e' la tabella
+**Che cosa si stima.** La grandezza appresa è la tabella
 
     P(bin del ritardo alla fermata a valle | contesto, bin del ritardo a monte)
 
 dove "a monte" e "a valle" sono due fermate **consecutive della stessa corsa**, il
-ritardo e' discretizzato in otto bin i cui bordi sono essi stessi una scelta
-misurata, e il contesto e' una fra cinque codifiche annidate: nulla, il tipo di
+ritardo è discretizzato in otto bin i cui bordi sono essi stessi una scelta
+misurata, e il contesto è una fra cinque codifiche annidate: nulla, il tipo di
 veicolo, il tipo per fascia oraria, il tipo per fascia per tipo di giorno, e infine
 la linea per fascia per tipo di giorno. Le due variabili al condizionamento non
 hanno lo stesso ruolo. Il contesto dice **quanto una linea sia strutturalmente
-puntuale** in un certo momento della giornata; il bin a monte e' cio' che rende
-esprimibile la **correlazione dentro una corsa**, ed e' la ragione per cui
+puntuale** in un certo momento della giornata; il bin a monte è ciò che rende
+esprimibile la **correlazione dentro una corsa**, ed è la ragione per cui
 l'interfaccia del modello dei ritardi lo prevede fin dalla prima versione.
 
 **Come le cinque codifiche stanno insieme: una scala di risalita a priori
-incatenati.** Al livello piu' fine le celle sono centinaia di migliaia e la loro
-popolazione e' fortemente disuguale: poche linee portanti concentrano la maggior
+incatenati.** Al livello più fine le celle sono centinaia di migliaia e la loro
+popolazione è fortemente disuguale: poche linee portanti concentrano la maggior
 parte dei passaggi, mentre molte combinazioni corrispondono a servizi marginali con
 pochi dati o nessuno. Stimarle tutte con le sole frequenze proprie darebbe tabelle
 precise dove i dati abbondano e prive di senso dove scarseggiano; stimarle tutte al
-livello piu' grossolano darebbe l'opposto. La soluzione adottata e' una scala di
-cinque gradini, dal contesto piu' vago al piu' fine, in cui **ogni gradino usa come
+livello più grossolano darebbe l'opposto. La soluzione adottata è una scala di
+cinque gradini, dal contesto più vago al più fine, in cui **ogni gradino usa come
 priore di Dirichlet la stima del gradino precedente**, con concentrazione `alfa`:
 
     P(cella) = (conteggi + alfa * P(genitore)) / (osservazioni + alfa)
@@ -1620,28 +1620,28 @@ priore di Dirichlet la stima del gradino precedente**, con concentrazione `alfa`
 Una cella con tre osservazioni resta quasi uguale al genitore, una con tremila lo
 ignora, una senza osservazioni **coincide** con il genitore. Non esiste quindi una
 soglia separata che dica "sotto tante osservazioni, usa il livello sopra": `alfa`
-governa gia' quella transizione, e la governa in modo graduale invece che a
+governa già quella transizione, e la governa in modo graduale invece che a
 gradino. Si tara una concentrazione **per gradino**, il che permette di essere
 prudenti dove i dati scarseggiano e fiduciosi dove abbondano. Il vincolo che la
-scala impone e' di contenimento: lungo la scala il contesto puo' restare fermo o
-infittirsi, mai allargarsi, perche' ogni cella deve avere per genitore una cella
+scala impone è di contenimento: lungo la scala il contesto può restare fermo o
+infittirsi, mai allargarsi, perché ogni cella deve avere per genitore una cella
 che la contiene.
 
-**I dati su cui tutto questo poggia.** La finestra e' il **25 agosto - 9 settembre
-2026**, sedici giornate per ciascuna citta', dichiarata nella colonna `finestra` di
+**I dati su cui tutto questo poggia.** La finestra è il **25 agosto - 9 settembre
+2026**, sedici giornate per ciascuna città, dichiarata nella colonna `finestra` di
 ogni CSV di questo argomento. Le giornate sono divise in ordine temporale: nove di
 addestramento, tre di taratura della concentrazione e quattro di verifica (6-9
 settembre); le ultime due dell'addestramento fanno da banco di prova per la scelta
-dei bordi e non entrano nella stima finale, cosi' che nessun iperparametro venga
-scelto guardando le giornate su cui il modello e' poi misurato. Non si usa una
+dei bordi e non entrano nella stima finale, così che nessun iperparametro venga
+scelto guardando le giornate su cui il modello è poi misurato. Non si usa una
 cross-validation a blocchi casuali: mescolerebbe fra stima e verifica passaggi della
 stessa giornata, che condividono il traffico di quel giorno, e la perdita misurata
-risulterebbe ottimistica. La divisione in ordine temporale e' la forma di
-validazione che rispetta la dipendenza fra le osservazioni, e la variabilita' si
+risulterebbe ottimistica. La divisione in ordine temporale è la forma di
+validazione che rispetta la dipendenza fra le osservazioni, e la variabilità si
 misura fra le quattro giornate di verifica, ciascuna delle quali fa da insieme di
-prova a se'. Il dimensionamento
-reale della raccolta dentro quella finestra, e cio' che ne sopravvive fino alla
-tabella stimata, e' il seguente.
+prova a sé. Il dimensionamento
+reale della raccolta dentro quella finestra, e ciò che ne sopravvive fino alla
+tabella stimata, è il seguente.
 
 Tabella 15 — Dimensioni della raccolta nella finestra di stima e coppie che ne
 sopravvivono.
@@ -1664,60 +1664,60 @@ otto su Roma e quattordici su Torino;
 colonna `coppie` (riga `fascia = tutte`) per le ultime due.*
 
 Il rapporto fra le due colonne va letto con cautela e non come un giudizio sulle
-due aziende: il volume romano e' un ordine di grandezza sopra quello torinese, ma
+due aziende: il volume romano è un ordine di grandezza sopra quello torinese, ma
 una parte di quel divario dipende da noi, come il paragrafo che segue mostra.
 
-**Le popolazioni non sono le stesse nelle due citta', e senza dirlo la Valutazione
-non si legge.** GTFS Real-Time non offre alcun segnale di "il mezzo e' gia'
+**Le popolazioni non sono le stesse nelle due città, e senza dirlo la Valutazione
+non si legge.** GTFS Real-Time non offre alcun segnale di "il mezzo è già
 passato": il progetto lo deduce confrontando l'orario atteso con l'istante di
 pubblicazione, e la deduzione presuppone che il produttore continui a pubblicare le
-fermate gia' servite. Roma lo fa, Torino no. Ne segue che **su Roma il modello si
-stima sulle sole constatazioni**, cioe' sui passaggi gia' avvenuti al momento
+fermate già servite. Roma lo fa, Torino no. Ne segue che **su Roma il modello si
+stima sulle sole constatazioni**, cioè sui passaggi già avvenuti al momento
 dell'emissione, e su **Torino su un'unica popolazione che comprende tutte le
-coppie**, il cui dato non e' un ritardo osservato ma l'ultima stima del produttore
+coppie**, il cui dato non è un ritardo osservato ma l'ultima stima del produttore
 prima che la fermata sparisca dal feed. Quanto **prima** venga emessa decide quanto
-la limitazione sia severa, ed e' misurato: la mediana dell'anticipo sul transito
+la limitazione sia severa, ed è misurato: la mediana dell'anticipo sul transito
 atteso vale **25 ± 12 secondi** fra le sedici giornate, con il primo quartile
 appena sotto lo zero e il terzo intorno ai due minuti (*fonte:
 `results/anticipo_ultima_revisione.csv`, colonne `anticipo_p25`,
 `anticipo_mediana`, `anticipo_p75` e `quota_positivi`, media e deviazione fra
-giornate*). Il dato torinese e' dunque molto piu' vicino a un fatto compiuto di
+giornate*). Il dato torinese è dunque molto più vicino a un fatto compiuto di
 quanto il solo nome "previsione" lasci pensare, e per il **34,8% ± 4,7%** dei
-passaggi il transito atteso era gia' trascorso al momento della pubblicazione.
-Le due perdite non sono percio'
+passaggi il transito atteso era già trascorso al momento della pubblicazione.
+Le due perdite non sono perciò
 confrontabili fra loro come se
 rispondessero alla stessa domanda, e ogni tabella che segue porta la popolazione
 accanto al numero. Le colonne `raffronto_tutte_*` di `results/stima_rete.csv`
-danno, per Roma, la lettura omogenea su tutte le coppie: e' quella, e non la
-principale, che si puo' accostare a Torino.
+danno, per Roma, la lettura omogenea su tutte le coppie: è quella, e non la
+principale, che si può accostare a Torino.
 
 **Una grandezza dei dati che misura noi e non il trasporto.** Il numero di valori
 distinti conservati per ciascun passaggio dipende fortemente da quanto spesso
 interroghiamo il feed: sulle giornate piene di raccolta della finestra - tutte tranne
-il 25 agosto, che e' parziale - la correlazione fra i dump raccolti in una giornata e i
+il 25 agosto, che è parziale - la correlazione fra i dump raccolti in una giornata e i
 valori per passaggio di quella giornata vale **+0,841 (p = 8,4e-05, quindici giornate)
 su Roma** e
-**+0,530 (p = 0,042, quindici giornate) su Torino**. Ogni interrogazione e'
+**+0,530 (p = 0,042, quindici giornate) su Torino**. Ogni interrogazione è
 un'occasione di vedere una previsione cambiata, e chi interroga ogni minuto ne
-coglie piu' di chi interroga
-ogni mezz'ora, a parita' di produttore. Quella grandezza si riporta percio' **solo
-sulle giornate a cadenza piena**, cioe' con almeno 1.400 dump, ed e' riportata cosi'
+coglie più di chi interroga
+ogni mezz'ora, a parità di produttore. Quella grandezza si riporta perciò **solo
+sulle giornate a cadenza piena**, cioè con almeno 1.400 dump, ed è riportata così
 nella tabella qui sopra: circa venti valori per passaggio su Roma e circa sette su
 Torino. La quota di righe che la deduplica conserva si comporta diversamente, e la
 differenza va detta con la debolezza che ha: sulle giornate piene la sua dipendenza
-dalla cadenza **non e' distinguibile da zero** (+0,329, p = 0,23 su quindici giornate
+dalla cadenza **non è distinguibile da zero** (+0,329, p = 0,23 su quindici giornate
 romane; +0,490, p = 0,064 su quindici torinesi), ma la stima puntuale resta positiva
-in entrambe le citta', e un campione di quindici punti non ha la potenza per
-escludere una dipendenza debole. E' un'affermazione di assenza, non una prova di
+in entrambe le città, e un campione di quindici punti non ha la potenza per
+escludere una dipendenza debole. È un'affermazione di assenza, non una prova di
 assenza. Va aggiunto che l'esclusione della giornata parziale la sostiene per
 intero: **includendo il 25 agosto la correlazione diventa significativa** in
-entrambe le citta' (+0,648, p = 0,007 su Roma; +0,725, p = 0,001 su Torino).
-Quella giornata e' esclusa perche' quarantasette dump su millequattrocento non sono
-una giornata di raccolta ma i cinquanta minuti in cui il collector e' stato acceso,
-ed e' la stessa esclusione applicata a ogni altra grandezza di questa tabella; resta
+entrambe le città (+0,648, p = 0,007 su Roma; +0,725, p = 0,001 su Torino).
+Quella giornata è esclusa perché quarantasette dump su millequattrocento non sono
+una giornata di raccolta ma i cinquanta minuti in cui il collector è stato acceso,
+ed è la stessa esclusione applicata a ogni altra grandezza di questa tabella; resta
 che un risultato il quale si rovescia togliendo un punto va riportato per quello che
-e'. La ragione teorica per cui la quota dovrebbe dipendere meno dalla cadenza tiene
-comunque: e' un rapporto fra due grandezze che crescono insieme, mentre i valori per
+è. La ragione teorica per cui la quota dovrebbe dipendere meno dalla cadenza tiene
+comunque: è un rapporto fra due grandezze che crescono insieme, mentre i valori per
 passaggio sono un conteggio che cresce da solo. Le sei correlazioni si ricalcolano
 dalla colonna `dump_letti` di `results/consolidamento.csv` accanto alle due
 grandezze, una giornata per riga.
@@ -1725,20 +1725,20 @@ grandezze, una giornata per riga.
 **Che cosa il modello prende dalla base di conoscenza, e che cosa no.** Prende
 l'**orario programmato**, senza il quale il ritardo non esisterebbe come grandezza,
 e lo prende dall'archivio statico **in vigore nella giornata osservata** e non dal
-piu' recente, perche' confrontare un'osservazione di oggi con un orario di due
+più recente, perché confrontare un'osservazione di oggi con un orario di due
 settimane fa produrrebbe ritardi inventati. Prende la **linea** e il **tipo di
 veicolo**, quest'ultimo dal `route_type` dell'archivio, che sono due dei tre fattori
 del contesto; il terzo, il tipo di giorno, viene dal calendario. Non prende invece
-**nulla di cio' che la base di conoscenza in ASP deriva**: i trasbordi, la loro
-accessibilita' e la loro utilita' sono relazioni fra fermate, e la distribuzione di
-un ritardo non dipende da esse. La direzione del flusso e' l'opposta: la tabella
+**nulla di ciò che la base di conoscenza in ASP deriva**: i trasbordi, la loro
+accessibilità e la loro utilità sono relazioni fra fermate, e la distribuzione di
+un ritardo non dipende da esse. La direzione del flusso è l'opposta: la tabella
 stimata qui viene consegnata al pianificatore dell'argomento precedente attraverso
-il contratto `ModelloRitardo`, fissato prima della stima, ed e' li' che incontra i
+il contratto `ModelloRitardo`, fissato prima della stima, ed è lì che incontra i
 trasbordi derivati dalla base di conoscenza. Il modello dei ritardi ignora inoltre
 del tutto la topologia della rete: due fermate consecutive di una corsa sono per lui
-una coppia ordinata di osservazioni, non due punti a una certa distanza. E' una
+una coppia ordinata di osservazioni, non due punti a una certa distanza. È una
 semplificazione dichiarata e non una svista, e il campo `sequenza_a_monte` aggiunto
-al contratto e' il posto da cui un modello futuro potrebbe cominciare a usarla.
+al contratto è il posto da cui un modello futuro potrebbe cominciare a usarla.
 
 ## Strumenti utilizzati
 
@@ -1746,7 +1746,7 @@ La rete bayesiana come rappresentazione di una distribuzione congiunta fattorizz
 la stima di una multinomiale con priore di Dirichlet e la perdita logaritmica come
 criterio di valutazione di una distribuzione predittiva sono nozioni standard e si
 trovano nel testo del corso [1, cap. 7, 9 e 10]; non vengono rispiegate qui. Il
-calcolo e' interamente in **NumPy** [10], perche' la stima si riduce a conteggi su
+calcolo è interamente in **NumPy** [10], perché la stima si riduce a conteggi su
 matrici sparse di celle e a una ricorrenza fra livelli, e una libreria di
 apprendimento supervisionato non avrebbe nulla da offrirle: la lettura dei dati
 colonnari usa **pandas** [6] e **pyarrow**, e **scipy.stats** [12] fornisce la
@@ -1754,65 +1754,65 @@ correlazione di rango usata nella valutazione. La raccolta che alimenta tutto qu
 usa **gtfs-realtime-bindings** [13] per il formato protobuf dei feed e la sola
 libreria standard di Python per le richieste HTTP.
 
-Due costruzioni meritano invece di essere dichiarate, perche' non sono
-un'applicazione diretta di quelle nozioni. La prima e' la **scala di risalita a
-priori incatenati**: non e' uno smorzamento con un parametro solo ne' una miscela di
+Due costruzioni meritano invece di essere dichiarate, perché non sono
+un'applicazione diretta di quelle nozioni. La prima è la **scala di risalita a
+priori incatenati**: non è uno smorzamento con un parametro solo né una miscela di
 esperti, ma una successione di stime in cui la posteriore di ciascun livello di
-contesto diventa la media del priore di Dirichlet del livello immediatamente piu'
-fine, con una concentrazione tarata separatamente per gradino. E' la struttura dei
+contesto diventa la media del priore di Dirichlet del livello immediatamente più
+fine, con una concentrazione tarata separatamente per gradino. È la struttura dei
 modelli gerarchici di Dirichlet usati nello smorzamento dei modelli linguistici
 [17, 18], trasportata qui dalla gerarchia delle n-uple di parole a quella dei
-contesti di linea, fascia e tipo di giorno. La seconda e' l'**assunzione di massima
-entropia dentro ciascun bin** [19], necessaria perche' il pianificatore chiede una
-probabilita' su un istante mentre la tabella conosce solo un intervallo: dentro i
+contesti di linea, fascia e tipo di giorno. La seconda è l'**assunzione di massima
+entropia dentro ciascun bin** [19], necessaria perché il pianificatore chiede una
+probabilità su un istante mentre la tabella conosce solo un intervallo: dentro i
 bin limitati si assume una distribuzione uniforme, in quelli aperti verso l'infinito
-un'esponenziale con la media misurata dentro quel bin. E' l'unico punto in cui il
-progetto aggiunge informazione che i dati non contengono, ed e' scelto col criterio
+un'esponenziale con la media misurata dentro quel bin. È l'unico punto in cui il
+progetto aggiunge informazione che i dati non contengono, ed è scelto col criterio
 che ne aggiunge il meno possibile.
 
 ## Decisioni di Progetto
 
-**Il ritardo si discretizza in otto bin, e ogni arco assente nella rete e'
-approssimato di conseguenza.** La discretizzazione e' necessaria, perche' senza di
-essa non ci sarebbero tabelle di probabilita' da stimare, e ha una conseguenza che
+**Il ritardo si discretizza in otto bin, e ogni arco assente nella rete è
+approssimato di conseguenza.** La discretizzazione è necessaria, perché senza di
+essa non ci sarebbero tabelle di probabilità da stimare, e ha una conseguenza che
 va dichiarata accanto alla scelta e non in fondo alle conclusioni: **condizionare
-sul bin non e' condizionare sulla variabile**. Dentro lo stesso bin si trovano
-ritardi diversi, e un antenato piu' lontano conserva un residuo di informazione su
+sul bin non è condizionare sulla variabile**. Dentro lo stesso bin si trovano
+ritardi diversi, e un antenato più lontano conserva un residuo di informazione su
 *dove dentro il bin* stesse il genitore. Quel residuo si manifesta come dipendenza
-condizionata ed e' reale nella rappresentazione discretizzata pur non esistendo nel
-processo. La misura che lo quantifica e' netta: su una catena costruita in modo da
+condizionata ed è reale nella rappresentazione discretizzata pur non esistendo nel
+processo. La misura che lo quantifica è netta: su una catena costruita in modo da
 essere markoviana in senso esatto, l'informazione mutua condizionata vale 0,01174
-bit contro un riferimento per permutazione di 0,00087 ± 0,00007, cioe' **tredici
+bit contro un riferimento per permutazione di 0,00087 ± 0,00007, cioè **tredici
 volte** il riferimento, con un eccesso pari a centocinquanta volte la sua incertezza
 (*fonte:
 `results/catena_costruita.csv`, riga `otto bin del progetto` della catena
 `markoviana per costruzione`, 200.000 terne, semi 23 e 29*). Un criterio che si
-fermasse li' avrebbe dichiarato non
+fermasse lì avrebbe dichiarato non
 markoviano un processo markoviano per costruzione. Ne segue che ogni indipendenza
-condizionata che la struttura della rete assume e' **approssimata dalla
-discretizzazione, non esatta**: l'arco che non c'e' fra due variabili significa
-"indipendenti dato il genitore", ma il genitore che la rete osserva e' un bin e non
-un ritardo, e una parte di dipendenza sopravvive sempre, tanto maggiore quanto piu'
-grossolani sono i bin. Non e' un difetto da correggere, perche' bin piu' fini
-riducono l'approssimazione e moltiplicano le celle peggiorando la stima: e' un
-compromesso, ed e' un limite del modello da dichiarare.
+condizionata che la struttura della rete assume è **approssimata dalla
+discretizzazione, non esatta**: l'arco che non c'è fra due variabili significa
+"indipendenti dato il genitore", ma il genitore che la rete osserva è un bin e non
+un ritardo, e una parte di dipendenza sopravvive sempre, tanto maggiore quanto più
+grossolani sono i bin. Non è un difetto da correggere, perché bin più fini
+riducono l'approssimazione e moltiplicano le celle peggiorando la stima: è un
+compromesso, ed è un limite del modello da dichiarare.
 
 **Il secondo antenato porta informazione e non entra nella rete, e le due
 affermazioni non si contraddicono.** Indicando con `R0` il bin del ritardo a una
 fermata e con `R-1` e `R-2` quelli alle due fermate precedenti della stessa corsa,
-il secondo antenato e' `R-2`. Il criterio che distingue l'artefatto dalla
-struttura e' il verso con cui l'eccesso di informazione varia al raffinarsi dei bin:
+il secondo antenato è `R-2`. Il criterio che distingue l'artefatto dalla
+struttura è il verso con cui l'eccesso di informazione varia al raffinarsi dei bin:
 sulla catena markoviana costruita l'eccesso si dissolve - dal **3,83%** con quattro
 bin allo **0,14%** con venti, non in modo monotono ma con una direzione
 inequivocabile - mentre sulla catena di controllo, in cui `R0` dipende davvero anche
-da `R-2`, non si dissolve affatto: li' la quota parte dal 21% e **sale** al 27% al
-raffinarsi dei bin. E' la coppia dei due banchi a rendere il criterio una misura
+da `R-2`, non si dissolve affatto: lì la quota parte dal 21% e **sale** al 27% al
+raffinarsi dei bin. È la coppia dei due banchi a rendere il criterio una misura
 invece di una speranza: senza il secondo, una regola che dicesse sempre "si dissolve"
 supererebbe il primo (*fonte: `results/catena_costruita.csv`, righe
 `N bin equispaziati` delle due catene, 200.000 terne ciascuna, semi dichiarati in
 colonna*). Sui dati veri non si dissolve, ma cala in modo regolare, e vale fra l'1,3%
-e il 5,6% di cio' che il primo antenato gia' spiega. "Non si dissolve" non implica
-pero' "aggiungi l'arco": implica "misura quanto vale". La misura e' stata fatta due
+e il 5,6% di ciò che il primo antenato già spiega. "Non si dissolve" non implica
+però "aggiungi l'arco": implica "misura quanto vale". La misura è stata fatta due
 volte, con esiti di segno opposto.
 
 Tabella 16 — Guadagno relativo della perdita fuori campione aggiungendo l'arco dal
@@ -1822,10 +1822,10 @@ secondo antenato.
 | --- | ---: | ---: | ---: |
 | Roma, tutte | +0,0364 | **-0,0289** | 2,15 |
 | Roma, solo previsioni | +0,0379 | **-0,0749** | 0,81 |
-| Roma, solo gia' passate | +0,0502 | **-0,1004** | 0,20 |
+| Roma, solo già passate | +0,0502 | **-0,1004** | 0,20 |
 | Torino, tutte | +0,0347 | **-0,0035** | 2,26 |
 | Torino, solo previsioni | +0,0237 | **-0,0263** | 0,99 |
-| Torino, solo gia' passate | +0,0448 | **-0,0182** | 0,36 |
+| Torino, solo già passate | +0,0448 | **-0,0182** | 0,36 |
 
 *Fonte: `results/markov_terne.csv`, righe `costo-beneficio otto bin` e
 `costo-beneficio con contesto`, colonna `quota` (guadagno relativo della perdita
@@ -1835,120 +1835,120 @@ giornate; separazione per giornata, ultimi tre giorni in verifica.*
 La prima colonna confronta `P(R0|R-1)` con `P(R0|R-1,R-2)` **senza contesto** -
 sessantaquattro celle contro cinquecentododici, su oltre due milioni di terne di
 verifica per Roma e seicentomila per Torino: entrambi i modelli sono stimati in
-abbondanza, e l'arco guadagna fra il 2% e il 5%. La seconda rifa' lo stesso confronto
-**dentro il modello vero**, dove il ritardo e' condizionato anche a linea, fascia e
-tipo di giorno e le celle passano da 466 mila a 3,7 milioni: li' l'arco **peggiora su
+abbondanza, e l'arco guadagna fra il 2% e il 5%. La seconda rifà lo stesso confronto
+**dentro il modello vero**, dove il ritardo è condizionato anche a linea, fascia e
+tipo di giorno e le celle passano da 466 mila a 3,7 milioni: lì l'arco **peggiora su
 tutte e sei le combinazioni**, ma di quanto varia molto, da tre decimi di punto
 percentuale su Torino a dieci punti sulle constatazioni romane. La causa sta nella
 terza colonna: con l'arco le osservazioni per cella in addestramento scendono sotto le
-tre, e sulle popolazioni piu' piccole sotto l'unita', cioe' la maggior parte delle
-celle non riceve nemmeno un dato, e una tabella stimata su celle vuote e' peggiore di
-una tabella piu' grossolana stimata su celle piene. Le due misure rispondono a domande
-diverse - "il secondo antenato porta informazione?" e' una domanda sui dati, "l'arco
-migliora il modello?" e' una domanda sul modello - e la seconda decide.
+tre, e sulle popolazioni più piccole sotto l'unità, cioè la maggior parte delle
+celle non riceve nemmeno un dato, e una tabella stimata su celle vuote è peggiore di
+una tabella più grossolana stimata su celle piene. Le due misure rispondono a domande
+diverse - "il secondo antenato porta informazione?" è una domanda sui dati, "l'arco
+migliora il modello?" è una domanda sul modello - e la seconda decide.
 
-Va detto che il caso torinese su tutte le coppie, **-0,0035**, e' quasi un pareggio:
-li' l'arco non paga ma nemmeno costa, e se fosse stato l'unico caso disponibile la
-decisione sarebbe rimasta aperta. Regge perche' il segno e' lo stesso su tutte e sei
-le combinazioni e perche' la causa - le osservazioni per cella - e' misurata e non
+Va detto che il caso torinese su tutte le coppie, **-0,0035**, è quasi un pareggio:
+lì l'arco non paga ma nemmeno costa, e se fosse stato l'unico caso disponibile la
+decisione sarebbe rimasta aperta. Regge perché il segno è lo stesso su tutte e sei
+le combinazioni e perché la causa - le osservazioni per cella - è misurata e non
 congetturata; ma su quella combinazione la decisione poggia su un margine sottile, e
 va letta come tale. L'arco non si aggiunge e **l'assunzione markoviana si
-tiene come approssimazione dichiarata**: e' una posizione piu' forte di quella di
-partenza, perche' l'argomento sull'incertezza la assumeva senza averla verificata
+tiene come approssimazione dichiarata**: è una posizione più forte di quella di
+partenza, perché l'argomento sull'incertezza la assumeva senza averla verificata
 mentre ora si sa che cosa si trascura e quanto vale. Il punto di metodo che ne
 discende vale oltre questo caso: una misura va fatta **nel regime in cui la decisione
-si applica**. Il confronto senza contesto era corretto - misurava esattamente cio'
+si applica**. Il confronto senza contesto era corretto - misurava esattamente ciò
 che dichiarava - ma era calcolato in abbondanza di dati mentre la decisione si
-applica in scarsita', e fra i due regimi il segno del risultato cambia.
+applica in scarsità, e fra i due regimi il segno del risultato cambia.
 
-**I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno: e' una
-doppia tautologia.** E' la decisione piu' istruttiva del capitolo, perche' i due
+**I bordi dei bin non si scelgono sulla perdita, e nemmeno sul guadagno: è una
+doppia tautologia.** È la decisione più istruttiva del capitolo, perché i due
 criteri che verrebbero naturali sono **sbagliati per costruzione in versi opposti**.
 La **perdita grezza** fuori campione premia i bordi che ammucchiano la massa in
-pochi bin: cosi' l'entropia marginale cala, e la perdita cala con lei per quanto male
+pochi bin: così l'entropia marginale cala, e la perdita cala con lei per quanto male
 il modello lavori. Preferire i bordi a perdita minore significherebbe preferire la
 discretizzazione che ha meno da spiegare, non il modello che spiega meglio. Il
 **guadagno sul marginale** - la differenza fra l'entropia marginale e la perdita,
-cioe' quanto il modello aggiunga a chi non sa nulla - corregge esattamente quel
+cioè quanto il modello aggiunga a chi non sa nulla - corregge esattamente quel
 difetto, e ne introduce uno simmetrico: a numero di bin fisso, i bin a **frequenza
 uguale massimizzano l'entropia marginale** e quindi il tetto del guadagno, per cui
 preferire il guadagno maggiore significa preferire gli ottili prima ancora di
 guardare i dati. I due criteri non sono uno giusto e uno sbagliato: sono le due
 facce dello stesso errore, e nessuno dei due sa che cosa serva al pianificatore.
 
-Cio' che serve al pianificatore e' **distinguere secondi**, dell'ordine di un margine
-di coincidenza. Si e' misurata quindi una terza grandezza, l'**ampiezza confusa**:
+Ciò che serve al pianificatore è **distinguere secondi**, dell'ordine di un margine
+di coincidenza. Si è misurata quindi una terza grandezza, l'**ampiezza confusa**:
 per ciascun bin la differenza fra il novantanovesimo e l'unesimo percentile dei
 ritardi che vi cadono - i secondi che il modello dichiara quando dice solo "bin b" -
-mediata sui bin col peso delle loro numerosita' e **ristretta alle osservazioni fra
-zero e trenta minuti**, che e' l'orizzonte del margine di coincidenza. Sono secondi
+mediata sui bin col peso delle loro numerosità e **ristretta alle osservazioni fra
+zero e trenta minuti**, che è l'orizzonte del margine di coincidenza. Sono secondi
 e non bit, e si confrontano con un margine invece che con un'altra discretizzazione.
 La regola che ne discende usa **il guadagno per escludere e i secondi per decidere**:
-un candidato e' ammesso se il suo guadagno, in *ciascuna* citta', non dista dal
-migliore piu' della deviazione fra giornate del riferimento di quella citta' (0,0041
+un candidato è ammesso se il suo guadagno, in *ciascuna* città, non dista dal
+migliore più della deviazione fra giornate del riferimento di quella città (0,0041
 bit su Roma, 0,0168 su Torino, misurata e non fissata); fra gli ammessi vince quello
 che confonde meno secondi.
 
-**Una soglia di quattro millesimi di bit, con un alfa che, come si vedra' piu'
-avanti, non e' identificabile: le due cose stanno nello stesso regime?** La domanda e' legittima e
+**Una soglia di quattro millesimi di bit, con un alfa che, come si vedrà più
+avanti, non è identificabile: le due cose stanno nello stesso regime?** La domanda è legittima e
 la risposta va data prima che venga posta. Le due grandezze **non sono la stessa
-scala**: la soglia e' la deviazione della perdita **fra giornate di verifica** a
-bordi fissi, cioe' quanto lo stesso candidato oscilla cambiando il giorno su cui lo
-si misura; la piattezza descritta piu' avanti riguarda quanto la perdita si muove
+scala**: la soglia è la deviazione della perdita **fra giornate di verifica** a
+bordi fissi, cioè quanto lo stesso candidato oscilla cambiando il giorno su cui lo
+si misura; la piattezza descritta più avanti riguarda quanto la perdita si muove
 cambiando la **configurazione di alfa** a giornate fisse. Confonderle sarebbe un
 errore, ma il sospetto che la soglia sia troppo fine per essere significativa merita
-comunque una verifica, e la verifica c'e': **ripetendo l'intera scelta dei bordi con
+comunque una verifica, e la verifica c'è: **ripetendo l'intera scelta dei bordi con
 la griglia degli alfa allargata di due ordini di grandezza, il guadagno di ogni
-candidato si sposta al piu' di 0,00053 bit e la graduatoria resta identica in
-entrambe le citta'**. Lo scarto massimo e' un ottavo della soglia romana e un
+candidato si sposta al più di 0,00053 bit e la graduatoria resta identica in
+entrambe le città**. Lo scarto massimo è un ottavo della soglia romana e un
 centoventesimo del margine che decide. La scelta dei bordi non dipende dunque dalla
-taratura, ed e' questo che chiude la questione: non che la soglia sia larga, ma che
-il margine sia sedici volte piu' grande di lei e centoventi volte piu' grande di
+taratura, ed è questo che chiude la questione: non che la soglia sia larga, ma che
+il margine sia sedici volte più grande di lei e centoventi volte più grande di
 quanto la taratura possa spostare.
 
-**Su questa finestra la regola si e' ridotta al criterio che doveva evitare, e va
+**Su questa finestra la regola si è ridotta al criterio che doveva evitare, e va
 detto per intero.** L'esclusione ha ammesso **un solo candidato**, gli `ottili`, che
 sono esattamente quelli che il guadagno preferiva; i secondi non hanno quindi deciso
-nulla, e il candidato adottato e' il **peggiore** proprio sulla grandezza che era
+nulla, e il candidato adottato è il **peggiore** proprio sulla grandezza che era
 stata dichiarata decisiva - 701 s di ampiezza confusa su Roma contro i 293 del
-candidato `decisione`, cioe' **2,4 volte piu' secondi**. Se si normalizza la perdita
+candidato `decisione`, cioè **2,4 volte più secondi**. Se si normalizza la perdita
 per l'entropia marginale propria di ciascun candidato, gli ottili sono per giunta
 **ultimi ex aequo** su Roma. Il secondo classificato sul guadagno, i `misti`, resta
-indietro di 0,066 bit su Roma e 0,097 su Torino, oltre entrambe le soglie: e' quello
-il passaggio che ha svuotato la regola, perche' bastava che uno solo degli altri
-rientrasse in gara perche' i secondi lo scavalcassero sugli ottili.
+indietro di 0,066 bit su Roma e 0,097 su Torino, oltre entrambe le soglie: è quello
+il passaggio che ha svuotato la regola, perché bastava che uno solo degli altri
+rientrasse in gara perché i secondi lo scavalcassero sugli ottili.
 
 Non se ne conclude che la regola fosse sbagliata, ma nemmeno che abbia funzionato.
 L'ampiezza confusa **resta il criterio dichiarato** per le prossime esecuzioni, e ha
 un pregio che il guadagno non ha: si confronta con un margine di coincidenza invece
-che con un'altra discretizzazione. Va pero' registrato che **su questi dati non e'
+che con un'altra discretizzazione. Va però registrato che **su questi dati non è
 stata la regola a chiudere la questione, ma il backtesting**, che ha mostrato i due
-insiemi indistinguibili sui risultati - ed e' la ragione per cui il paragrafo
-seguente esiste. Una regola che ammette un candidato solo non e' una regola che ha
-scelto: e' una soglia che ha scartato tutti gli altri, e il fatto che il superstite
+insiemi indistinguibili sui risultati - ed è la ragione per cui il paragrafo
+seguente esiste. Una regola che ammette un candidato solo non è una regola che ha
+scelto: è una soglia che ha scartato tutti gli altri, e il fatto che il superstite
 coincida col vincitore del criterio che si voleva evitare andava scritto qui e non
 lasciato dedurre. I bordi precedenti, ereditati dalla prima versione del modello e
 scelti su una popolazione diversa, erano invece sbagliati in modo non opinabile: con
 essi il **62,3%** delle osservazioni romane e il **45,7%** delle torinesi finiva in
 uno dei due bin aperti, dove il modello dichiara di non distinguere nulla.
 
-**La chiusura: la scelta dei bordi non e' un punto di decisione del progetto.** La
-domanda lasciata aperta - se `ottili` e `decisione` diano risultati diversi la' dove
-la decisione si applica - e' stata rimessa al backtesting, dove la grandezza che conta
-non e' piu' la perdita sui bin ma i viaggi arrivati entro la scadenza. La risposta e'
+**La chiusura: la scelta dei bordi non è un punto di decisione del progetto.** La
+domanda lasciata aperta - se `ottili` e `decisione` diano risultati diversi là dove
+la decisione si applica - è stata rimessa al backtesting, dove la grandezza che conta
+non è più la perdita sui bin ma i viaggi arrivati entro la scadenza. La risposta è
 **no**. Al primo confronto i due insiemi parevano distinguersi, ma la differenza veniva
 per intero da una giornata, Roma 2026-09-07, che ha contribuito **sette coppie
 rigiocabili invece di trenta** e pesava nella media fra giornate quanto le altre; la
-causa e' nel dato pubblicato, e la documenta il paragrafo seguente. Escludendo con una
+causa è nel dato pubblicato, e la documenta il paragrafo seguente. Escludendo con una
 regola fissata prima di guardarne l'esito le giornate che contribuiscono meno della
-meta' delle coppie richieste, i due insiemi coincidono a quindici e a trenta minuti di
+metà delle coppie richieste, i due insiemi coincidono a quindici e a trenta minuti di
 margine, e le deviazioni si stringono da ±3,5 e ±10,4 a ±1,9 per tutti e due. Si
 adottano gli `ottili`, che vincevano sul guadagno, e si dichiara che `decisione`
 avrebbe dato gli stessi risultati.
 
 **La copertura dell'orario statico, e due giornate in cui manca.** Si dava per scontato
 che una corsa vista nel feed esistesse nell'archivio di quel giorno. Misurata su tutte
-e trentadue le giornate, la divisione e' netta e senza zona grigia.
+e trentadue le giornate, la divisione è netta e senza zona grigia.
 
 Tabella 17 — Copertura dell'orario statico sui dati real-time, per giornata.
 
@@ -1960,21 +1960,21 @@ Tabella 17 — Copertura dell'orario statico sui dati real-time, per giornata.
 | **Roma, 2026-09-07** | 1 | **39,5%** | **46,6%** |
 
 *Fonte: `results/copertura_orario.csv`, colonne `quota_con_orario` e
-`quota_trip_riconosciuti`, finestra `2026-09-09`; l'archivio confrontato e' quello in
-vigore in ciascuna giornata secondo l'indice, non il piu' recente.*
+`quota_trip_riconosciuti`, finestra `2026-09-09`; l'archivio confrontato è quello in
+vigore in ciascuna giornata secondo l'indice, non il più recente.*
 
-Le due giornate anomale sono **gli unici due lunedi' della finestra**, e il
+Le due giornate anomale sono **gli unici due lunedì della finestra**, e il
 disallineamento dura tutta la giornata: la quota di righe pubblicate molto dopo
 l'orario programmato cresce in modo continuo dal 5% delle sei del mattino al 35% delle
-ventitre'. Non e' un difetto della raccolta ne' del consolidamento, che su quelle
+ventitré. Non è un difetto della raccolta né del consolidamento, che su quelle
 giornate hanno letto 1.433 e 1.352 dump e scritto 18,4 e 9,6 milioni di righe come
-sempre, ma **del dato pubblicato**: senza orario non c'e' ritardo, e una coppia i cui
-candidati non sono interamente osservati non e' rigiocabile. La misura entra fra i
+sempre, ma **del dato pubblicato**: senza orario non c'è ritardo, e una coppia i cui
+candidati non sono interamente osservati non è rigiocabile. La misura entra fra i
 controlli permanenti - `SOGLIA_COPERTURA_ORARIO` vale 0,90 in `src/delays/contesto.py`
 - e **avvisa senza scartare**, per la ragione detta qui sotto.
 
-**Le due giornate mal coperte restano nei campioni di questo capitolo, ed e' il limite
-piu' serio dei dati qui usati.**
+**Le due giornate mal coperte restano nei campioni di questo capitolo, ed è il limite
+più serio dei dati qui usati.**
 
 Tabella 18 — Peso delle due giornate mal coperte nei rispettivi insiemi.
 
@@ -1989,28 +1989,28 @@ con `coppie` di `results/correlazione_rete.csv`.*
 
 Il 31 agosto pesa un ventesimo del campione di stima e sposta la matrice di poco. Il 7
 settembre sta invece **nella verifica**, dove pesa un quarto della media fra giornate,
-e la sua popolazione e' **distorta** oltre che ridotta: il 30,5% delle sue coppie supera
+e la sua popolazione è **distorta** oltre che ridotta: il 30,5% delle sue coppie supera
 il criterio di constatazione, contro il 13,9-19,7% delle altre tre giornate di verifica
 (*fonte: conteggi per giornata stampati dallo stesso comando, righe "N coppie, M
-constatate"*). Quanto questo sposti i numeri **non e' misurato**, perche'
+constatate"*). Quanto questo sposti i numeri **non è misurato**, perché
 `results/stima_rete.csv` non riporta le quattro perdite separate. Le giornate non sono
-state tolte perche' la copertura e' stata scoperta **dopo** che i numeri del capitolo
-erano stati misurati, e ritoccare il campione dopo averne visto i risultati e'
+state tolte perché la copertura è stata scoperta **dopo** che i numeri del capitolo
+erano stati misurati, e ritoccare il campione dopo averne visto i risultati è
 esattamente il difetto che la separazione fra banco, taratura e verifica esiste per
-impedire: la correzione giusta e' escluderle con una regola fissata prima, alla
+impedire: la correzione giusta è escluderle con una regola fissata prima, alla
 prossima raccolta, e rimisurare.
 
-**Le constatazioni vengono prima nella scala, e non e' una ponderazione.** Su Roma il
-**22,70%** delle transizioni fra previsioni consecutive e' l'identita' al secondo,
+**Le constatazioni vengono prima nella scala, e non è una ponderazione.** Su Roma il
+**22,70%** delle transizioni fra previsioni consecutive è l'identità al secondo,
 contro il **4,45%** fra constatazioni, mentre su Torino il fenomeno non esiste (1,26% e
 1,30%, *fonte: `results/markov_terne.csv`, righe `valori ripetuti (sui secondi)`,
 colonna `quota_identiche`, finestra `2026-09-09`*): sono copie che il produttore non ha
 ricalcolato, non informazione indipendente. Pesarle come le constatazioni spingerebbe
 la matrice di transizione verso la diagonale, e il modello sottostimerebbe proprio la
-variabilita' su cui il pianificatore robusto si fonda. *Alternativa scartata:* pesare
+variabilità su cui il pianificatore robusto si fonda. *Alternativa scartata:* pesare
 le due popolazioni, che richiederebbe di sapere quanto valga una previsione rispetto a
 una constatazione. L'ordine nella scala non lo richiede: una cella si stima sulle
-constatazioni se ne ha abbastanza, altrimenti si sale a un contesto piu' grossolano
+constatazioni se ne ha abbastanza, altrimenti si sale a un contesto più grossolano
 restando sulle constatazioni, e solo dopo si ricorre alle previsioni.
 
 **Su Torino le constatazioni non esistono, e la scala perde una dimensione.** Il
@@ -2019,18 +2019,18 @@ in tutte e sedici le giornate, contro **fra 10.020 e 70.229 secondi** su Roma: i
 torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita. Le righe
 torinesi che superavano il criterio di constatazione, dal 3,9% all'8,2% a seconda del
 giorno, erano previsioni selezionate per essere molto in anticipo: lo **0,00% di esse
-ha ritardo positivo, tutti i giorni**, e il ritardo massimo fra loro e' di **1
+ha ritardo positivo, tutti i giorni**, e il ritardo massimo fra loro è di **1
 secondo** (*fonte: `results/diagnosi_constatazioni.csv`, colonne
 `feed_meno_programmato_max`, `quota_constatazioni`,
 `constatazioni_con_ritardo_positivo` e `ritardo_massimo_fra_le_constatazioni`,
 finestra `2026-09-09`*). *Alternative considerate:* togliere Torino dal modello dei
-ritardi, perdendo la seconda citta'; oppure ricostruire i passaggi dalla sparizione di
-una fermata fra due dump consecutivi, che non e' un segnale pulito perche' le liste di
+ritardi, perdendo la seconda città; oppure ricostruire i passaggi dalla sparizione di
+una fermata fra due dump consecutivi, che non è un segnale pulito perché le liste di
 fermate di una corsa si accorciano e si allungano - su 288 corse torinesi, 130
 accorciate e 113 allungate (*misura una tantum del 9 settembre 2026 su due dump
-grezzi, non sostenuta da un CSV*). La scelta e' **un'unica popolazione con la sola
-dimensione del contesto**: su Torino il dato stimato e' l'ultima stima del produttore
-prima che la fermata sparisca dal feed. Non e' scritta a mano nel codice:
+grezzi, non sostenuta da un CSV*). La scelta è **un'unica popolazione con la sola
+dimensione del contesto**: su Torino il dato stimato è l'ultima stima del produttore
+prima che la fermata sparisca dal feed. Non è scritta a mano nel codice:
 `Citta.scale` guarda quel massimo e passa a una dimensione sola sotto la soglia.
 
 **Dentro un bin si assume la distribuzione di massima entropia.** Il pianificatore
@@ -2040,15 +2040,15 @@ l'infinito**, con la media misurata dentro quel bin. *Alternative scartate:*
 concentrare la massa di ogni bin nel suo valore medio, che farebbe saltare
 `P(arrivo ≤ T)` al variare di T di un secondo - un artefatto su cui il pianificatore
 sceglierebbe; assegnare ai bin aperti un'ampiezza convenzionale, che inventerebbe il
-parametro che pesa di piu', dato che i bin aperti raccolgono fra il 2,4% e il 62,3%
-della massa a seconda dei bordi. *Perche' massima entropia:* e' l'unico punto in cui il
+parametro che pesa di più, dato che i bin aperti raccolgono fra il 2,4% e il 62,3%
+della massa a seconda dei bordi. *Perché massima entropia:* è l'unico punto in cui il
 progetto aggiunge informazione che i dati non contengono, e va scelto col criterio che
 ne aggiunge il meno possibile, senza lasciare parametri liberi. Quando il contesto
 manca - alla prima fermata di un itinerario il ritardo a monte non esiste ancora - si
 **marginalizza** sulla distribuzione dei bin a monte misurata sulle giornate di stima,
-che e' cio' che una rete bayesiana fa su una variabile non osservata.
+che è ciò che una rete bayesiana fa su una variabile non osservata.
 
-Le decisioni che seguono riguardano la raccolta e sono vincolanti per la stima, perche'
+Le decisioni che seguono riguardano la raccolta e sono vincolanti per la stima, perché
 determinano che cosa sia disponibile.
 
 **Si conserva una riga a ogni cambio della previsione, non solo l'ultima.** Per ogni
@@ -2056,62 +2056,62 @@ passaggio, identificato da `(trip_id, stop_sequence)`, si conserva una riga a og
 cambio del valore osservato. *Alternative scartate:* conservare solo l'ultima
 osservazione, che getterebbe l'evoluzione della stima dell'azienda, irripetibile a
 posteriori; oppure una riga per dump, che conserverebbe soprattutto ripetizioni. La
-regola non ha pero' portato il risparmio in volume che le era stato attribuito: la
-quota di righe conservate vale **circa tre quarti in entrambe le citta'** (tabella del
-sommario), perche' la previsione viene ricalcolata quasi a ogni giro.
+regola non ha però portato il risparmio in volume che le era stato attribuito: la
+quota di righe conservate vale **circa tre quarti in entrambe le città** (tabella del
+sommario), perché la previsione viene ricalcolata quasi a ogni giro.
 
-**La chiave di join e' `(trip_id, stop_sequence)`, non quella naturale.** La chiave
+**La chiave di join è `(trip_id, stop_sequence)`, non quella naturale.** La chiave
 naturale `(trip_id, stop_id, stop_sequence)`, che era la prima implementazione, rendeva
 inutilizzabili i dati di Torino senza che nulla lo segnalasse: **GTT non include mai lo
 `stop_id`** nei `stop_time_update`, identificando la fermata con il solo
-`stop_sequence`, e il join non trovava corrispondenza. La chiave ridotta e' altrettanto
-precisa, perche' la specifica GTFS [5] garantisce che `stop_sequence` sia univoco
+`stop_sequence`, e il join non trovava corrispondenza. La chiave ridotta è altrettanto
+precisa, perché la specifica GTFS [5] garantisce che `stop_sequence` sia univoco
 dentro una corsa; quando il feed fornisce anche lo `stop_id`, si verifica che coincida
 con quello statico e una divergenza viene segnalata.
 
-**L'orario statico e' archiviato a ogni cambiamento, ed e' un requisito e non una
-precauzione.** Il ritardo e' uno scostamento da un orario che cambia, e confrontare
+**L'orario statico è archiviato a ogni cambiamento, ed è un requisito e non una
+precauzione.** Il ritardo è uno scostamento da un orario che cambia, e confrontare
 un'osservazione con l'orario sbagliato produrrebbe ritardi plausibili e falsi. Dal 25
 agosto al 9 settembre **Roma ha prodotto sedici revisioni distinte su sedici giorni** e
 **Torino sei su sedici** (*fonte: `results/archivi_statici.csv`, colonne `revisioni` e
 `giorni_coperti`*): con un solo scaricamento, i dump del 25 agosto sarebbero oggi
-associati a un orario sbagliato per entrambe le citta'. Un indice associa percio' a ogni
+associati a un orario sbagliato per entrambe le città. Un indice associa perciò a ogni
 data la revisione valida quel giorno. Per accorgersi del cambiamento si confronta
 l'impronta invece di riscaricare l'archivio, che per Roma pesa **47,2 MB** in media per
 revisione (*fonte: `results/archivi_statici.csv`, colonna `mb_medi`*). *Alternativa
 scartata:* l'intestazione HTTP `Last-Modified`, che molti server aggiornano anche
-quando il contenuto e' identico. GTT non pubblica alcun `.md5`, e per Torino si scarica
+quando il contenuto è identico. GTT non pubblica alcun `.md5`, e per Torino si scarica
 l'archivio e se ne confronta l'impronta.
 
 **Si raccolgono entrambi i feed, non solo `trip_updates`.** I `vehicle_positions`
 permettono di distinguere una corsa soppressa da una semplicemente non aggiornata, che
-nei `trip_updates` sono indistinguibili; ed e' sul confronto fra i due feed che si e'
+nei `trip_updates` sono indistinguibili; ed è sul confronto fra i due feed che si è
 diagnosticato il silenzio del produttore torinese descritto qui sotto.
 
 **Un collector che funziona non garantisce dati.** Il registro delle interruzioni
-distingue il collector spento, i cui minuti vanno esclusi dal backtesting perche' una
+distingue il collector spento, i cui minuti vanno esclusi dal backtesting perché una
 coincidenza mai osservata verrebbe scambiata per una coincidenza persa, dal feed che non
-risponde, che e' invece una condizione del mondo: un passeggero reale sarebbe rimasto
-senza dati esattamente come noi. Una terza condizione e' emersa per caso: **dalla
+risponde, che è invece una condizione del mondo: un passeggero reale sarebbe rimasto
+senza dati esattamente come noi. Una terza condizione è emersa per caso: **dalla
 mezzanotte del 10 settembre il feed di Torino restituisce un `FeedMessage` vuoto**,
 quindici byte, mentre ogni indicatore di salute del collector restava corretto. Il
 controllo aggiunto avvisa quando la dimensione mediana dei dump delle ultime due
 giornate scende sotto i cento byte, un confine fra i quindici byte di un messaggio vuoto
-e i trentaquattromila del piu' piccolo dump utile osservato. **La finestra di stima si
+e i trentaquattromila del più piccolo dump utile osservato. **La finestra di stima si
 ferma al 9 settembre, quindi nessun risultato di questo capitolo usa quelle giornate.**
 
 ## Valutazione
 
 **Le grandezze.** La **perdita logaritmica**, in bit, e lo **scarto di
 calibrazione** sono quelli usuali [1, cap. 7 e 10]; la calibrazione raccoglie le
-previsioni in dieci classi di valore simile, pesate per numerosita'. La perdita si
-calcola sulle **quattro giornate di verifica**, che non hanno partecipato ne' alla
-stima ne' alla taratura ne' alla scelta dei bordi; media e deviazione standard sono
-prese fra giornate, perche' le coppie di uno stesso giorno non sono indipendenti.
-Tre grandezze sono invece proprie di questo progetto. L'**entropia marginale** e' la
+previsioni in dieci classi di valore simile, pesate per numerosità. La perdita si
+calcola sulle **quattro giornate di verifica**, che non hanno partecipato né alla
+stima né alla taratura né alla scelta dei bordi; media e deviazione standard sono
+prese fra giornate, perché le coppie di uno stesso giorno non sono indipendenti.
+Tre grandezze sono invece proprie di questo progetto. L'**entropia marginale** è la
 perdita di un modello che ignora contesto e ritardo a monte, e **dipende dai bordi**:
-il **guadagno**, la differenza fra le due, e' percio' la grandezza confrontabile fra
-discretizzazioni diverse. La **correlazione implicita** e' la correlazione fra ritardo a monte e ritardo a
+il **guadagno**, la differenza fra le due, è perciò la grandezza confrontabile fra
+discretizzazioni diverse. La **correlazione implicita** è la correlazione fra ritardo a monte e ritardo a
 valle che la matrice stimata comporta, calcolata usando come rappresentante di
 ciascun bin il ritardo medio **misurato** dentro di esso e non il punto medio
 dell'intervallo, che per i due bin aperti non esisterebbe.
@@ -2134,16 +2134,16 @@ Tabella 19 — Concentrazioni del priore scelte dalla taratura, per gradino.
 0,5 a 100.000.000 su scala logaritmica.*
 
 **Che cosa significa un alfa al massimo della griglia, misurato.** Due dei dieci
-gradini tarati scelgono l'estremo superiore, e l'estremo superiore non e' un valore come gli
+gradini tarati scelgono l'estremo superiore, e l'estremo superiore non è un valore come gli
 altri: per `alfa` che cresce la stima di una cella tende a quella del genitore,
-perche' il peso che la cella conserva sui propri conteggi vale `N / (N + alfa)`. Un
+perché il peso che la cella conserva sui propri conteggi vale `N / (N + alfa)`. Un
 gradino ad `alfa` massimo sta dunque chiedendo di somigliare al genitore quanto la
-griglia gli concede, e la domanda non e' se allargare la griglia ma **quanto sia
-gia' vicino**. E' un confronto di matrici, e si fa senza rieseguire nulla.
+griglia gli concede, e la domanda non è se allargare la griglia ma **quanto sia
+già vicino**. È un confronto di matrici, e si fa senza rieseguire nulla.
 
 Tabella 20 — Distanza fra ciascun gradino e il suo genitore nella scala stimata.
 
-| gradino | citta' | alfa | scarto massimo per cella | divergenza media (bit) | celle |
+| gradino | città | alfa | scarto massimo per cella | divergenza media (bit) | celle |
 | --- | --- | ---: | ---: | ---: | ---: |
 | tipo | Roma | 100.000 | 0,205077 | 1,2e-01 | 8 |
 | tipo x fascia | Roma | 250 | 0,166298 | 1,4e-01 | 48 |
@@ -2154,28 +2154,28 @@ Tabella 20 — Distanza fra ciascun gradino e il suo genitore nella scala stimat
 | tipo x fascia x giorno | Torino | 100.000.000 | 0,000005 | 4,7e-11 | 288 |
 | linea x fascia x giorno | Torino | 250 | 0,199193 | 1,2e-02 | 18.144 |
 
-*Fonte: `results/trasparenza_gradini.csv`, scale principali delle due citta', bordi
-`ottili`, finestra `2026-09-09`. Lo scarto massimo e' la piu' grande differenza fra
-una probabilita' del gradino e la corrispondente del genitore; la divergenza e'
+*Fonte: `results/trasparenza_gradini.csv`, scale principali delle due città, bordi
+`ottili`, finestra `2026-09-09`. Lo scarto massimo è la più grande differenza fra
+una probabilità del gradino e la corrispondente del genitore; la divergenza è
 `KL(gradino || genitore)` in bit, mediata sulle celle col peso delle loro
 osservazioni. Le celle mai visitate coincidono col genitore per costruzione e non
 entrano nella divergenza.*
 
-**La risposta e' diversa per i due gradini che restano all'estremo.** Su Torino
+**La risposta è diversa per i due gradini che restano all'estremo.** Su Torino
 entrambi sono **trasparenti davvero**: il livello per tipo si discosta dal genitore
 di sei centomillesimi su ogni cella e quello per tipo, fascia e giorno di cinque
-milionesimi, cioe' molto meno di quanto qualunque uso del pianificatore possa
+milionesimi, cioè molto meno di quanto qualunque uso del pianificatore possa
 distinguere. Quei due gradini non servono, la taratura lo ha detto spingendoli
 all'estremo, e la misura lo conferma senza inferenze: **la scala torinese lavora su
 tre gradini su cinque**. Su Roma, invece, dopo l'allargamento della griglia **nessun
 gradino resta all'estremo**, e la questione si chiude in un altro modo.
 
-**La concentrazione del priore non e' identificabile da questi dati.** Nella prima
+**La concentrazione del priore non è identificabile da questi dati.** Nella prima
 esecuzione la griglia degli `alfa` si fermava a un milione e tre gradini vi si
-appoggiavano; poiche' il peso che una cella conserva sui propri conteggi vale
+appoggiavano; poiché il peso che una cella conserva sui propri conteggi vale
 `N / (N + alfa)`, e il livello per tipo di Roma ha **otto celle sole** su 1,17 milioni
-di coppie, la griglia e' stata portata a **cento milioni** e l'esperimento rifatto. La
-perdita non si muove: sulla scala principale romana passa da 0,9437 a 0,9426 bit, cioe'
+di coppie, la griglia è stata portata a **cento milioni** e l'esperimento rifatto. La
+perdita non si muove: sulla scala principale romana passa da 0,9437 a 0,9426 bit, cioè
 **un millesimo**, contro una deviazione fra giornate di ±0,064, e su Torino da
 1,1260 a 1,1261; la scelta dei bordi non cambia. Su Torino i due gradini all'estremo
 passano da quattro millesimi e mezzo millesimo a **sei centomillesimi e cinque
@@ -2189,23 +2189,23 @@ di cinque decimillesimi.
 corrente: si rifanno cambiando `CANDIDATI` in `src/delays/rete.py` e rieseguendo
 `scripts/stima_rete.py --fino-a 2026-09-09`, e sono quelli del commit `a59f0b9`.*
 
-Ne segue che **il valore di `alfa` di un singolo gradino non e' identificabile da
-questi dati**. La superficie della perdita e' piatta e la discesa coordinata non e'
-esaustiva - Torino peggiora di un decimillesimo pur disponendo di una griglia piu'
-ampia - quindi leggere nel valore di un gradino un significato ("e' al massimo, dunque
-non serve") e' sovrainterpretare. Cio' che resta leggibile e' la **distanza fra le
-matrici**, che e' una misura diretta: dice che due gradini torinesi sono trasparenti e
-che nessun gradino romano lo e'. Con la stessa piattezza e' coerente il fatto che su
-Roma la taratura non spenga il gradino per tipo, benche' nei dati romani tutte le linee
+Ne segue che **il valore di `alfa` di un singolo gradino non è identificabile da
+questi dati**. La superficie della perdita è piatta e la discesa coordinata non è
+esaustiva - Torino peggiora di un decimillesimo pur disponendo di una griglia più
+ampia - quindi leggere nel valore di un gradino un significato ("è al massimo, dunque
+non serve") è sovrainterpretare. Ciò che resta leggibile è la **distanza fra le
+matrici**, che è una misura diretta: dice che due gradini torinesi sono trasparenti e
+che nessun gradino romano lo è. Con la stessa piattezza è coerente il fatto che su
+Roma la taratura non spenga il gradino per tipo, benché nei dati romani tutte le linee
 portino un solo `route_type` e quel livello produca la stessa partizione del livello
-sotto di se'.
+sotto di sé.
 
 **Dove la scala lavora davvero.** La stessa tabella lo dice, e non era ovvio: i
-gradini che spostano di piu' sono i **primi due di contesto** - il tipo e la fascia
+gradini che spostano di più sono i **primi due di contesto** - il tipo e la fascia
 oraria - con circa un decimo di bit di divergenza ciascuno su Roma, contro i due
-centesimi e mezzo del livello per linea. La linea, che e' il fattore piu' fine e
+centesimi e mezzo del livello per linea. La linea, che è il fattore più fine e
 quello che costa sessantamila celle, aggiunge meno di un quarto di quanto aggiunga la
-fascia oraria. E' coerente con il confronto fra le scale piu' avanti, dove il solo
+fascia oraria. È coerente con il confronto fra le scale più avanti, dove il solo
 tipo di linea arriva vicino alla scala intera: la risalita serve soprattutto a **non
 pagare** le celle fini, non ad aggiungerne il contenuto.
 
@@ -2225,22 +2225,22 @@ Tabella 21 — Confronto fra i cinque candidati per i bordi dei bin, sul banco d
 *Fonte: `results/scelta_bordi.csv`, finestra `2026-09-09`, due giornate di banco;
 colonne `guadagno`, `massa_nei_bin_aperti` e `ampiezza_confusa_decisione`; le
 soglie di ammissione sono la colonna `deviazione_perdita` della riga `attuali` di
-ciascuna citta'. Le ampiezze sono ristrette alle osservazioni fra zero e trenta
+ciascuna città. Le ampiezze sono ristrette alle osservazioni fra zero e trenta
 minuti.*
 
 I bordi ereditati dalla prima versione del modello lasciavano quasi due terzi della
 massa romana in un
-bin aperto, dove il modello dichiara di non distinguere nulla, e il loro guadagno e'
-il piu' basso su Roma: su questo non c'e' ambiguita'. Fra i quattro candidati nuovi
+bin aperto, dove il modello dichiara di non distinguere nulla, e il loro guadagno è
+il più basso su Roma: su questo non c'è ambiguità. Fra i quattro candidati nuovi
 la lettura dipende invece dal criterio, come la doppia tautologia fa prevedere: gli
-ottili vincono il guadagno in entrambe le citta' e confondono il maggior numero di
+ottili vincono il guadagno in entrambe le città e confondono il maggior numero di
 secondi, mentre `decisione` e `misti` fanno l'opposto. La regola adottata ammette
 solo gli ottili, e il backtesting ha poi mostrato che la differenza non arriva ai
 risultati.
 
 **La scala di risalita contro i suoi due estremi.** La domanda a cui la tabella
-risponde e' se la scala serva davvero, cioe' se batta sia il modello che stima tutto
-al livello piu' fine sia quello che si ferma al livello grossolano.
+risponde è se la scala serva davvero, cioè se batta sia il modello che stima tutto
+al livello più fine sia quello che si ferma al livello grossolano.
 
 Tabella 22 — Perdita logaritmica della scala completa contro i suoi due estremi, in bit.
 
@@ -2256,27 +2256,27 @@ Tabella 22 — Perdita logaritmica della scala completa contro i suoi due estrem
 `solo livello fine` e `solo tipo di linea`, bordi `ottili`, finestra `2026-09-09`;
 media e deviazione su quattro giornate di verifica.*
 
-La scala completa vince su entrambe le citta' e su entrambi gli estremi, ma i due
+La scala completa vince su entrambe le città e su entrambi gli estremi, ma i due
 confronti non hanno lo stesso peso e vanno letti separatamente. Contro il **livello
-fine da solo** il vantaggio e' netto - circa tre decimi di bit su Roma e sette
-centesimi su Torino, dalla tabella - e soprattutto e' accompagnato da un **crollo
-della variabilita' fra giornate**, che su Roma si riduce quasi a un sesto e su
+fine da solo** il vantaggio è netto - circa tre decimi di bit su Roma e sette
+centesimi su Torino, dalla tabella - e soprattutto è accompagnato da un **crollo
+della variabilità fra giornate**, che su Roma si riduce quasi a un sesto e su
 Torino a meno di un terzo: il modello a
-sole celle fini non e' semplicemente peggiore, e' **instabile**, perche' su ogni
-giornata sbaglia in modo diverso a seconda di quali linee rare vi compaiano. E' il
+sole celle fini non è semplicemente peggiore, è **instabile**, perché su ogni
+giornata sbaglia in modo diverso a seconda di quali linee rare vi compaiano. È il
 difetto che la risalita esiste per curare, e la misura mostra che lo cura. Contro il
-**tipo di linea da solo** il vantaggio e' invece di poco piu' di un centesimo di bit
-in entrambe le citta', **dentro la deviazione fra giornate di entrambe le scale**:
+**tipo di linea da solo** il vantaggio è invece di poco più di un centesimo di bit
+in entrambe le città, **dentro la deviazione fra giornate di entrambe le scale**:
 le deviazioni
 riportate sono quelle di ciascuna scala separatamente e non quelle della loro
 differenza, quindi non permettono di concludere che il vantaggio sia significativo.
-La lettura onesta e' che la scala compra **soprattutto stabilita'**, e che gran parte
-di cio' che sa dire lo sa gia' dire il livello grossolano; e' anche il motivo per cui
-la taratura rende trasparente piu' di un gradino intermedio.
+La lettura onesta è che la scala compra **soprattutto stabilità**, e che gran parte
+di ciò che sa dire lo sa già dire il livello grossolano; è anche il motivo per cui
+la taratura rende trasparente più di un gradino intermedio.
 
-**Se le previsioni aggiungano qualcosa a cio' che le constatazioni sanno gia'.** E'
+**Se le previsioni aggiungano qualcosa a ciò che le constatazioni sanno già.** È
 la domanda che il piano poneva come scambio di gradini e che nella scala a priori
-incatenati non e' esprimibile in quella forma, perche' il contesto puo' solo
+incatenati non è esprimibile in quella forma, perché il contesto può solo
 infittirsi. Si risponde inserendo il gradino delle previsioni fini appena prima di
 quello finale e confrontando.
 
@@ -2290,33 +2290,33 @@ previsioni nella scala, Roma.
 | previsioni a ogni livello | 10 | 0,9417 ± 0,0634 | 0,9114 ± 0,0326 |
 | previsioni sole | 5 | 0,9552 ± 0,0617 | 0,8830 ± 0,0296 |
 
-*Fonte: `results/stima_rete.csv`, citta' `roma`, colonne `perdita`/`deviazione` e
+*Fonte: `results/stima_rete.csv`, città `roma`, colonne `perdita`/`deviazione` e
 `perdita_previsioni`/`deviazione_previsioni`, bordi `ottili`; Torino non compare
-perche' vi esiste una popolazione sola.*
+perché vi esiste una popolazione sola.*
 
 Sulla popolazione che conta, le constatazioni, aggiungere le previsioni migliora di
-**due millesimi e mezzo di bit**, cioe' un venticinquesimo della deviazione fra
+**due millesimi e mezzo di bit**, cioè un venticinquesimo della deviazione fra
 giornate: non migliora. Sulla popolazione delle previsioni migliora di due
-centesimi, il che e'
+centesimi, il che è
 atteso e non
-decide, perche' un modello che ha visto le previsioni predice meglio le previsioni.
-Raddoppiare i gradini portandoli a dieci non aggiunge nulla di piu'. Si adotta
-percio' la scala piu' semplice, cinque gradini di sole constatazioni, che e' anche
+decide, perché un modello che ha visto le previsioni predice meglio le previsioni.
+Raddoppiare i gradini portandoli a dieci non aggiunge nulla di più. Si adotta
+perciò la scala più semplice, cinque gradini di sole constatazioni, che è anche
 l'unica delle quattro il cui significato si dica in una frase. Va notato che
-`previsioni sole` e' la peggiore sulle constatazioni e la migliore sulle previsioni,
-che e' la firma di due popolazioni realmente diverse e non di un capriccio del
+`previsioni sole` è la peggiore sulle constatazioni e la migliore sulle previsioni,
+che è la firma di due popolazioni realmente diverse e non di un capriccio del
 campione.
 
-**La calibrazione.** Una probabilita' non si verifica un'osservazione alla volta: si
+**La calibrazione.** Una probabilità non si verifica un'osservazione alla volta: si
 raccolgono tutte le previsioni di valore simile e si guarda con quale frequenza
-l'evento previsto sia poi accaduto. Le coppie sono (probabilita' attribuita al bin
+l'evento previsto sia poi accaduto. Le coppie sono (probabilità attribuita al bin
 *k*, il bin osservato era *k*) su tutti e otto i bin, e non solo su quello
-realizzato, perche' un modello che sbaglia i bin che non escono mai e' comunque
+realizzato, perché un modello che sbaglia i bin che non escono mai è comunque
 sbagliato.
 
 Tabella 24 — Calibrazione del modello stimato sulle quattro giornate di verifica.
 
-| classe di probabilita' | Roma attesa | Roma osservata | Roma coppie | Torino attesa | Torino osservata | Torino coppie |
+| classe di probabilità | Roma attesa | Roma osservata | Roma coppie | Torino attesa | Torino osservata | Torino coppie |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0,0 - 0,1 | 0,0101 | 0,0116 | 3.310.651 | 0,0081 | 0,0098 | 4.599.931 |
 | 0,1 - 0,2 | 0,1383 | 0,1435 | 441.856 | 0,1403 | 0,1418 | 960.917 |
@@ -2331,26 +2331,26 @@ Tabella 24 — Calibrazione del modello stimato sulle quattro giornate di verifi
 | **scarto medio pesato** | | **0,0035** | | | **0,0032** | |
 
 *Fonte: `results/calibrazione_rete_roma.csv` e `results/calibrazione_rete_torino.csv`,
-quattro giornate di verifica messe insieme; lo scarto medio e' la colonna
+quattro giornate di verifica messe insieme; lo scarto medio è la colonna
 `scarto_calibrazione` di `results/stima_rete.csv`.*
 
-Lo scarto medio pesato sta sotto il mezzo punto percentuale in entrambe le citta', e
-la tabella mostra dove si concentra: nelle classi centrali e alte il modello e'
-leggermente **ottimista**, cioe' promette qualche punto in piu' di quanto osservi -
+Lo scarto medio pesato sta sotto il mezzo punto percentuale in entrambe le città, e
+la tabella mostra dove si concentra: nelle classi centrali e alte il modello è
+leggermente **ottimista**, cioè promette qualche punto in più di quanto osservi -
 su Roma circa 0,57 contro 0,53 nella classe 0,5-0,6 e 0,66 contro 0,64 nella
-successiva, con le cifre piene in tabella. Non e' un dettaglio indifferente per
-questo progetto, perche' il
+successiva, con le cifre piene in tabella. Non è un dettaglio indifferente per
+questo progetto, perché il
 pianificatore robusto sceglie l'itinerario che massimizza `P(arrivo ≤ T)` e un
-modello ottimista sovrastima la probabilita' di tutti i candidati: finche'
-l'ottimismo e' uniforme non sposta la graduatoria, ma va dichiarato che la
-probabilita' stampata accanto a un itinerario e' un paio di punti sopra la frequenza
+modello ottimista sovrastima la probabilità di tutti i candidati: finché
+l'ottimismo è uniforme non sposta la graduatoria, ma va dichiarato che la
+probabilità stampata accanto a un itinerario è un paio di punti sopra la frequenza
 osservata. Le classi centrali che sembrano peggiori, 0,4-0,5, sono anche le meno
 popolate - 597 coppie su Roma - e non reggono da sole nessuna conclusione.
 
 **La correlazione reale contro lo 0,70 sintetico dell'argomento sull'incertezza.**
 L'argomento precedente aveva assunto un parametro scalare in [0, 1] per la
 trasmissione del ritardo lungo la corsa e aveva usato **0,70**, dichiarandolo un
-numero scelto per buon senso in attesa della misura. Questa e' la misura.
+numero scelto per buon senso in attesa della misura. Questa è la misura.
 
 Tabella 25 — Correlazione fra ritardo a monte e a valle lungo la corsa, dati reali
 contro valore sintetico.
@@ -2370,38 +2370,38 @@ contro valore sintetico.
 quattro giornate di verifica; popolazione `constatazioni` per Roma e `tutte` per
 Torino.*
 
-Tre letture, nell'ordine. La prima e' che **il ritardo si trasmette lungo la corsa
-molto piu' di quanto l'argomento precedente avesse assunto**: 0,96 su Roma e 0,91 su
-Torino contro 0,70, e la distanza e' di venti-trenta punti, ben oltre qualunque
-variabilita' fra giornate. Gli esperimenti sintetici dell'argomento precedente sono
+Tre letture, nell'ordine. La prima è che **il ritardo si trasmette lungo la corsa
+molto più di quanto l'argomento precedente avesse assunto**: 0,96 su Roma e 0,91 su
+Torino contro 0,70, e la distanza è di venti-trenta punti, ben oltre qualunque
+variabilità fra giornate. Gli esperimenti sintetici dell'argomento precedente sono
 stati quindi eseguiti in un mondo in cui il ritardo si propaga meno che nella
-realta', ed e' esattamente il mondo in cui un pianificatore che ignori la
-correlazione sbaglia di meno: il vantaggio del metodo robusto misurato la' e' da
-considerarsi **prudente**, non gonfiato. La seconda e' che la discretizzazione in
+realtà, ed è esattamente il mondo in cui un pianificatore che ignori la
+correlazione sbaglia di meno: il vantaggio del metodo robusto misurato là è da
+considerarsi **prudente**, non gonfiato. La seconda è che la discretizzazione in
 otto bin **non distrugge la dipendenza che deve rappresentare**: la correlazione
 implicita nella matrice stimata e quella misurata sui secondi distano **meno di un
 millesimo su Roma** e **sei millesimi su Torino**, entrambe intorno a 0,96 e a 0,92:
-le cifre piene sono in tabella. E' il controllo che giustifica a posteriori l'intera
-rappresentazione a bin, perche' una matrice che perdesse la correlazione renderebbe
-inutile il condizionamento sul ritardo a monte. La terza e' che **le quattro letture
+le cifre piene sono in tabella. È il controllo che giustifica a posteriori l'intera
+rappresentazione a bin, perché una matrice che perdesse la correlazione renderebbe
+inutile il condizionamento sul ritardo a monte. La terza è che **le quattro letture
 concordano fra loro**: Pearson e Spearman, su tutte le coppie e dentro i soli bordi
-dei bin, stanno tutte fra 0,91 e 0,98. Non e' un'osservazione oziosa, perche' sulla
+dei bin, stanno tutte fra 0,91 e 0,98. Non è un'osservazione oziosa, perché sulla
 popolazione torinese mal definita descritta nelle decisioni di progetto le stesse
 quattro letture si contraddicevano, +0,999 su tutto contro +0,240 dentro i bordi
 (*misura una tantum del 9 settembre 2026, su una popolazione poi abbandonata*), e la
-loro discordanza e' stato il segnale che qualcosa non andava nella definizione della
+loro discordanza è stato il segnale che qualcosa non andava nella definizione della
 popolazione prima ancora che nei numeri.
 
 **Che cosa questa valutazione non dice.** Non dice se il modello appreso faccia
 arrivare puntuale un passeggero: la perdita logaritmica e la calibrazione misurano
 quanto bene il modello descriva i ritardi, non quanto bene un itinerario scelto con
-esso regga il mondo reale. Quella misura e' un'altra, si fa rigiocando gli itinerari
-sulle giornate osservate, ed e' l'oggetto dell'argomento che segue e la risposta alla
+esso regga il mondo reale. Quella misura è un'altra, si fa rigiocando gli itinerari
+sulle giornate osservate, ed è l'oggetto dell'argomento che segue e la risposta alla
 domanda di ricerca del progetto. Va inoltre ricordato che i numeri romani e torinesi
-di questo capitolo **non rispondono alla stessa domanda**: su Roma la perdita e'
+di questo capitolo **non rispondono alla stessa domanda**: su Roma la perdita è
 calcolata su passaggi avvenuti, su Torino sull'ultima stima del produttore a circa
 venticinque secondi dal transito atteso, e le colonne `raffronto_tutte_*` esistono
-proprio perche' il
+proprio perché il
 lettore che voglia accostarli disponga della lettura omogenea invece di accostare due
 grandezze che condividono solo il nome.
 
@@ -2410,52 +2410,52 @@ grandezze che condividono solo il nome.
 ## Sommario
 
 Il problema si formula come **soddisfacimento di vincoli** [1, cap. 4]. La
-particolarita' di questo caso e' che le variabili non sono grandezze elementari ma
-scelte fra itinerari gia' calcolati: il pianificatore descritto nell'argomento
+particolarità di questo caso è che le variabili non sono grandezze elementari ma
+scelte fra itinerari già calcolati: il pianificatore descritto nell'argomento
 sulla ricerca produce, per ogni tratta, l'insieme delle soluzioni non dominate su
 orario di arrivo, cambi e minuti a piedi, e qui si decide **quale** di quelle
-soluzioni usare su ciascuna tratta di un viaggio che ne ha piu' d'una.
+soluzioni usare su ciascuna tratta di un viaggio che ne ha più d'una.
 
-La situazione modellata e' quella di chi deve toccare piu' luoghi nella stessa
+La situazione modellata è quella di chi deve toccare più luoghi nella stessa
 giornata: essere in stazione fra le 9:00 e le 9:15, poi in ufficio entro le 10:00.
-Ogni singola tratta e' un problema gia' risolto; cio' che non e' risolto e' la
-loro **compatibilita' reciproca**, ed e' li' che vive questo argomento.
+Ogni singola tratta è un problema già risolto; ciò che non è risolto è la
+loro **compatibilità reciproca**, ed è lì che vive questo argomento.
 
 **Variabili, domini, vincoli.** Le variabili sono le tratte del viaggio, una per
-ciascuna. Il dominio di una tratta e' l'insieme degli itinerari non dominati che
-la percorrono, ciascuno con l'istante da cui e' eseguibile, l'orario di arrivo, il
+ciascuna. Il dominio di una tratta è l'insieme degli itinerari non dominati che
+la percorrono, ciascuno con l'istante da cui è eseguibile, l'orario di arrivo, il
 numero di cambi e i secondi di cammino. I vincoli sono cinque. La **precedenza**
 impone di non ripartire prima di essere arrivati e di aver trascorso alla tappa il
-tempo per cui ci si e' fermati. La **finestra** impone che l'arrivo a una tappa
-intermedia cada fra due estremi, e l'estremo inferiore non e' decorativo: se si deve
-essere in stazione fra le 9:00 e le 9:15, arrivare alle 8:40 e' una violazione e
+tempo per cui ci si è fermati. La **finestra** impone che l'arrivo a una tappa
+intermedia cada fra due estremi, e l'estremo inferiore non è decorativo: se si deve
+essere in stazione fra le 9:00 e le 9:15, arrivare alle 8:40 è una violazione e
 non un vantaggio. Il **budget dei cambi** limita il numero totale di trasbordi
 dell'intera giornata, e il **budget del cammino** i minuti totali a piedi. La
 **scadenza** vincola l'arrivo finale.
 
-**Che cosa rende questo un problema di vincoli e non una ricerca sequenziale.** E'
+**Che cosa rende questo un problema di vincoli e non una ricerca sequenziale.** È
 la domanda che decide se l'argomento abbia diritto di esistere, e va affrontata
 prima di ogni altra cosa.
 
 Con i soli vincoli di precedenza il problema **si risolverebbe da sinistra a
 destra**, scegliendo su ogni tratta l'itinerario che arriva prima e senza mai
-tornare indietro. La ragione e' la stessa dominanza che nell'argomento sulla
+tornare indietro. La ragione è la stessa dominanza che nell'argomento sulla
 ricerca permette di togliere l'istante dalla chiave di stato: arrivare prima, a
-parita' di tutto il resto, non puo' nuocere, perche' ogni prosecuzione disponibile
-a chi arriva tardi lo e' anche a chi arriva presto. Se il modello si fermasse li',
+parità di tutto il resto, non può nuocere, perché ogni prosecuzione disponibile
+a chi arriva tardi lo è anche a chi arriva presto. Se il modello si fermasse lì,
 chiamarlo soddisfacimento di vincoli sarebbe una millanteria.
 
-Cio' che rompe quella proprieta' sono i **due budget globali**. Non sono stati
+Ciò che rompe quella proprietà sono i **due budget globali**. Non sono stati
 introdotti per accoppiare le variabili: sono i vincoli che un viaggiatore reale
-ha, e l'accoppiamento e' una loro conseguenza. Nessuno accetta dodici cambi in una
+ha, e l'accoppiamento è una loro conseguenza. Nessuno accetta dodici cambi in una
 mattina, e le aziende di trasporto pubblicano tempi minimi di trasbordo proprio
-perche' il cambio ha un costo che non e' solo di tempo. Il tetto sul cammino e'
-ancora piu' concreto, ed e' stringente per chi ha ridotta mobilita' — la stessa
+perché il cambio ha un costo che non è solo di tempo. Il tetto sul cammino è
+ancora più concreto, ed è stringente per chi ha ridotta mobilità — la stessa
 persona per cui la base di conoscenza del primo argomento deriva la relazione
 `accessibile`.
 
-Sotto un budget globale la dominanza cade, perche' un itinerario che arriva prima
-puo' **consumare cambi che serviranno piu' avanti**. Il caso seguente lo dimostra
+Sotto un budget globale la dominanza cade, perché un itinerario che arriva prima
+può **consumare cambi che serviranno più avanti**. Il caso seguente lo dimostra
 in modo verificabile a mano.
 
 > Viaggio di tre tratte, tetto globale di **quattro cambi**, sosta minima di cinque
@@ -2469,144 +2469,144 @@ in modo verificabile a mano.
 > *Terza tratta*: un solo itinerario, che esige di essere pronti alle 09:55 e costa
 > un cambio.
 >
-> La strategia sequenziale sceglie `X1`, perche' arriva prima. Con la sosta di
-> cinque minuti puo' poi prendere `Y1`, che parte esattamente alle 09:10: ha speso
+> La strategia sequenziale sceglie `X1`, perché arriva prima. Con la sosta di
+> cinque minuti può poi prendere `Y1`, che parte esattamente alle 09:10: ha speso
 > quattro cambi, e alla terza tratta ne servirebbe un quinto. **Dichiara l'istanza
 > infattibile.**
 >
-> Scegliendo invece `X2`, che arriva **sette minuti piu' tardi**, la sosta impone
-> di attendere fino alle 09:17 e quindi di prendere `Y2`. Il totale e'
+> Scegliendo invece `X2`, che arriva **sette minuti più tardi**, la sosta impone
+> di attendere fino alle 09:17 e quindi di prendere `Y2`. Il totale è
 > 1 + 2 + 1 = quattro cambi esatti, e il viaggio si conclude. **La soluzione
 > esiste**, e per trovarla bisogna scegliere sulla prima tratta un itinerario
 > peggiore sul criterio locale.
 
-E' l'assenza di sottostruttura ottima, ed e' cio' che distingue un problema di
+È l'assenza di sottostruttura ottima, ed è ciò che distingue un problema di
 soddisfacimento di vincoli da una successione di decisioni indipendenti. Il caso
-e' costruito, quindi dimostra che il fenomeno e' **possibile**; quanto sia
-frequente su istanze ricavate dalla rete vera e' la misura riportata nella
-valutazione, ed e' stata fatta prima di costruirci sopra qualunque altra cosa.
+è costruito, quindi dimostra che il fenomeno è **possibile**; quanto sia
+frequente su istanze ricavate dalla rete vera è la misura riportata nella
+valutazione, ed è stata fatta prima di costruirci sopra qualunque altra cosa.
 
 ## Strumenti utilizzati
 
 La formulazione e le nozioni di variabile, dominio, vincolo e propagazione sono
 quelle del testo del corso [1, cap. 4]. I domini provengono dalla ricerca
-multi-criterio a etichette gia' descritta [9]; la potatura del risolutore completo
-usa un limite inferiore sul consumo residuo, che e' la forma piu' semplice di
+multi-criterio a etichette già descritta [9]; la potatura del risolutore completo
+usa un limite inferiore sul consumo residuo, che è la forma più semplice di
 propagazione all'indietro su un vincolo di somma.
 
 Non vi sono dipendenze aggiuntive: i due risolutori sono scritti in Python puro
-sopra le strutture gia' esistenti, e l'esperimento riusa il grafo tempo-espanso e
+sopra le strutture già esistenti, e l'esperimento riusa il grafo tempo-espanso e
 il pianificatore degli argomenti precedenti.
 
-E' originale di questo progetto, e per questo esposto nel sommario, il
+È originale di questo progetto, e per questo esposto nel sommario, il
 controesempio a tre tratte che dimostra l'assenza di sottostruttura ottima sotto un
 budget globale.
 
 ## Decisioni di Progetto
 
-**I domini si costruiscono da una griglia di istanti di disponibilita'.** Il
+**I domini si costruiscono da una griglia di istanti di disponibilità.** Il
 pianificatore viene interrogato su ogni tratta a partire da tre istanti, sfalsati
-di dieci minuti, e l'unione delle frontiere risultanti forma il dominio. *Perche'
-non un solo istante:* il dominio sarebbe povero e la scelta quasi obbligata, cioe'
-un problema di vincoli senza vincoli da soddisfare. *Perche' non piu' di tre:*
-ogni istante e' una ricerca di Pareto completa, e il costo dell'esperimento cresce
+di dieci minuti, e l'unione delle frontiere risultanti forma il dominio. *Perché
+non un solo istante:* il dominio sarebbe povero e la scelta quasi obbligata, cioè
+un problema di vincoli senza vincoli da soddisfare. *Perché non più di tre:*
+ogni istante è una ricerca di Pareto completa, e il costo dell'esperimento cresce
 linearmente. *La conseguenza sul modello, da dichiarare:* ogni candidato conserva
-l'istante da cui e' stato calcolato, e il vincolo di precedenza si scrive su
-quello. Un itinerario calcolato per chi e' pronto alle 09:20 e' eseguibile da
-chiunque sia pronto entro le 09:20, quindi la formulazione e' corretta ed e'
+l'istante da cui è stato calcolato, e il vincolo di precedenza si scrive su
+quello. Un itinerario calcolato per chi è pronto alle 09:20 è eseguibile da
+chiunque sia pronto entro le 09:20, quindi la formulazione è corretta ed è
 leggermente **conservativa**: un viaggiatore pronto alle 09:12 potrebbe in teoria
-prendere qualcosa che la griglia non offre. Il vantaggio e' che i domini restano
+prendere qualcosa che la griglia non offre. Il vantaggio è che i domini restano
 **statici**, come un problema di vincoli richiede; ricalcolarli in funzione della
 scelta precedente li renderebbe dinamici e trasformerebbe il problema in
 un'altra cosa.
 
 **I budget sono derivati dai dati, non scelti a occhio.** Per ogni istanza si
 calcola il minimo di cambi ottenibile guardando ogni tratta separatamente, e il
-tetto e' quel minimo piu' un margine che varia da zero a tre. *Perche' cosi':* un
-tetto fisso confronterebbe istanze non confrontabili, perche' un viaggio fra
-periferie richiede intrinsecamente piu' cambi di uno in centro, e un tetto sotto
+tetto è quel minimo più un margine che varia da zero a tre. *Perché così:* un
+tetto fisso confronterebbe istanze non confrontabili, perché un viaggio fra
+periferie richiede intrinsecamente più cambi di uno in centro, e un tetto sotto
 il minimo renderebbe l'istanza infattibile per aritmetica invece che per
 interazione fra le tratte — misurando la nostra scelta della soglia e non il
-fenomeno. *Perche' il minimo per tratta e' un limite inferiore valido:* minimizza
-ogni tratta ignorando precedenza e finestre, quindi non puo' superare il consumo
-di una soluzione vera, ed e' anche il limite usato per potare la ricerca completa.
+fenomeno. *Perché il minimo per tratta è un limite inferiore valido:* minimizza
+ogni tratta ignorando precedenza e finestre, quindi non può superare il consumo
+di una soluzione vera, ed è anche il limite usato per potare la ricerca completa.
 
-**Il budget del cammino e' lasciato largo di proposito.** Il margine sul cammino
-e' di trenta minuti, abbastanza da non stringere quasi mai. *Perche':*
+**Il budget del cammino è lasciato largo di proposito.** Il margine sul cammino
+è di trenta minuti, abbastanza da non stringere quasi mai. *Perché:*
 l'esperimento isola l'effetto del budget sui **cambi**, e lasciar stringere
 entrambi mescolerebbe due cause in un solo numero. Il vincolo resta implementato e
-collaudato, e stringerlo e' l'esperimento naturale successivo.
+collaudato, e stringerlo è l'esperimento naturale successivo.
 
-**Il confronto e' con la strategia sequenziale piu' forte, non con un fantoccio.**
+**Il confronto è con la strategia sequenziale più forte, non con un fantoccio.**
 Il risolutore greedy scarta i candidati che sforerebbero il budget **mentre**
-procede, invece di accorgersene alla fine. *Perche':* un greedy che si accorge
-dello sforamento solo alla fine fallirebbe piu' spesso, e la misura direbbe piu'
+procede, invece di accorgersene alla fine. *Perché:* un greedy che si accorge
+dello sforamento solo alla fine fallirebbe più spesso, e la misura direbbe più
 sulla debolezza del confronto che sulla natura del problema. La sola cosa che il
-greedy non fa e' tornare indietro, che e' esattamente la proprieta' in esame.
+greedy non fa è tornare indietro, che è esattamente la proprietà in esame.
 
-**Piu' grafi brevi invece di uno lungo.** Un viaggio di quattro tratte casuali
-attraversa la citta' per cinque o sei ore, ma il costo di una ricerca cresce con
+**Più grafi brevi invece di uno lungo.** Un viaggio di quattro tratte casuali
+attraversa la città per cinque o sei ore, ma il costo di una ricerca cresce con
 l'orizzonte del grafo: misurato su Roma, la stessa ricerca costa **2,87 secondi**
-su un orizzonte di 150 minuti e **38,63 secondi** su uno di 420, perche' il numero
-di stati raggiungibili cresce con la finestra. Si costruisce percio' una
+su un orizzonte di 150 minuti e **38,63 secondi** su uno di 420, perché il numero
+di stati raggiungibili cresce con la finestra. Si costruisce perciò una
 successione di sei grafi da 150 minuti sfalsati di un'ora, e ogni tratta viene
-cercata su quello che copre il suo istante di disponibilita'. *La conseguenza:*
+cercata su quello che copre il suo istante di disponibilità. *La conseguenza:*
 l'orizzonte effettivo di ciascuna ricerca resta fra i 90 e i 150 minuti,
 confrontabile con i 120 minuti dell'argomento sulla ricerca, e vale la stessa
-limitazione gia' dichiarata li': si trova l'ottimo dentro la finestra, e una
-tratta che richiedesse un'attesa piu' lunga non verrebbe trovata affatto.
+limitazione già dichiarata lì: si trova l'ottimo dentro la finestra, e una
+tratta che richiedesse un'attesa più lunga non verrebbe trovata affatto.
 
 **Le catene che si interrompono si conservano per il prefisso.** Se la terza
 tratta di una catena non ha alcun itinerario nella finestra, le prime due restano
-utilizzabili come istanza a due tratte. *Perche' non si scarta tutto:* butterebbe
-via istanze valide e farebbe sembrare il fenomeno piu' raro di quanto sia. Una
+utilizzabili come istanza a due tratte. *Perché non si scarta tutto:* butterebbe
+via istanze valide e farebbe sembrare il fenomeno più raro di quanto sia. Una
 catena viene scartata solo sotto le due tratte, sotto le quali non esiste viaggio
 multi-tappa.
 
 ## Valutazione
 
-La misura riportata qui e' stata fatta **prima** di costruire qualunque altra cosa
-sopra la formulazione, perche' e' quella che poteva invalidarla. La domanda e'
+La misura riportata qui è stata fatta **prima** di costruire qualunque altra cosa
+sopra la formulazione, perché è quella che poteva invalidarla. La domanda è
 semplice: su istanze ricavate dalla rete vera, quanto spesso la strategia
 sequenziale dichiara infattibile un viaggio che una soluzione ce l'ha? Se la
 risposta fosse "quasi mai", il viaggio multi-tappa non sarebbe un problema di
 soddisfacimento di vincoli e l'argomento andrebbe chiuso come risultato negativo.
 
-**Come sono costruite le istanze.** Per ciascuna citta' si estraggono venticinque
+**Come sono costruite le istanze.** Per ciascuna città si estraggono venticinque
 successioni di cinque fermate, con un seme dichiarato, fra le fermate
 effettivamente servite; da ogni successione si ricavano i domini tratta per
-tratta, interrogando il pianificatore da tre istanti di disponibilita' sfalsati di
+tratta, interrogando il pianificatore da tre istanti di disponibilità sfalsati di
 dieci minuti. Da ogni catena si ritagliano poi i viaggi a due, tre e quattro
 tratte, e per ciascuno si fanno variare i tetti sui cambi da zero a tre sopra il
 minimo ottenibile. Le catene utilizzabili sono state **20 su 25 a Roma** e **17 su
-25 a Torino**: le altre si interrompono sotto le due tratte perche' una tratta non
-ha alcun itinerario nella finestra, ed e' la stessa limitazione gia' misurata
+25 a Torino**: le altre si interrompono sotto le due tratte perché una tratta non
+ha alcun itinerario nella finestra, ed è la stessa limitazione già misurata
 nell'argomento sulla ricerca, dove la finestra non bastava sul 14-22% delle
 coppie. Delle catene utilizzabili, 11 a Roma e 13 a Torino arrivano alle quattro
 tratte complete.
 
 I domini contengono **15,7 ± 5,6 itinerari per tratta**: sono abbastanza ricchi
-perche' la scelta sia una scelta vera e non un'assegnazione obbligata, il che e'
-il primo requisito perche' il problema sia interessante.
+perché la scelta sia una scelta vera e non un'assegnazione obbligata, il che è
+il primo requisito perché il problema sia interessante.
 
 **Il risultato principale.** Su **244 istanze risolubili, la strategia sequenziale
-ne dichiara infattibili 45, cioe' il 18,4% ± 2,5%**: 16,5% ± 3,4% a Roma e
+ne dichiara infattibili 45, cioè il 18,4% ± 2,5%**: 16,5% ± 3,4% a Roma e
 20,3% ± 3,6% a Torino, con l'errore standard binomiale descritto nella didascalia della Tabella 26.
 Quasi
-una istanza su cinque richiede di tornare indietro su una scelta gia' fatta. Il
-fenomeno costruito a mano nel sommario non e' dunque una curiosita' di laboratorio:
-e' frequente.
+una istanza su cinque richiede di tornare indietro su una scelta già fatta. Il
+fenomeno costruito a mano nel sommario non è dunque una curiosità di laboratorio:
+è frequente.
 
-Tabella 26 — Effetto del margine sul tetto dei cambi. Il margine e' lo scarto fra
+Tabella 26 — Effetto del margine sul tetto dei cambi. Il margine è lo scarto fra
 il tetto imposto e il minimo ottenibile guardando ogni tratta separatamente;
 margine zero significa che ogni tratta deve usare il proprio itinerario con meno
 cambi. Aggregata sui viaggi a due, tre e quattro tratte. Accanto a ogni percentuale
-c'e' il suo errore standard binomiale, `sqrt(p(1-p)/n)` sulle `n` istanze
+c'è il suo errore standard binomiale, `sqrt(p(1-p)/n)` sulle `n` istanze
 risolubili: le istanze ricavate dalla stessa catena non sono del tutto indipendenti,
 quindi va letto come limite inferiore dell'incertezza. Fonte:
 `results/csp_greedy.csv`.
 
-| Citta' | Margine | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
+| Città | Margine | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Roma | 0 | 47 | 15 | 11 | 4 (26,7% ± 11,4%) |
 | Roma | 1 | 47 | 26 | 22 | 4 (15,4% ± 7,1%) |
@@ -2621,46 +2621,46 @@ La tabella va letta su due colonne insieme. La colonna **risolubili** cresce in
 modo netto con il margine — da 15 a 43 su Roma, da 15 a 42 su Torino — e non
 sorprende: allentando il tetto, istanze prima impossibili diventano possibili. A
 margine zero **meno di un terzo** delle istanze ha una soluzione, il che dice che
-imporre a ogni tratta il proprio itinerario piu' economico in cambi e' un vincolo
+imporre a ogni tratta il proprio itinerario più economico in cambi è un vincolo
 molto severo una volta che le tratte devono anche incastrarsi fra loro.
 
-La colonna **il greedy sbaglia** e' quella che risponde alla domanda, e su Torino
-scende in modo monotono: 40,0%, 34,5%, 16,2%, 7,1%. Piu' il budget e' stretto,
-piu' spesso la strategia sequenziale si acceca da sola scegliendo l'arrivo piu'
+La colonna **il greedy sbaglia** è quella che risponde alla domanda, e su Torino
+scende in modo monotono: 40,0%, 34,5%, 16,2%, 7,1%. Più il budget è stretto,
+più spesso la strategia sequenziale si acceca da sola scegliendo l'arrivo più
 precoce. Roma segue lo stesso andamento con un'oscillazione fra il margine 1 e il
 2, 15,4% contro 18,9%, che su numeri di questa taglia — quattro e sette casi — non
-e' distinguibile dal rumore campionario. Il verso pero' e' inequivocabile agli
-estremi, 26,7% contro 11,6%. **E' la conferma sperimentale che a far fallire il
-greedy sia il budget globale**, perche' allentando quello e lasciando tutto il
+è distinguibile dal rumore campionario. Il verso però è inequivocabile agli
+estremi, 26,7% contro 11,6%. **È la conferma sperimentale che a far fallire il
+greedy sia il budget globale**, perché allentando quello e lasciando tutto il
 resto invariato il fallimento si dirada.
 
 **Le righe non hanno tutte lo stesso peso, e la percentuale da sola non lo dice.**
-La quota di fallimento e' calcolata sulle sole istanze risolubili, e quel
+La quota di fallimento è calcolata sulle sole istanze risolubili, e quel
 denominatore varia moltissimo lungo la tabella: a margine tre poggia su 43 e 42
 casi, a margine zero su 15 e 15. Le due righe a margine zero, che sono anche
-quelle con le percentuali piu' alte, sono percio' le **meno solide** della
+quelle con le percentuali più alte, sono perciò le **meno solide** della
 tabella: il 26,7% di Roma sono quattro casi su quindici e il 40,0% di Torino sei
-su quindici, e uno o due casi in piu' o in meno sposterebbero la percentuale di
+su quindici, e uno o due casi in più o in meno sposterebbero la percentuale di
 sei o sette punti. Vanno lette come indicazione della direzione, non come stima
 del valore. Le righe a margine due e tre, con denominatori fra 37 e 43, reggono
 invece un'interpretazione quantitativa. La stessa cautela vale per la Tabella 27,
 dove il 33,3% di Roma a quattro tratte sono **quattro casi su dodici**, mentre
-l'11,8% a due tratte poggia su 68: la monotonia della colonna e' credibile perche'
-si presenta identica su entrambe le citta', benche' gli errori standard delle righe
-adiacenti si sovrappongano, mentre il valore dell'ultima riga di Roma e' poco
+l'11,8% a due tratte poggia su 68: la monotonia della colonna è credibile perché
+si presenta identica su entrambe le città, benché gli errori standard delle righe
+adiacenti si sovrappongano, mentre il valore dell'ultima riga di Roma è poco
 solido. In generale, in queste due tabelle il denominatore
 cala proprio dove la percentuale cresce, e leggere le percentuali senza guardare
 la colonna "risolubili" porterebbe a sopravvalutare gli estremi.
 
 Va notato che il fallimento **non scompare** nemmeno a margine tre, dove resta
 all'11,6% e al 7,1%. Il tetto continua a stringere in qualche istanza anche
-quando e' generoso, il che e' coerente con il fatto che il minimo per tratta e' un
+quando è generoso, il che è coerente con il fatto che il minimo per tratta è un
 limite inferiore non raggiungibile: nulla garantisce che esista un'assegnazione
 che lo realizzi su tutte le tratte contemporaneamente.
 
 Tabella 27 — Effetto del numero di tratte, aggregata sui quattro margini.
 
-| Citta' | Tratte | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
+| Città | Tratte | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Roma | 2 | 80 | 68 | 60 | 8 (11,8% ± 3,9%) |
 | Roma | 3 | 64 | 41 | 33 | 8 (19,5% ± 6,2%) |
@@ -2669,41 +2669,41 @@ Tabella 27 — Effetto del numero di tratte, aggregata sui quattro margini.
 | Torino | 3 | 56 | 35 | 28 | 7 (20,0% ± 6,8%) |
 | Torino | 4 | 52 | 30 | 22 | 8 (26,7% ± 8,1%) |
 
-Questa e' la lettura piu' pulita dell'esperimento, perche' la crescita e'
-**monotona su entrambe le citta' senza eccezioni**: 11,8%, 19,5%, 33,3% a Roma e
-17,2%, 20,0%, 26,7% a Torino. Ogni tratta aggiunta rende piu' probabile che una
-scelta locale ottima precluda il resto del viaggio, ed e' esattamente cio' che ci
-si attende quando le variabili sono accoppiate da un vincolo di somma: piu' sono
-le variabili che condividono un budget, piu' modi ci sono di spenderlo male. Su un
+Questa è la lettura più pulita dell'esperimento, perché la crescita è
+**monotona su entrambe le città senza eccezioni**: 11,8%, 19,5%, 33,3% a Roma e
+17,2%, 20,0%, 26,7% a Torino. Ogni tratta aggiunta rende più probabile che una
+scelta locale ottima precluda il resto del viaggio, ed è esattamente ciò che ci
+si attende quando le variabili sono accoppiate da un vincolo di somma: più sono
+le variabili che condividono un budget, più modi ci sono di spenderlo male. Su un
 viaggio di quattro tratte a Roma la strategia sequenziale sbaglia in **un caso su
 tre**.
 
 La colonna **risolubili** cala al crescere delle tratte — 68, 41, 12 a Roma — per
 due ragioni distinte che vale la pena separare: le catene lunghe sono meno
-numerose, perche' alcune si interrompono prima; e a parita' di margine un viaggio
-con piu' tratte ha piu' vincoli da soddisfare contemporaneamente. Il calo e' piu'
+numerose, perché alcune si interrompono prima; e a parità di margine un viaggio
+con più tratte ha più vincoli da soddisfare contemporaneamente. Il calo è più
 marcato a Roma, dove restano dodici istanze risolubili su quarantaquattro a
-quattro tratte: e' la riga a cui si applica la cautela enunciata sopra sulla
+quattro tratte: è la riga a cui si applica la cautela enunciata sopra sulla
 sottigliezza della base.
 
-**Il costo della risoluzione e' trascurabile, e la conseguenza non e' ovvia.** Il
+**Il costo della risoluzione è trascurabile, e la conseguenza non è ovvia.** Il
 risolutore completo esplora in media 209 assegnazioni parziali, con un massimo di
 3.115, e impiega **0,07 ms in media e 1,1 ms nel caso peggiore**; a quattro tratte
 la media sale a 410 nodi e 0,13 ms. Il confronto con l'argomento sulla base di
-conoscenza e' istruttivo: li' il costo era interamente di istanziazione e non di
+conoscenza è istruttivo: lì il costo era interamente di istanziazione e non di
 ricerca, e qui accade qualcosa di analogo ma spostato di un livello. **Tutto il
-costo di questo modulo sta nel costruire i domini**, cioe' nelle ricerche di
+costo di questo modulo sta nel costruire i domini**, cioè nelle ricerche di
 Pareto che li producono — nell'ordine dei secondi ciascuna — mentre il
-soddisfacimento dei vincoli su quei domini e' gratuito.
+soddisfacimento dei vincoli su quei domini è gratuito.
 
-Ne discende una conseguenza pratica che va dichiarata perche' contraddice
+Ne discende una conseguenza pratica che va dichiarata perché contraddice
 un'attesa iniziale. Riscrivere il risolutore come programma a vincoli in Answer
 Set Programming, che era il passo successivo previsto, **non porterebbe alcun
-guadagno di prestazioni**, dal momento che la risoluzione costa gia' meno di un
-millesimo di secondo. Porterebbe altro, e sarebbe comunque utile: la possibilita'
+guadagno di prestazioni**, dal momento che la risoluzione costa già meno di un
+millesimo di secondo. Porterebbe altro, e sarebbe comunque utile: la possibilità
 di aggiungere un vincolo senza riscrivere codice, e la dimostrazione che lo stesso
 strumento usato in modo puramente deduttivo nel primo argomento sa anche cercare.
-Ma la giustificazione sarebbe di espressivita', non di velocita', e presentarla
+Ma la giustificazione sarebbe di espressività, non di velocità, e presentarla
 altrimenti sarebbe scorretto.
 
 **Che cosa manca a questo argomento.** Sono state eseguite la formulazione, il
@@ -2711,17 +2711,17 @@ controesempio e la misura che la giustifica; restano fuori tre cose, dichiarate
 qui e riprese fra gli sviluppi possibili. La **codifica in Answer Set
 Programming** dei vincoli, con il confronto fra il costo di istanziazione e quello
 di ricerca sullo stesso strumento del primo argomento. La **transizione di fase**,
-cioe' la mappa della soddisfacibilita' e del costo al variare congiunto
+cioè la mappa della soddisfacibilità e del costo al variare congiunto
 dell'ampiezza delle finestre e dei due budget, di cui la colonna "risolubili" delle
-tabelle qui sopra e' soltanto una sezione. E il **budget del cammino**, che in
-questo esperimento e' stato lasciato largo di proposito per isolare l'effetto dei
+tabelle qui sopra è soltanto una sezione. E il **budget del cammino**, che in
+questo esperimento è stato lasciato largo di proposito per isolare l'effetto dei
 cambi, e che stringendolo produrrebbe un secondo accoppiamento indipendente dal
-primo — quello che interessa piu' da vicino il passeggero a ridotta mobilita' per
-cui la base di conoscenza deriva la relazione di accessibilita'.
+primo — quello che interessa più da vicino il passeggero a ridotta mobilità per
+cui la base di conoscenza deriva la relazione di accessibilità.
 
 Questo argomento non ha una figura. Le tabelle riportano due sezioni di una
-superficie a due parametri, e disegnarla per intero e' esattamente
-l'esperimento sulla transizione di fase che non e' stato eseguito: una figura
+superficie a due parametri, e disegnarla per intero è esattamente
+l'esperimento sulla transizione di fase che non è stato eseguito: una figura
 costruita sui soli dati disponibili mostrerebbe due linee, non la superficie, e
 direbbe meno delle tabelle. Dati grezzi in `results/csp_greedy.csv`, 364 righe.
 
@@ -2734,11 +2734,11 @@ calcolati sull'orario programmato pubblicato dalle due aziende.
 
 Le cinque sezioni precedenti hanno misurato ciascuna una parte del sistema: quanto
 costi derivare i trasbordi, quanto costi cercare gli itinerari, quanto bene si
-compongano le probabilita' lungo la catena delle coincidenze, quanto bene il modello
-dei ritardi descriva i ritardi, quanto spesso un viaggio a piu' tappe richieda di
+compongano le probabilità lungo la catena delle coincidenze, quanto bene il modello
+dei ritardi descriva i ritardi, quanto spesso un viaggio a più tappe richieda di
 tornare indietro su una scelta. Nessuna di quelle misure dice se un viaggiatore che
-segua il consiglio del pianificatore arrivi puntuale piu' spesso. Questa sezione fa
-quella misura, ed e' la sola che risponde alla domanda da cui il progetto e' nato.
+segua il consiglio del pianificatore arrivi puntuale più spesso. Questa sezione fa
+quella misura, ed è la sola che risponde alla domanda da cui il progetto è nato.
 
 **Che cosa il backtesting fa.** Per ciascuna coppia origine-destinazione e per
 ciascuna scadenza si calcolano **due** itinerari sulla stessa frontiera di Pareto:
@@ -2746,176 +2746,176 @@ quello che minimizza l'orario teorico di arrivo, e quello che massimizza
 `P(arrivo ≤ T)` secondo il modello appreso. Entrambi vengono poi **rigiocati sui
 ritardi che quel giorno sono stati osservati davvero**, fermata per fermata: si parte
 all'orario previsto, si applica a ogni passaggio il ritardo registrato nel feed, si
-verifica se la coincidenza successiva sia ancora prendibile, e se non lo e' si prende
+verifica se la coincidenza successiva sia ancora prendibile, e se non lo è si prende
 la corsa seguente della stessa linea. Alla fine si guarda l'orologio.
 
-**Perche' non si puo' rispondere confrontando le probabilita' che il modello
-attribuisce.** Sarebbe la misura piu' semplice - il robusto dichiara una probabilita'
-piu' alta del piu' veloce, e la differenza sembrerebbe il vantaggio - ed e' priva di
-valore: la probabilita' che il modello attribuisce alla propria scelta e' **per
-costruzione la piu' alta fra i candidati**, perche' e' quella che l'ha fatta
+**Perché non si può rispondere confrontando le probabilità che il modello
+attribuisce.** Sarebbe la misura più semplice - il robusto dichiara una probabilità
+più alta del più veloce, e la differenza sembrerebbe il vantaggio - ed è priva di
+valore: la probabilità che il modello attribuisce alla propria scelta è **per
+costruzione la più alta fra i candidati**, perché è quella che l'ha fatta
 scegliere. Il modello sarebbe insieme giudice e imputato, e un modello sistematicamente
-ottimista risulterebbe tanto migliore quanto piu' sbaglia. Solo la replica su dati
-osservati puo' contraddirlo, ed e' l'unica ragione per cui questa sezione esiste.
+ottimista risulterebbe tanto migliore quanto più sbaglia. Solo la replica su dati
+osservati può contraddirlo, ed è l'unica ragione per cui questa sezione esiste.
 
-**Una clausola della domanda di ricerca e' caduta, e va detto qui.** La domanda era
-stata posta "a parita' di tempo di viaggio nominale". Quella clausola non e'
-soddisfacibile, e non per un limite dei dati: la strategia di riferimento e' definita
+**Una clausola della domanda di ricerca è caduta, e va detto qui.** La domanda era
+stata posta "a parità di tempo di viaggio nominale". Quella clausola non è
+soddisfacibile, e non per un limite dei dati: la strategia di riferimento è definita
 come quella che **minimizza** l'orario teorico di arrivo, quindi qualunque altro
 itinerario arriva nominalmente dopo, e un insieme di alternative a pari tempo nominale
 fra cui scegliere non esiste sulla frontiera. La misura lo conferma senza eccezioni:
 nelle **337 istanze** in cui le due strategie scelgono itinerari diversi sui bordi
-adottati, il robusto e' nominalmente piu' lento **337 volte su 337**, mai uguale e
-mai piu' veloce (*fonte: `results/backtest.csv`, bordi `ottili`, confronto di
-`arrivo_programmato` fra le due strategie a parita' di citta', giornata, coppia e
+adottati, il robusto è nominalmente più lento **337 volte su 337**, mai uguale e
+mai più veloce (*fonte: `results/backtest.csv`, bordi `ottili`, confronto di
+`arrivo_programmato` fra le due strategie a parità di città, giornata, coppia e
 margine, giornata mal coperta esclusa come in tutte le tabelle della sezione;
-includendola le istanze divergenti sono 338, e la proprieta' vale ancora senza
+includendola le istanze divergenti sono 338, e la proprietà vale ancora senza
 eccezioni*).
 
-Cio' che il backtesting misura e' percio' uno **scambio**, e la riformulazione onesta
-della domanda e' questa:
+Ciò che il backtesting misura è perciò uno **scambio**, e la riformulazione onesta
+della domanda è questa:
 
-> il criterio probabilistico compra affidabilita' pagando tempo nominale, entro il
+> il criterio probabilistico compra affidabilità pagando tempo nominale, entro il
 > margine che il viaggiatore ha dichiarato accettando una scadenza. Quanto ne paga, e
 > lo scambio conviene?
 
-E' una domanda piu' forte della prima, perche' la prima chiedeva un pasto gratis e
-questa chiede un prezzo: il prezzo e' misurato e riportato accanto al beneficio, e il
-lettore puo' giudicare lo scambio invece di doverlo credere.
+È una domanda più forte della prima, perché la prima chiedeva un pasto gratis e
+questa chiede un prezzo: il prezzo è misurato e riportato accanto al beneficio, e il
+lettore può giudicare lo scambio invece di doverlo credere.
 
 **Le giornate, le coppie, le istanze.** La replica usa le **quattro giornate di
-verifica**, dal 6 al 9 settembre 2026, cioe' le stesse che il modello non ha mai
+verifica**, dal 6 al 9 settembre 2026, cioè le stesse che il modello non ha mai
 visto: un backtesting su giornate di addestramento misurerebbe la memoria del modello
-e non la sua utilita'. Per ogni giornata si estraggono **trenta coppie**
+e non la sua utilità. Per ogni giornata si estraggono **trenta coppie**
 origine-destinazione, con seme fisso, fra quelle i cui candidati sono interamente
 osservati; per ciascuna coppia si valutano **sei margini** - 0, 5, 10, 15, 20 e 30
-minuti - e **due strategie**, e l'intero esperimento e' ripetuto su **due insiemi di
+minuti - e **due strategie**, e l'intero esperimento è ripetuto su **due insiemi di
 bordi dei bin**, `ottili` e `decisione`, per verificare che la scelta discussa
 nell'argomento precedente non decida i risultati. In tutto **5.208 istanze**, di cui
 2.328 romane e 2.880 torinesi.
 
-**Su quale parte della rete la misura valga.** Non ogni itinerario e' rigiocabile:
+**Su quale parte della rete la misura valga.** Non ogni itinerario è rigiocabile:
 servono i ritardi osservati di tutte le sue tratte, e il tempo reale non copre tutta
 la rete che l'orario descrive. Delle coppie esaminate ne sopravvive il **53,80% ±
-4,37% su Roma** e il **48,69% ± 12,01% su Torino**. E' una selezione **non casuale**,
-che favorisce le linee frequenti e ben coperte, e va sommata al limite piu' grave
+4,37% su Roma** e il **48,69% ± 12,01% su Torino**. È una selezione **non casuale**,
+che favorisce le linee frequenti e ben coperte, e va sommata al limite più grave
 dichiarato nell'argomento sull'incertezza: su Roma il feed real-time porta i soli
 autobus di superficie e **nessuna** delle quattro linee di metropolitana, su Torino
-otto tram su nove ma meno della meta' degli autobus. I risultati che seguono valgono
+otto tram su nove ma meno della metà degli autobus. I risultati che seguono valgono
 per quelle sottoreti, scelte dai produttori dei dati e non da noi.
 
 ## Strumenti utilizzati
 
-Non c'e' letteratura nuova da citare: il backtesting non impiega alcun formalismo che
-le sezioni precedenti non abbiano gia' introdotto. Usa il pianificatore
+Non c'è letteratura nuova da citare: il backtesting non impiega alcun formalismo che
+le sezioni precedenti non abbiano già introdotto. Usa il pianificatore
 multi-criterio dell'argomento sulla ricerca per produrre la frontiera di Pareto, il
 calcolo di `P(arrivo ≤ T)` dell'argomento sull'incertezza per sceglierne un elemento,
 e la tabella stimata nell'argomento sull'apprendimento come modello dei ritardi,
-tradotta nel contratto `ModelloRitardo` da `src/delays/bayesiano.py`. Il calcolo e' in
+tradotta nel contratto `ModelloRitardo` da `src/delays/bayesiano.py`. Il calcolo è in
 **NumPy** [10] e **pandas** [6], la lettura dei dati colonnari in **pyarrow**.
 
-La sola cosa che vale la pena dichiarare e' **come la replica e' costruita**, perche'
-e' scritta per questo progetto e ogni sua scelta e' una decisione di misura. La
-replica e' una funzione pura in `src/eval/replica.py`: riceve un itinerario e una
+La sola cosa che vale la pena dichiarare è **come la replica è costruita**, perché
+è scritta per questo progetto e ogni sua scelta è una decisione di misura. La
+replica è una funzione pura in `src/eval/replica.py`: riceve un itinerario e una
 tabella `(corsa, fermata) -> ritardo osservato`, e restituisce l'orario reale di
 arrivo, quante coincidenze sono state perse, quanti recuperi sono riusciti e se il
 viaggio si sia interrotto. Non legge file, non conosce il modello e non sa quale
-strategia abbia prodotto l'itinerario che sta rigiocando: e' cio' che la rende
-collaudabile su casi di esito noto e cio' che impedisce al modello di influenzare il
+strategia abbia prodotto l'itinerario che sta rigiocando: è ciò che la rende
+collaudabile su casi di esito noto e ciò che impedisce al modello di influenzare il
 proprio giudizio.
 
-Il fenomeno che solo la replica vede, e per il quale ha un test dedicato, e' che **un
+Il fenomeno che solo la replica vede, e per il quale ha un test dedicato, è che **un
 mezzo in anticipo fa perdere la coincidenza esattamente come uno in ritardo**. Se la
 corsa successiva parte novanta secondi prima del previsto e il viaggiatore arriva
-puntuale, la coincidenza e' persa; nessun confronto condotto sull'orario programmato
-puo' accorgersene, e nessuna misura basata sul solo ritardo medio lo prevede.
+puntuale, la coincidenza è persa; nessun confronto condotto sull'orario programmato
+può accorgersene, e nessuna misura basata sul solo ritardo medio lo prevede.
 
 ## Decisioni di Progetto
 
 **Il confronto si fa rigiocando, non chiedendo al modello di giudicare se stesso.**
-*Alternativa scartata:* confrontare la probabilita' attesa delle due scelte, che e'
-cio' che l'esperimento sulla griglia della scadenza misura nell'argomento
-sull'incertezza. E' una misura
+*Alternativa scartata:* confrontare la probabilità attesa delle due scelte, che è
+ciò che l'esperimento sulla griglia della scadenza misura nell'argomento
+sull'incertezza. È una misura
 legittima di quanto la frontiera sia varia, ma non risponde alla domanda di ricerca,
 per la ragione detta nel sommario. *Il prezzo della scelta:* rigiocare costa molto di
-piu' - ogni giornata richiede di ricostruire il grafo, cercare le frontiere e
+più - ogni giornata richiede di ricostruire il grafo, cercare le frontiere e
 replicare ogni itinerario - e limita il numero di istanze a qualche migliaio invece
-che a centinaia di migliaia. E' un prezzo che si paga volentieri, perche' la misura
-piu' economica avrebbe risposto a un'altra domanda.
+che a centinaia di migliaia. È un prezzo che si paga volentieri, perché la misura
+più economica avrebbe risposto a un'altra domanda.
 
 **I recuperi contano come coincidenze perse, non come fallimenti.** Ogni tappa porta
-con se' le corse successive della stessa linea: se quella pianificata sfugge si prende
-la seguente e si arriva piu' tardi. *Alternativa scartata:* trattare la coincidenza
-persa come fallimento del viaggio. *Perche' no:* sopravvaluterebbe la differenza fra
-le strategie, perche' in una rete urbana una linea ripassa, e il danno vero di una
-coincidenza persa e' il tempo, non l'impossibilita' di arrivare. *Il tetto, e il suo
-costo:* i recuperi consecutivi sono limitati a due, e va dichiarato perche' oltre quel
+con sé le corse successive della stessa linea: se quella pianificata sfugge si prende
+la seguente e si arriva più tardi. *Alternativa scartata:* trattare la coincidenza
+persa come fallimento del viaggio. *Perché no:* sopravvaluterebbe la differenza fra
+le strategie, perché in una rete urbana una linea ripassa, e il danno vero di una
+coincidenza persa è il tempo, non l'impossibilità di arrivare. *Il tetto, e il suo
+costo:* i recuperi consecutivi sono limitati a due, e va dichiarato perché oltre quel
 punto la replica smette di seguire il viaggio.
 
-**Un viaggio interrotto non e' arrivato entro la scadenza.** *Alternative scartate:*
-escluderlo dal conto, oppure contarlo riuscito. *Perche' no:* entrambe premierebbero
-la strategia che si caccia piu' spesso nei guai, che e' esattamente il contrario di
-cio' che si vuole misurare. Sui dati raccolti i viaggi che non arrivano sono fra il
-4,4% e il 7,8% a seconda della citta' e della strategia, quindi non e' un dettaglio
+**Un viaggio interrotto non è arrivato entro la scadenza.** *Alternative scartate:*
+escluderlo dal conto, oppure contarlo riuscito. *Perché no:* entrambe premierebbero
+la strategia che si caccia più spesso nei guai, che è esattamente il contrario di
+ciò che si vuole misurare. Sui dati raccolti i viaggi che non arrivano sono fra il
+4,4% e il 7,8% a seconda della città e della strategia, quindi non è un dettaglio
 contabile.
 
 **Una tratta non osservata ferma la replica, e non viene sostituita con l'orario
-teorico.** *Perche':* sostituirla dichiarerebbe puntuale cio' che non si e' visto, e lo
-farebbe **proprio nei casi in cui il dato manca** - cioe' sulle linee peggio coperte,
+teorico.** *Perché:* sostituirla dichiarerebbe puntuale ciò che non si è visto, e lo
+farebbe **proprio nei casi in cui il dato manca** - cioè sulle linee peggio coperte,
 che sono verosimilmente anche le meno affidabili. Sarebbe un errore orientato, non
 rumore. *La conseguenza, da dichiarare:* si tengono solo le coppie con almeno due
-candidati interamente osservati, e la quota che sopravvive e' riportata accanto ai
+candidati interamente osservati, e la quota che sopravvive è riportata accanto ai
 risultati invece di restare implicita.
 
-**Le giornate magre non entrano nelle medie, e ora si sa perche' una lo era.** Una
-giornata che contribuisca meno della meta' delle coppie richieste viene esclusa: la
-media fra giornate le pesa tutte uguali - ed e' la scelta giusta, perche' le istanze
+**Le giornate magre non entrano nelle medie, e ora si sa perché una lo era.** Una
+giornata che contribuisca meno della metà delle coppie richieste viene esclusa: la
+media fra giornate le pesa tutte uguali - ed è la scelta giusta, perché le istanze
 di uno stesso giorno condividono il traffico di quel giorno e non sono indipendenti -
-ma ne segue che sette coppie conterebbero quanto trenta. La soglia e' a meta' ed e'
+ma ne segue che sette coppie conterebbero quanto trenta. La soglia è a metà ed è
 stata fissata **prima** di guardare quale risultato producesse. Sui dati raccolti
-esclude una sola giornata, Roma 2026-09-07, e la causa e' ora misurata: quel giorno il
+esclude una sola giornata, Roma 2026-09-07, e la causa è ora misurata: quel giorno il
 **46,6% dei `trip_id` del feed romano non esiste nell'archivio statico in vigore**,
 quindi meno di quattro righe su dieci hanno un ritardo calcolabile e quasi nessuna
-coppia e' interamente osservata. Non era un difetto della raccolta, che quel giorno ha
+coppia è interamente osservata. Non era un difetto della raccolta, che quel giorno ha
 letto 1.433 dump e scritto 18,4 milioni di righe come sempre.
 
-**Su Torino il dato contro cui si verifica non e' un transito osservato.** Il feed
+**Su Torino il dato contro cui si verifica non è un transito osservato.** Il feed
 torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita, quindi
-l'ultima riga disponibile di ciascun passaggio e' l'ultima **stima** del produttore e
-non una constatazione. Quanto quell'ultima stima sia vicina al fatto e' misurato:
+l'ultima riga disponibile di ciascun passaggio è l'ultima **stima** del produttore e
+non una constatazione. Quanto quell'ultima stima sia vicina al fatto è misurato:
 **25 ± 12 secondi** di anticipo mediano sul transito atteso, con il primo quartile
-sotto lo zero - il **34,8% ± 4,7%** delle righe e' pubblicato **dopo** il transito
-atteso - e il terzo intorno ai due minuti. La limitazione e' quindi molto piu'
+sotto lo zero - il **34,8% ± 4,7%** delle righe è pubblicato **dopo** il transito
+atteso - e il terzo intorno ai due minuti. La limitazione è quindi molto più
 lieve di quanto la parola "previsione" lasci pensare, ma resta: i risultati
 torinesi misurano quanto
 il pianificatore regga contro l'ultima stima del produttore, non contro un orologio.
 
-**I due insiemi di bordi si rigiocano entrambi, ed e' la chiusura di una questione
+**I due insiemi di bordi si rigiocano entrambi, ed è la chiusura di una questione
 lasciata aperta.** L'argomento precedente aveva scelto gli `ottili` con una regola che
-su quei dati si e' ridotta al criterio del guadagno, e aveva rimesso a questa sezione
-la verifica che la scelta non cambiasse i risultati. L'esperimento e' ripetuto per
-intero su entrambi, e la risposta e' nella valutazione.
+su quei dati si è ridotta al criterio del guadagno, e aveva rimesso a questa sezione
+la verifica che la scelta non cambiasse i risultati. L'esperimento è ripetuto per
+intero su entrambi, e la risposta è nella valutazione.
 
 ## Valutazione
 
-**Le grandezze, prima di usarle.** La **quota di viaggi arrivati entro la scadenza** e'
+**Le grandezze, prima di usarle.** La **quota di viaggi arrivati entro la scadenza** è
 la frazione di istanze in cui l'orario reale di arrivo, ottenuto dalla replica, non
 supera `T`; un viaggio interrotto conta come non arrivato. Le **coincidenze perse**
-sono il numero medio di cambi in cui la corsa pianificata era gia' partita all'arrivo
+sono il numero medio di cambi in cui la corsa pianificata era già partita all'arrivo
 del viaggiatore, contando anche le partenze anticipate. Il **costo in tempo nominale**
-e' la differenza fra l'orario teorico di arrivo dell'itinerario robusto e quello del
-piu' veloce, calcolata sulle sole istanze in cui le due strategie scelgono
-diversamente. La **quota di divergenza** e' la frazione di istanze in cui le due
-scelgono diversamente: dove scelgono lo stesso itinerario la differenza e' zero **per
+è la differenza fra l'orario teorico di arrivo dell'itinerario robusto e quello del
+più veloce, calcolata sulle sole istanze in cui le due strategie scelgono
+diversamente. La **quota di divergenza** è la frazione di istanze in cui le due
+scelgono diversamente: dove scelgono lo stesso itinerario la differenza è zero **per
 costruzione**, e mediare su quelle diluisce l'effetto verso lo zero per quanto il
 modello sia bravo. Tutte le medie e le deviazioni sono prese **fra giornate**, tre su
-Roma e quattro su Torino, per la stessa ragione per cui la giornata magra e' esclusa.
+Roma e quattro su Torino, per la stessa ragione per cui la giornata magra è esclusa.
 
 **Il beneficio: viaggi arrivati entro la scadenza.**
 
 Tabella 28 — Quota di viaggi arrivati entro la scadenza, per strategia e margine.
 
-| margine | Roma, piu' veloce | Roma, robusto | Roma, differenza | Torino, piu' veloce | Torino, robusto | Torino, differenza |
+| margine | Roma, più veloce | Roma, robusto | Roma, differenza | Torino, più veloce | Torino, robusto | Torino, differenza |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0 min | 0,3778 ± 0,1171 | 0,3889 ± 0,1347 | +0,0111 ± 0,0192 | 0,5000 ± 0,0817 | 0,4917 ± 0,0918 | **-0,0083 ± 0,0167** |
 | 5 min | 0,5111 ± 0,0839 | 0,5444 ± 0,0192 | +0,0333 ± 0,0667 | 0,7250 ± 0,0788 | 0,7333 ± 0,1277 | +0,0083 ± 0,0833 |
@@ -2926,9 +2926,9 @@ Tabella 28 — Quota di viaggi arrivati entro la scadenza, per strategia e margi
 
 *Fonte: `results/backtest_riepilogo.csv`, bordi `ottili`, colonne `quota_entro` e
 `deviazione_entro`; media e deviazione su 3 giornate (Roma) e 4 (Torino), 90 e 120
-istanze per riga. La differenza e' la media delle differenze giornaliere fra le due
-strategie, con la loro deviazione, ricalcolata da `results/backtest.csv`: e' appaiata,
-quindi piu' stretta di quanto le deviazioni delle due colonne lascerebbero credere.*
+istanze per riga. La differenza è la media delle differenze giornaliere fra le due
+strategie, con la loro deviazione, ricalcolata da `results/backtest.csv`: è appaiata,
+quindi più stretta di quanto le deviazioni delle due colonne lascerebbero credere.*
 
 **Il prezzo: tempo nominale che il robusto paga.** La stessa tabella, sulle sole
 istanze in cui le due strategie scelgono diversamente.
@@ -2949,33 +2949,33 @@ fra le due strategie sulle istanze in cui differisce; giornata magra esclusa. Le
 a margine nullo e a cinque minuti poggiano su meno di venti istanze divergenti e vanno
 lette come indicazioni.*
 
-Le due tabelle vanno lette insieme, ed e' questo il risultato. A **quindici e venti
+Le due tabelle vanno lette insieme, ed è questo il risultato. A **quindici e venti
 minuti di margine su Roma** il criterio probabilistico porta **dieci e quattordici
-punti percentuali** in piu' di viaggi arrivati entro la scadenza, e li paga con
+punti percentuali** in più di viaggi arrivati entro la scadenza, e li paga con
 **quattro e sei minuti** di tempo teorico mediano su un terzo delle istanze. Su Torino
-il beneficio e' molto piu' piccolo - fra zero e quattro punti - e il prezzo comparabile,
+il beneficio è molto più piccolo - fra zero e quattro punti - e il prezzo comparabile,
 fra due e cinque minuti. Lo scambio conviene su Roma nella fascia centrale dei margini,
-e su Torino e' vicino all'indifferenza. La deviazione appaiata dice quanto fidarsi di
-queste differenze: su Roma la differenza vale tre volte o piu' la propria deviazione
+e su Torino è vicino all'indifferenza. La deviazione appaiata dice quanto fidarsi di
+queste differenze: su Roma la differenza vale tre volte o più la propria deviazione
 fra giornate a venti e trenta minuti e una volta e mezzo a quindici, su Torino la
 supera solo a trenta minuti, e di poco. Su tre e quattro giornate sono rapporti
-indicativi, non test di significativita'.
+indicativi, non test di significatività.
 
-**Il costo e' quasi sempre dentro il margine dichiarato, e le eccezioni dicono una
+**Il costo è quasi sempre dentro il margine dichiarato, e le eccezioni dicono una
 cosa.** Su 315 istanze divergenti a margine non nullo, il robusto sceglie un itinerario
-il cui arrivo teorico supera la scadenza in **nove casi**. Non e' un errore: e' una
+il cui arrivo teorico supera la scadenza in **nove casi**. Non è un errore: è una
 scommessa esplicita su un mezzo in anticipo, resa possibile dal fatto che i ritardi
-osservati sono negativi molto piu' spesso di quanto l'intuizione suggerisca. In quei
-nove casi il modello giudica piu' probabile arrivare entro `T` con un itinerario che
-nominalmente arriva dopo, e la replica gli da' ragione o torto caso per caso. A
+osservati sono negativi molto più spesso di quanto l'intuizione suggerisca. In quei
+nove casi il modello giudica più probabile arrivare entro `T` con un itinerario che
+nominalmente arriva dopo, e la replica gli dà ragione o torto caso per caso. A
 margine zero, invece, ogni istanza divergente supera il margine per definizione,
-perche' il margine e' zero: e' aritmetica, non un comportamento.
+perché il margine è zero: è aritmetica, non un comportamento.
 
 **Le coincidenze perse, che sono la grandezza nominata nella domanda di ricerca.**
 
 Tabella 30 — Coincidenze perse per viaggio, per strategia e margine.
 
-| margine | Roma, piu' veloce | Roma, robusto | Torino, piu' veloce | Torino, robusto |
+| margine | Roma, più veloce | Roma, robusto | Torino, più veloce | Torino, robusto |
 | ---: | ---: | ---: | ---: | ---: |
 | 0 min | 0,4222 ± 0,1171 | 0,3556 ± 0,0509 | 0,3417 ± 0,1641 | 0,3250 ± 0,1596 |
 | 5 min | 0,4222 ± 0,1171 | 0,3667 ± 0,0882 | 0,3417 ± 0,1641 | 0,2583 ± 0,1101 |
@@ -2986,51 +2986,51 @@ Tabella 30 — Coincidenze perse per viaggio, per strategia e margine.
 
 *Fonte: `results/backtest_riepilogo.csv`, colonna `coincidenze_perse`, bordi `ottili`;
 le deviazioni sono fra giornate, ricalcolate da `results/backtest.csv`. La strategia
-piu' veloce non dipende dal margine, quindi la sua colonna e' costante: e' la scadenza
+più veloce non dipende dal margine, quindi la sua colonna è costante: è la scadenza
 a cambiare, non l'itinerario che minimizza l'orario teorico.*
 
-Su questa grandezza il vantaggio e' piu' netto che sugli arrivi, e cresce col
+Su questa grandezza il vantaggio è più netto che sugli arrivi, e cresce col
 margine, in modo monotono su Torino e su Roma dal primo margine non nullo in poi: a
 trenta minuti il robusto perde **meno
-della meta'** delle coincidenze del piu' veloce su Roma (0,1889 contro 0,4222) e **un
+della metà** delle coincidenze del più veloce su Roma (0,1889 contro 0,4222) e **un
 terzo** su Torino (0,1167 contro 0,3417). La differenza appaiata fra giornate vale a
-trenta minuti -0,233 ± 0,153 su Roma e -0,225 ± 0,145 su Torino: il segno e'
+trenta minuti -0,233 ± 0,153 su Roma e -0,225 ± 0,145 su Torino: il segno è
 stabile, l'ampiezza varia molto da un giorno all'altro.
 
 **Per quale meccanismo, misurato.** La strategia di riferimento ha un numero medio di
-cambi, cioe' di salite secondo la convenzione dell'argomento sulla ricerca, **costante
-a ogni margine** - 2,678 su Roma, 2,183 su Torino - perche' il suo
+cambi, cioè di salite secondo la convenzione dell'argomento sulla ricerca, **costante
+a ogni margine** - 2,678 su Roma, 2,183 su Torino - perché il suo
 itinerario non dipende dalla scadenza. Quella robusta parte quasi dallo stesso valore
 a margine nullo (2,644 e 2,208) e **scende al crescere del margine**, fino a 2,289 e
-1,875 a trenta minuti. Non e' quindi che il robusto prenda "un cambio in meno" in
-generale: e' che **usa lo spazio che il margine gli concede per togliere coincidenze
-invece che per allargarle**, e la discesa e' progressiva perche' lo spazio cresce.
+1,875 a trenta minuti. Non è quindi che il robusto prenda "un cambio in meno" in
+generale: è che **usa lo spazio che il margine gli concede per togliere coincidenze
+invece che per allargarle**, e la discesa è progressiva perché lo spazio cresce.
 
-Quanto del vantaggio passi di li' si misura restringendo alle istanze in cui le due
+Quanto del vantaggio passi di lì si misura restringendo alle istanze in cui le due
 strategie scelgono itinerari con lo **stesso numero di cambi**:
 
 Tabella 31 — Coincidenze perse per viaggio sulle istanze divergenti, per gruppo.
 
-| citta' | gruppo | istanze | perse, veloce | perse, robusto | differenza |
+| città | gruppo | istanze | perse, veloce | perse, robusto | differenza |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Roma | tutte le divergenti | 163 | 0,6933 | 0,2638 | **-0,4294** |
-| Roma | a parita' di cambi | 38 | 0,5263 | 0,5526 | **+0,0263** |
+| Roma | a parità di cambi | 38 | 0,5263 | 0,5526 | **+0,0263** |
 | Roma | robusto con meno cambi | 120 | 0,7583 | 0,1583 | -0,6000 |
 | Torino | tutte le divergenti | 174 | 0,7299 | 0,0920 | **-0,6379** |
-| Torino | a parita' di cambi | 51 | 0,4118 | 0,1176 | **-0,2941** |
+| Torino | a parità di cambi | 51 | 0,4118 | 0,1176 | **-0,2941** |
 | Torino | robusto con meno cambi | 119 | 0,8908 | 0,0840 | -0,8067 |
 
 *Fonte: `results/backtest.csv`, bordi `ottili`, sole istanze in cui le due strategie
 scelgono itinerari con orario di arrivo teorico diverso; giornata magra esclusa.*
 
-Il campione a parita' di cambi e' pero' piccolo - trentotto istanze su Roma e
-cinquantuno su Torino, cioe' cinque-undici per ciascuno dei sei margini - e riportarlo
+Il campione a parità di cambi è però piccolo - trentotto istanze su Roma e
+cinquantuno su Torino, cioè cinque-undici per ciascuno dei sei margini - e riportarlo
 margine per margine darebbe celle che il caso muove a piacere. Aggregato in due soli
-gruppi di margini, che e' quanto il campione sostiene:
+gruppi di margini, che è quanto il campione sostiene:
 
-Tabella 32 — Coincidenze perse a parita' di cambi, per gruppo di margini.
+Tabella 32 — Coincidenze perse a parità di cambi, per gruppo di margini.
 
-| citta' | margini | istanze | perse, veloce | perse, robusto | differenza |
+| città | margini | istanze | perse, veloce | perse, robusto | differenza |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Roma | 0-10 min | 18 | 0,7222 | 0,7222 | **0,0000** |
 | Roma | 15-30 min | 20 | 0,3500 | 0,4000 | **+0,0500** |
@@ -3038,34 +3038,34 @@ Tabella 32 — Coincidenze perse a parita' di cambi, per gruppo di margini.
 | Torino | 15-30 min | 32 | 0,4375 | 0,1250 | **-0,3125** |
 
 *Fonte: come sopra, sole istanze divergenti con lo stesso numero di cambi; i margini
-sono aggregati perche' le celle singole contengono da cinque a undici istanze.*
+sono aggregati perché le celle singole contengono da cinque a undici istanze.*
 
-La risposta e' diversa nelle due citta'. **Su Roma il vantaggio sulle coincidenze
-perse sparisce del tutto a parita' di cambi**, e in entrambi i gruppi di margini:
-zero esatto fino a dieci minuti, cinque centesimi a sfavore oltre. Li' il meccanismo
-e' **interamente** la semplificazione dell'itinerario - il robusto non sceglie
+La risposta è diversa nelle due città. **Su Roma il vantaggio sulle coincidenze
+perse sparisce del tutto a parità di cambi**, e in entrambi i gruppi di margini:
+zero esatto fino a dieci minuti, cinque centesimi a sfavore oltre. Lì il meccanismo
+è **interamente** la semplificazione dell'itinerario - il robusto non sceglie
 coincidenze migliori, sceglie itinerari che ne hanno meno. Su Torino il vantaggio si
-riduce ma **resta netto e coerente fra i due gruppi**, -0,26 e -0,31: li' una parte
-viene dalla semplificazione e una parte dallo scegliere meglio a parita' di struttura.
+riduce ma **resta netto e coerente fra i due gruppi**, -0,26 e -0,31: lì una parte
+viene dalla semplificazione e una parte dallo scegliere meglio a parità di struttura.
 
-Togliere un cambio e' un modo legittimo di essere robusti, ed e' esattamente cio' che
-un viaggiatore disposto ad arrivare piu' tardi comprerebbe; ma e' un meccanismo
+Togliere un cambio è un modo legittimo di essere robusti, ed è esattamente ciò che
+un viaggiatore disposto ad arrivare più tardi comprerebbe; ma è un meccanismo
 **diverso** da quello che il progetto si proponeva di dimostrare, che era scegliere
-coincidenze con margini piu' larghi. Il nesso fra le due tabelle e' questo: il
+coincidenze con margini più larghi. Il nesso fra le due tabelle è questo: il
 margine non viene speso per allargare le coincidenze che ci sono, ma per **eliminarne
-qualcuna**, e su Roma e' l'unico canale per cui passa il vantaggio. Sugli arrivi
-entro la scadenza, sempre a parita' di cambi, il vantaggio resta positivo in entrambe
-le citta' e in entrambi i gruppi di margini - da +0,05 a +0,09 - ma su
-diciotto-trentadue istanze per cella: e' un indizio che qualcosa oltre la semplificazione ci sia, non la
+qualcuna**, e su Roma è l'unico canale per cui passa il vantaggio. Sugli arrivi
+entro la scadenza, sempre a parità di cambi, il vantaggio resta positivo in entrambe
+le città e in entrambi i gruppi di margini - da +0,05 a +0,09 - ma su
+diciotto-trentadue istanze per cella: è un indizio che qualcosa oltre la semplificazione ci sia, non la
 sua dimostrazione.
 
 **Dove le due strategie divergono davvero.** Le tabelle sopra mediano anche sulle
-istanze in cui le due scelgono lo stesso itinerario, dove la differenza e' nulla per
+istanze in cui le due scelgono lo stesso itinerario, dove la differenza è nulla per
 costruzione. Restringendo alle sole divergenti:
 
 Tabella 33 — Quota di arrivi entro la scadenza sulle sole istanze divergenti.
 
-| margine | Roma, divergenti | piu' veloce | robusto | Torino, divergenti | piu' veloce | robusto |
+| margine | Roma, divergenti | più veloce | robusto | Torino, divergenti | più veloce | robusto |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0 min | 13 | 0,1310 | 0,2619 | 9 | 0,4583 | 0,3958 |
 | 5 min | 19 | 0,3889 | 0,4722 | 22 | 0,6146 | 0,6771 |
@@ -3076,21 +3076,21 @@ Tabella 33 — Quota di arrivi entro la scadenza sulle sole istanze divergenti.
 
 *Fonte: `results/backtest_riepilogo.csv`, colonne `quota_entro_divergenti` e
 `istanze_divergenti`, bordi `ottili`. **Tre celle stanno sotto le venti istanze** -
-Roma a margine nullo (13) e a cinque minuti (19), Torino a margine nullo (9) - e li'
-la quota e' mossa da una manciata di viaggi: vanno lette come indicazioni, non come
+Roma a margine nullo (13) e a cinque minuti (19), Torino a margine nullo (9) - e lì
+la quota è mossa da una manciata di viaggi: vanno lette come indicazioni, non come
 misure. Nella sezione, ogni tabella che contenga celle sotto quella soglia lo dichiara
 nella propria riga di fonte.*
 
-Qui il vantaggio e' molto piu' grande - a venti minuti su Roma il robusto porta a
-destinazione entro la scadenza il 94% delle istanze contro il 56% del piu' veloce, su
-trentaquattro istanze - e questo e' il numero che descrive **quanto il modello sposti
-l'esito quando sposta la scelta**. Non e' pero' il numero che descrive quanto serva
+Qui il vantaggio è molto più grande - a venti minuti su Roma il robusto porta a
+destinazione entro la scadenza il 94% delle istanze contro il 56% del più veloce, su
+trentaquattro istanze - e questo è il numero che descrive **quanto il modello sposti
+l'esito quando sposta la scelta**. Non è però il numero che descrive quanto serva
 un pianificatore robusto a
-un utente qualsiasi, perche' quell'utente incontra anche le istanze in cui le due
+un utente qualsiasi, perché quell'utente incontra anche le istanze in cui le due
 strategie coincidono, che sono fra il 56% e il 93%. Le due letture rispondono a due
 domande diverse e vanno tenute separate.
 
-**Quante giornate hanno segno positivo.** E' la verifica che il risultato non venga da
+**Quante giornate hanno segno positivo.** È la verifica che il risultato non venga da
 una giornata sola. Sulla quota di arrivi entro la scadenza, per margine:
 
 Tabella 34 — Segno della differenza fra le strategie, giornata per giornata.
@@ -3109,37 +3109,37 @@ Tabella 34 — Segno della differenza fra le strategie, giornata per giornata.
 
 Su Roma, dai quindici minuti in su, **tutte** le giornate hanno segno positivo: il
 vantaggio non viene da un giorno fortunato. Su Torino no: a ogni margine fino a venti
-minuti c'e' almeno una giornata in cui il robusto fa peggio, a quindici minuti sono due
-su quattro, e soltanto a trenta minuti nessuna giornata e' negativa. E' il modo piu' diretto di dire che **il risultato torinese non e' stabile**,
-e concorda con le deviazioni della prima tabella, che su Torino sono spesso piu' grandi
+minuti c'è almeno una giornata in cui il robusto fa peggio, a quindici minuti sono due
+su quattro, e soltanto a trenta minuti nessuna giornata è negativa. È il modo più diretto di dire che **il risultato torinese non è stabile**,
+e concorda con le deviazioni della prima tabella, che su Torino sono spesso più grandi
 della differenza che accompagnano.
 
-**La scelta dei bordi dei bin non arriva ai risultati.** L'intero esperimento e'
+**La scelta dei bordi dei bin non arriva ai risultati.** L'intero esperimento è
 ripetuto con `decisione` al posto di `ottili`. A quindici e trenta minuti su Roma i due
 insiemi danno lo stesso identico risultato, +10,0 punti; lo scarto massimo fra i due
-su tutti i dodici confronti e' di **1,11 punti percentuali**, a venti minuti su Roma
+su tutti i dodici confronti è di **1,11 punti percentuali**, a venti minuti su Roma
 (+13,3 con `decisione` contro +14,4 con `ottili`), ben dentro le deviazioni fra
 giornate. Su Torino lo scarto non supera gli 0,83 punti a nessun margine. La
 questione lasciata aperta nell'argomento precedente si chiude qui: **si adottano gli
 `ottili` e si dichiara che `decisione` avrebbe dato gli stessi risultati**.
 
-**La taratura del priore non arriva ai risultati, e la prova e' piu' forte.** Fra due
-esecuzioni del backtesting la griglia delle concentrazioni e' stata allargata da un
+**La taratura del priore non arriva ai risultati, e la prova è più forte.** Fra due
+esecuzioni del backtesting la griglia delle concentrazioni è stata allargata da un
 milione a cento milioni, e la taratura ne ha approfittato: **quattro dei venti gradini
 tarati stanno ora a cento milioni**, un valore che la griglia precedente non poteva
-nemmeno esprimere, quindi su quei quattro la configurazione e' cambiata di sicuro. Su
+nemmeno esprimere, quindi su quei quattro la configurazione è cambiata di sicuro. Su
 **5.208 istanze una sola scelta cambia**: Torino, 9 settembre, coppia 9, margine dieci
-minuti, fra due itinerari le cui probabilita' distano venticinque milionesimi;
-l'esito - fuori scadenza, una coincidenza persa - e' identico. Tutte le altre 5.207
+minuti, fra due itinerari le cui probabilità distano venticinque milionesimi;
+l'esito - fuori scadenza, una coincidenza persa - è identico. Tutte le altre 5.207
 istanze scelgono lo stesso itinerario, arrivano allo stesso secondo e perdono le
-stesse coincidenze. La non identificabilita' di `alfa` misurata nell'argomento
-precedente **non si ferma alla perdita logaritmica: arriva fino ai viaggi, e li' non
+stesse coincidenze. La non identificabilità di `alfa` misurata nell'argomento
+precedente **non si ferma alla perdita logaritmica: arriva fino ai viaggi, e lì non
 si vede affatto**.
 
 *I valori "prima" di questo confronto non stanno in `results/`, per la stessa ragione
 per cui non vi stanno quelli della griglia stretta nell'argomento precedente: i file
 portano lo stato corrente, e conservarne due versioni per un confronto transitorio
-moltiplicherebbe le fonti. Il confronto si rifa' riportando `CANDIDATI` di
+moltiplicherebbe le fonti. Il confronto si rifà riportando `CANDIDATI` di
 `src/delays/rete.py` al valore del commit `a59f0b9` e rieseguendo
 `scripts/backtest.py --fino-a 2026-09-09`. Le concentrazioni della corsa attuale sono
 stampate a ogni esecuzione e valgono `100000 100000 250 25000 50` e
@@ -3147,11 +3147,11 @@ stampate a ogni esecuzione e valgono `100000 100000 250 25000 50` e
 `250 100 250 1e+08 250` su Torino, per i bordi `ottili` e `decisione`
 rispettivamente.*
 
-**La probabilita' dichiarata contro la frequenza osservata.** Il modello, quando
-sceglie, stampa accanto all'itinerario la probabilita' che gli attribuisce, e nel
-backtesting si puo' confrontarla con la frequenza con cui quei viaggi sono poi arrivati.
+**La probabilità dichiarata contro la frequenza osservata.** Il modello, quando
+sceglie, stampa accanto all'itinerario la probabilità che gli attribuisce, e nel
+backtesting si può confrontarla con la frequenza con cui quei viaggi sono poi arrivati.
 
-Tabella 35 — Probabilita' dichiarata dal robusto contro frequenza osservata di arrivo.
+Tabella 35 — Probabilità dichiarata dal robusto contro frequenza osservata di arrivo.
 
 | margine | Roma, dichiarata | Roma, osservata | Torino, dichiarata | Torino, osservata |
 | ---: | ---: | ---: | ---: | ---: |
@@ -3165,14 +3165,14 @@ Tabella 35 — Probabilita' dichiarata dal robusto contro frequenza osservata di
 *Fonte: `results/backtest_riepilogo.csv`, colonne `probabilita_attesa` e
 `quota_entro`, strategia `robusto`, bordi `ottili`.*
 
-Il modello e' **pessimista** a ogni margine e in entrambe le citta': i viaggi arrivano
-piu' spesso di quanto prometta, fino a quindici punti su Roma a quindici minuti. E' il
+Il modello è **pessimista** a ogni margine e in entrambe le città: i viaggi arrivano
+più spesso di quanto prometta, fino a quindici punti su Roma a quindici minuti. È il
 segno opposto a quello atteso da un criterio che sceglie il proprio massimo, esposto
 alla maledizione del vincitore.
 
-**L'errore nasce nella composizione.** Scomponendo la probabilita' del viaggio nei suoi
-fattori - per ogni cambio, la probabilita' che il modello attribuisce al tenerlo contro
-la frequenza con cui e' stato tenuto davvero - i due livelli si separano:
+**L'errore nasce nella composizione.** Scomponendo la probabilità del viaggio nei suoi
+fattori - per ogni cambio, la probabilità che il modello attribuisce al tenerlo contro
+la frequenza con cui è stato tenuto davvero - i due livelli si separano:
 
 Tabella 36 — Calibrazione sulla singola coincidenza e sul viaggio intero.
 
@@ -3185,10 +3185,10 @@ Tabella 36 — Calibrazione sulla singola coincidenza e sul viaggio intero.
 `tenuta`, una riga per cambio - e `results/backtest.csv` per la seconda, ristretta ai
 viaggi con almeno un cambio; bordi `ottili`, giornata magra esclusa.*
 
-Sulla singola coincidenza il modello e' **ottimista** - promette il 78% e ne tiene il
-73% su Roma, il 79% contro il 70% su Torino - e sul viaggio intero e' **pessimista** di
+Sulla singola coincidenza il modello è **ottimista** - promette il 78% e ne tiene il
+73% su Roma, il 79% contro il 70% su Torino - e sul viaggio intero è **pessimista** di
 dieci e sei punti. Se la composizione fosse fedele, una stima ottimista su ogni fattore
-darebbe un prodotto ottimista: il cambio di segno viene percio' dal modo in cui i
+darebbe un prodotto ottimista: il cambio di segno viene perciò dal modo in cui i
 fattori sono messi insieme. E la divergenza cresce con la lunghezza della catena:
 
 Tabella 37 — Scarto di calibrazione per numero di coincidenze composte.
@@ -3200,38 +3200,38 @@ Tabella 37 — Scarto di calibrazione per numero di coincidenze composte.
 | 3 | +0,0359 | +0,2927 | **+0,257** | -0,3573 | -0,0576 | **+0,300** |
 
 *Fonte: come sopra; le due colonne di scarto sono misurate sulle stesse istanze, e la
-divergenza e' la loro differenza. Il numero di coincidenze si ricava dalla colonna
+divergenza è la loro differenza. Il numero di coincidenze si ricava dalla colonna
 `cambi` di `results/backtest.csv`, che conta le tratte: un itinerario con `cambi = 2`
 ha una coincidenza sola.*
 
 La divergenza passa da quattro a ventisei punti su Roma e da due a trenta su Torino,
-**in modo monotono su entrambe le citta'**. Il divario del viaggio, preso da solo, non
-lo mostrava, perche' e' la somma di due errori di segno opposto che crescono entrambi.
+**in modo monotono su entrambe le città**. Il divario del viaggio, preso da solo, non
+lo mostrava, perché è la somma di due errori di segno opposto che crescono entrambi.
 Nel comporre entrano l'assunzione markoviana, l'indipendenza fra il ritardo di arrivo
 di una tratta e quello di partenza della successiva, il tetto sui recuperi e la
-discretizzazione in bin: la misura dice che l'errore nasce li' dentro, non quale dei
-quattro lo produca. Per l'argomento precedente e' il **prezzo a valle**
-dell'approssimazione markoviana dichiarata, misurato in punti di probabilita' su
+discretizzazione in bin: la misura dice che l'errore nasce lì dentro, non quale dei
+quattro lo produca. Per l'argomento precedente è il **prezzo a valle**
+dell'approssimazione markoviana dichiarata, misurato in punti di probabilità su
 viaggi veri.
 
 **Tre spiegazioni alternative non reggono.** Il **tetto sui recuperi** prevedeva un
 pessimismo concentrato nei viaggi in cui i recuperi sono serviti, e accade l'opposto:
-li' il modello e' ottimista, -0,0431 su Roma e -0,1725 su Torino, mentre sui viaggi
-filati lisci e' pessimista, +0,1606 e +0,1214. La **selezione** del proprio massimo non
-spiega il divario, perche' la strategia piu' veloce, che non guarda la probabilita', lo
-mostra uguale: +0,0843 contro +0,0991 del robusto su Roma, e su Torino il robusto e'
-persino meno pessimista, +0,0643 contro +0,0980. Il **respiro della coincidenza piu'
-tesa**, una volta separato dalla probabilita' dichiarata a cui e' confuso, riceve
+lì il modello è ottimista, -0,0431 su Roma e -0,1725 su Torino, mentre sui viaggi
+filati lisci è pessimista, +0,1606 e +0,1214. La **selezione** del proprio massimo non
+spiega il divario, perché la strategia più veloce, che non guarda la probabilità, lo
+mostra uguale: +0,0843 contro +0,0991 del robusto su Roma, e su Torino il robusto è
+persino meno pessimista, +0,0643 contro +0,0980. Il **respiro della coincidenza più
+tesa**, una volta separato dalla probabilità dichiarata a cui è confuso, riceve
 appoggio in una sola cella su sei (-0,224 su Roma nella banda centrale, p = 0,009): non
-e' esclusa, ma non e' sostenuta.
+è esclusa, ma non è sostenuta.
 
-**Dove il divario vive: nelle probabilita' basse.** Raggruppando le istanze per
-probabilita' dichiarata - l'unico raggruppamento che misuri la calibrazione, perche' usa
+**Dove il divario vive: nelle probabilità basse.** Raggruppando le istanze per
+probabilità dichiarata - l'unico raggruppamento che misuri la calibrazione, perché usa
 un'informazione disponibile al momento della scelta - il modello risulta **ben
-calibrato quando e' sicuro e fortemente pessimista quando e' dubbioso**:
+calibrato quando è sicuro e fortemente pessimista quando è dubbioso**:
 
-Tabella 38 — Scarto fra frequenza osservata e probabilita' dichiarata, per classe di
-probabilita'.
+Tabella 38 — Scarto fra frequenza osservata e probabilità dichiarata, per classe di
+probabilità.
 
 | classe dichiarata | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
 | --- | ---: | ---: | ---: | ---: |
@@ -3244,17 +3244,17 @@ probabilita'.
 *Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`, cinque classi di
 ampiezza 0,2 sulla colonna `probabilita_attesa`.*
 
-Nella classe piu' alta di Torino, su 393 istanze, lo scarto e' di **due
+Nella classe più alta di Torino, su 393 istanze, lo scarto è di **due
 decimillesimi**; quando dichiara meno di 0,2, su Roma il viaggio riesce invece il 37%
-delle volte. E' la firma di una **coda sfavorevole troppo pesante**. L'assunzione di
-massima entropia nei bin aperti ne e' il candidato naturale, ma e' una congettura non
+delle volte. È la firma di una **coda sfavorevole troppo pesante**. L'assunzione di
+massima entropia nei bin aperti ne è il candidato naturale, ma è una congettura non
 verificata.
 
-**Una correzione a un parametro esiste, e non e' adottata.** Sostituendo alla
-probabilita' dichiarata `p` la quantita' `p^gamma` e cercando il `gamma` che minimizza
+**Una correzione a un parametro esiste, e non è adottata.** Sostituendo alla
+probabilità dichiarata `p` la quantità `p^gamma` e cercando il `gamma` che minimizza
 lo scarto medio fra classi:
 
-Tabella 39 — Correzione della probabilita' dichiarata con un esponente gamma.
+Tabella 39 — Correzione della probabilità dichiarata con un esponente gamma.
 
 | | scarto medio prima | gamma migliore | scarto medio dopo |
 | --- | ---: | ---: | ---: |
@@ -3263,75 +3263,75 @@ Tabella 39 — Correzione della probabilita' dichiarata con un esponente gamma.
 | insieme | 0,0792 | 0,68 | **0,0178** |
 
 *Fonte: `results/backtest.csv`, strategia `robusto`, bordi `ottili`; scarto medio fra
-probabilita' media e frequenza osservata su cinque classi di ampiezza 0,2, pesato per
-numerosita'.*
+probabilità media e frequenza osservata su cinque classi di ampiezza 0,2, pesato per
+numerosità.*
 
-Un solo esponente porta il divario **sotto i tre punti** su entrambe le citta', e il
+Un solo esponente porta il divario **sotto i tre punti** su entrambe le città, e il
 `gamma` che pareggia le medie vale **0,64 su Roma e 0,65 su Torino**, stimati
-indipendentemente. E' pero' una **media, non una costante**: varia di un fattore due
+indipendentemente. È però una **media, non una costante**: varia di un fattore due
 col margine (da 0,85 a 0,40 su Roma) e di un fattore tre-cinque col numero di tratte
 (da 0,20 a 1,03 su Roma, da 0,38 a 1,22 su Torino), coerentemente con un errore che
-cresce coi fattori composti. Non e' stata adottata perche' `gamma` e' stato **tarato e
+cresce coi fattori composti. Non è stata adottata perché `gamma` è stato **tarato e
 valutato sulle stesse quattro giornate**, e quindi descrive senza prevedere: adottarla
-richiederebbe giornate di taratura separate da quelle di verifica, come gia' si fa per
+richiederebbe giornate di taratura separate da quelle di verifica, come già si fa per
 la concentrazione del priore.
 
 Il difetto non invalida i confronti fra strategie, che sono misurati sulla replica e
-non sulle probabilita' dichiarate. Tocca cio' che il pianificatore puo' **promettere**:
-la probabilita' stampata accanto a un itinerario e' conservativa, e lo e' tanto piu'
-quanto piu' e' bassa.
+non sulle probabilità dichiarate. Tocca ciò che il pianificatore può **promettere**:
+la probabilità stampata accanto a un itinerario è conservativa, e lo è tanto più
+quanto più è bassa.
 
 **Che cosa questa valutazione non dice.** Il vantaggio del criterio probabilistico va
-letto con le cautele riportate nelle conclusioni: a margine nullo non c'e', su Torino
-e' piccolo e instabile sugli arrivi, poggia su quattro giornate, e il meccanismo non e'
+letto con le cautele riportate nelle conclusioni: a margine nullo non c'è, su Torino
+è piccolo e instabile sugli arrivi, poggia su quattro giornate, e il meccanismo non è
 quello atteso. Questa sezione ne aggiunge una: la misura riguarda una **sottorete**,
 gli autobus di superficie su Roma, tram e una parte degli autobus su Torino, sulle sole
-coppie i cui candidati erano interamente osservati, cioe' circa la meta'.
+coppie i cui candidati erano interamente osservati, cioè circa la metà.
 
-Il risultato che regge tutte le cautele e' percio' piu' stretto di quanto la prima
+Il risultato che regge tutte le cautele è perciò più stretto di quanto la prima
 tabella suggerisca: **su Roma, con margini fra quindici e trenta minuti, il criterio
 probabilistico perde dal 24% al 55% di coincidenze in meno del riferimento e porta
-dieci punti percentuali o piu' di viaggi entro la scadenza, su tutte le giornate, al
+dieci punti percentuali o più di viaggi entro la scadenza, su tutte le giornate, al
 prezzo di quattro-sette minuti mediani di orario teorico - e lo ottiene soprattutto
 spendendo il margine per togliere coincidenze, non per allargarle**. Su Torino il
-beneficio sugli arrivi non e' distinguibile dal rumore fra giornate, quello sulle
-coincidenze perse e' netto, e a parita' di cambi ne sopravvive circa la meta'.
+beneficio sugli arrivi non è distinguibile dal rumore fra giornate, quello sulle
+coincidenze perse è netto, e a parità di cambi ne sopravvive circa la metà.
 
 # Conclusioni
 
 ## Che cosa il progetto ha risposto
 
 La domanda chiedeva se un itinerario scelto massimizzando `P(arrivo ≤ T)` perdesse
-meno coincidenze di uno scelto minimizzando l'orario teorico. La risposta e' **si'**,
+meno coincidenze di uno scelto minimizzando l'orario teorico. La risposta è **sì**,
 con un prezzo che la formulazione iniziale non prevedeva.
 
-**Il prezzo.** La clausola "a parita' di tempo di viaggio nominale" e' caduta perche'
-non e' soddisfacibile: nelle 337 istanze in cui le due strategie divergono il robusto
-e' nominalmente piu' lento 337 volte su 337. Il criterio probabilistico compra quindi
-affidabilita' pagando tempo nominale, entro il margine che il viaggiatore ha
+**Il prezzo.** La clausola "a parità di tempo di viaggio nominale" è caduta perché
+non è soddisfacibile: nelle 337 istanze in cui le due strategie divergono il robusto
+è nominalmente più lento 337 volte su 337. Il criterio probabilistico compra quindi
+affidabilità pagando tempo nominale, entro il margine che il viaggiatore ha
 dichiarato: **quattro-sette minuti** mediani su Roma nella fascia in cui il vantaggio
-e' massimo, **tre-cinque** su Torino.
+è massimo, **tre-cinque** su Torino.
 
-**Il beneficio sulle coincidenze perse**, che e' la grandezza della domanda, e' il
-risultato piu' solido. A trenta minuti di margine il robusto ne perde circa **la
-meta'** di quelle del riferimento su Roma e **un terzo** su Torino, con lo stesso segno
-in entrambe le citta', e il vantaggio cresce col margine in modo monotono su Torino e,
-su Roma, dal primo margine non nullo in poi. Le due citta' non si ordinano: a cinque,
+**Il beneficio sulle coincidenze perse**, che è la grandezza della domanda, è il
+risultato più solido. A trenta minuti di margine il robusto ne perde circa **la
+metà** di quelle del riferimento su Roma e **un terzo** su Torino, con lo stesso segno
+in entrambe le città, e il vantaggio cresce col margine in modo monotono su Torino e,
+su Roma, dal primo margine non nullo in poi. Le due città non si ordinano: a cinque,
 dieci e quindici minuti Torino fa meglio di Roma (-0,0833 contro -0,0556, -0,1167
 contro -0,0667, -0,1750 contro -0,1000), a venti e trenta il rapporto si inverte.
 
-**Il beneficio sugli arrivi entro la scadenza e' piu' fragile.** Su Roma vale **dieci
-punti percentuali o piu'** fra quindici e trenta minuti, con tutte e tre le giornate di
+**Il beneficio sugli arrivi entro la scadenza è più fragile.** Su Roma vale **dieci
+punti percentuali o più** fra quindici e trenta minuti, con tutte e tre le giornate di
 segno positivo; su Torino resta **fra zero e quattro punti**, e a ogni margine fino a
-venti minuti almeno una giornata su quattro ha segno negativo. A **margine nullo** non e' distinguibile da
-zero su nessuna delle due citta' - differenze appaiate di +0,011 ± 0,019 su Roma e
+venti minuti almeno una giornata su quattro ha segno negativo. A **margine nullo** non è distinguibile da
+zero su nessuna delle due città - differenze appaiate di +0,011 ± 0,019 su Roma e
 -0,008 ± 0,017 su Torino -
 mentre sulle coincidenze perse il robusto ne perde comunque 0,0667 in meno su Roma e
 0,0167 in meno su Torino.
 
-**Il meccanismo non e' quello atteso.** Su Roma il vantaggio passa interamente per la
-scelta di itinerari con meno coincidenze, e a parita' di numero di tratte svanisce; su
-Torino ne sopravvive circa la meta'. Il margine non viene speso per allargare le
+**Il meccanismo non è quello atteso.** Su Roma il vantaggio passa interamente per la
+scelta di itinerari con meno coincidenze, e a parità di numero di tratte svanisce; su
+Torino ne sopravvive circa la metà. Il margine non viene speso per allargare le
 coincidenze esistenti, ma per eliminarne qualcuna.
 
 *Fonte di tutti i numeri di questa sezione: `results/backtest_riepilogo.csv` e
@@ -3346,25 +3346,25 @@ grezzi la relazione di trasbordo e la consegna al grafo tempo-espanso; la ricerc
 multi-criterio vi produce la frontiera delle soluzioni non dominate; il modulo
 probabilistico compone lungo le coincidenze le distribuzioni stimate dal modulo di
 apprendimento e sceglie l'itinerario che massimizza `P(arrivo ≤ T)`; il
-soddisfacimento di vincoli riusa la stessa frontiera per il viaggio a piu' tappe. La
-prova che i moduli si parlino e' che **un difetto di uno si manifesta nella misura di
+soddisfacimento di vincoli riusa la stessa frontiera per il viaggio a più tappe. La
+prova che i moduli si parlino è che **un difetto di uno si manifesta nella misura di
 un altro**.
 
-Il caso piu' istruttivo e' il legame fra apprendimento e backtesting. Il modello dei
+Il caso più istruttivo è il legame fra apprendimento e backtesting. Il modello dei
 ritardi, stimato su 1,17 milioni di coppie di osservazioni su Roma e 2,2 milioni su
-Torino, e' ben calibrato sui bin - scarto medio di **0,0035 e 0,0032** - ma sulla
-**singola coincidenza** e' ottimista di **cinque punti su Roma e nove su Torino**, e
+Torino, è ben calibrato sui bin - scarto medio di **0,0035 e 0,0032** - ma sulla
+**singola coincidenza** è ottimista di **cinque punti su Roma e nove su Torino**, e
 sul **viaggio intero** pessimista di dieci e sei. Una metrica interna ben calibrata non
 garantisce la calibrazione sull'evento che la decisione usa, e per accorgersene serviva
 rigiocare le scelte su dati osservati. Il legame funziona anche nell'altro verso: la
-correlazione lungo la corsa, assunta a **0,70** negli esperimenti sintetici, e'
+correlazione lungo la corsa, assunta a **0,70** negli esperimenti sintetici, è
 risultata **0,96 su Roma e 0,91 su Torino**. Quegli esperimenti erano condotti in un
-mondo in cui ignorare la correlazione costa meno, e il vantaggio misurato li' va letto
+mondo in cui ignorare la correlazione costa meno, e il vantaggio misurato lì va letto
 come prudente.
 
 ## Problematiche non affrontate, e possibili estensioni
 
-**L'errore di calibrazione nasce nella composizione, e non e' ancora attribuito.** La
+**L'errore di calibrazione nasce nella composizione, e non è ancora attribuito.** La
 divergenza fra i due livelli cresce col numero di coincidenze composte, da quattro a
 ventisei punti su Roma e da due a trenta su Torino. Le spiegazioni alternative messe
 alla prova non reggono; restano candidati l'assunzione markoviana, l'indipendenza fra
@@ -3372,52 +3372,52 @@ il ritardo d'arrivo di una tratta e quello di partenza della successiva, il tett
 recuperi e la discretizzazione in bin, e separarli richiede di rifare la composizione
 cambiandone uno alla volta. Una correzione `p^gamma` porta lo scarto medio da 0,1070
 a 0,0304 su Roma e da 0,0645 a 0,0174 su Torino, con esponente **0,64 e 0,65**
-stimato indipendentemente sulle due citta'; non e' stata adottata perche' tarata e
-valutata sulle stesse giornate, e perche' l'esponente varia di un fattore due col
+stimato indipendentemente sulle due città; non è stata adottata perché tarata e
+valutata sulle stesse giornate, e perché l'esponente varia di un fattore due col
 margine e di tre-cinque col numero di tratte.
 
 **I limiti che vengono dai dati.** La verifica poggia su **quattro giornate, tre su
 Roma**, della stessa settimana, dentro una finestra estiva - dal 25 agosto al 9
 settembre - in cui le reti sono in orario ridotto: tutti i numeri valgono per quelle
-due settimane, e l'estensione naturale e' rieseguire su una finestra piu' lunga. Su
-**Torino** il dato di verifica e' l'ultima stima del produttore e non un transito
+due settimane, e l'estensione naturale è rieseguire su una finestra più lunga. Su
+**Torino** il dato di verifica è l'ultima stima del produttore e non un transito
 osservato, per quanto vicina al fatto: **25 ± 12 secondi** di anticipo mediano, con
 il **34,8%** delle righe pubblicato dopo il transito atteso. Su **Roma** il tempo reale
 copre solo la rete di superficie: l'orario dichiara quattro linee di metropolitana con
 **6.614 corse programmate**, ma delle linee osservate in tempo reale, fra 310 e 405
-a seconda del giorno, tutte sono autobus, e il modello dei ritardi romano e' percio' un modello degli
+a seconda del giorno, tutte sono autobus, e il modello dei ritardi romano è perciò un modello degli
 autobus. Nessuna delle due aziende pubblica `transfers.txt` e solo due fermate
-appartengono a una stazione, per cui l'eredita' con default dei tempi di trasbordo
-collassa quasi ovunque sul terzo livello; Roma non dichiara l'accessibilita' di
+appartengono a una stazione, per cui l'eredità con default dei tempi di trasbordo
+collassa quasi ovunque sul terzo livello; Roma non dichiara l'accessibilità di
 nessuna delle sue 8.301 fermate, e i risultati su quel tema valgono per la sola
-Torino. Una terza citta' con un archivio piu' ricco e' l'estensione con il miglior
+Torino. Una terza città con un archivio più ricco è l'estensione con il miglior
 rapporto fra costo e valore.
 
 **I limiti dei modelli.** Le distanze di trasbordo sono in linea d'aria e il tempo di
-cammino e' discretizzato in quattro bande, con un errore di segno costante e quindi
+cammino è discretizzato in quattro bande, con un errore di segno costante e quindi
 ottimistico. Il grafo copre una finestra di due ore e la ricerca trova l'ottimo
-*dentro la finestra*: su cinquanta coppie per citta' la finestra e' bastata in
+*dentro la finestra*: su cinquanta coppie per città la finestra è bastata in
 quarantatre casi a Roma e trentanove a Torino, con un tetto di quattro cambi. Il
 modello probabilistico limita a due i recuperi dopo una coincidenza persa - il 9,2%
-della massa di probabilita' esaurisce il tetto -, tratta la correlazione con un solo
+della massa di probabilità esaurisce il tetto -, tratta la correlazione con un solo
 parametro scalare, e usa come candidati la frontiera di Pareto, abbastanza ricca
 (ampiezza media 0,42 ± 0,28 a margine non nullo) ma non costruita nella dimensione
 dei margini. La concentrazione
-del priore **non e' identificabile** da questi dati: configurazioni distanti sei ordini
+del priore **non è identificabile** da questi dati: configurazioni distanti sei ordini
 di grandezza danno perdite che differiscono di cinque decimillesimi, contro ±0,064
 fra giornate, e sui viaggi 5.207 istanze su 5.208 scelgono lo stesso itinerario.
 
 **Il viaggio multi-tappa** resta senza la codifica dei vincoli in Answer Set
 Programming, senza la mappa della transizione di fase al variare congiunto di finestre
-e budget, e senza un budget del cammino stretto, che e' quello che riguarda piu' da
-vicino il passeggero a ridotta mobilita'.
+e budget, e senza un budget del cammino stretto, che è quello che riguarda più da
+vicino il passeggero a ridotta mobilità.
 
 **Una strada scartata: Knowledge Graph e ontologie.** Pubblicare la base di conoscenza
-come grafo RDF con un vocabolario OWL sarebbe stato un regresso di espressivita'. OWL e'
-monotono, mentre le due proprieta' migliori della base di conoscenza non lo sono:
-l'eredita' difettibile del tempo minimo di trasbordo, in cui una regola piu' specifica
-disattiva una piu' generale, e l'accessibilita', dove aggiungere il fatto che un
-ascensore e' fuori servizio **rimuove** quattro conclusioni gia' derivate.
+come grafo RDF con un vocabolario OWL sarebbe stato un regresso di espressività. OWL è
+monotono, mentre le due proprietà migliori della base di conoscenza non lo sono:
+l'eredità difettibile del tempo minimo di trasbordo, in cui una regola più specifica
+disattiva una più generale, e l'accessibilità, dove aggiungere il fatto che un
+ascensore è fuori servizio **rimuove** quattro conclusioni già derivate.
 
 # Riferimenti Bibliografici
 
