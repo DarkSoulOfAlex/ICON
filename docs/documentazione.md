@@ -5,12 +5,12 @@ lang: it
 
 Gruppo di lavoro
 
-- `Alex Lorenzo Girone`, `798695`, `a.girone18@studenti.uniba.it`
-- `Michele Boccasile`, `797919`, `m.boccasile3@studenti.uniba.it`
+- Alex Lorenzo Girone, 798695, a.girone18@studenti.uniba.it
+- Michele Boccasile, 797919, m.boccasile3@studenti.uniba.it
 
-`https://github.com/DarkSoulOfAlex/ICON`
+https://github.com/DarkSoulOfAlex/ICON
 
-AA `2025-2026`
+AA 2025-2026
 
 # Introduzione
 
@@ -43,7 +43,7 @@ essere diverso, e quale sia il migliore dipende da quanto tempo si ha a
 disposizione.
 
 La domanda di ricerca e' percio' questa: **un itinerario scelto massimizzando
-P(arrivo <= T) perde meno coincidenze di un itinerario scelto minimizzando
+P(arrivo ≤ T) perde meno coincidenze di un itinerario scelto minimizzando
 l'orario teorico?** Il progetto e' costruito su due citta' con reti e
 caratteristiche diverse, Roma e Torino, i cui dati aperti sono raccolti in continuo
 da un sistema installato per lo scopo.
@@ -799,7 +799,7 @@ non sovrastima mai il costo residuo, ed e' percio' ammissibile.
 
 L'euristica e' inoltre **consistente**, perche' e' della forma `d(x)/V` con `d`
 distanza euclidea, che soddisfa la disuguaglianza triangolare: per ogni arco da
-`x` a `y` di costo `c` vale `h(x) <= c + h(y)`, dal momento che la distanza
+`x` a `y` di costo `c` vale `h(x) ≤ c + h(y)`, dal momento che la distanza
 euclidea fra `x` e la destinazione non supera la somma della distanza fra `x` e
 `y` e di quella fra `y` e la destinazione, e che `c` non e' inferiore al tempo
 minimo per coprire il tratto da `x` a `y`. Ne segue che ogni stato viene estratto
@@ -983,6 +983,9 @@ del campione di Torino, la 3176 → 3492 estratta con il seme 20260826, togliere
 dalla chiave dello stato a terra riduce il lavoro di due ordini di grandezza, con lo
 stesso identico orario di arrivo:
 
+Tabella 7 — Stati espansi e tempo di ricerca con e senza l'istante nella chiave dello
+stato a terra, sulla coppia 3176 → 3492 di Torino.
+
 | Formulazione dello stato a terra | Stati espansi | Secondi |
 | --- | ---: | ---: |
 | `(fermata, istante, cambi)` | 1.464.312 | 57,10 |
@@ -1001,7 +1004,7 @@ cinquantasette secondi l'una, non sarebbe stato eseguibile.
 
 **L'euristica geografica: un risultato negativo.**
 
-Tabella 7 — Confronto delle varianti di ricerca. Media e deviazione standard sulle
+Tabella 8 — Confronto delle varianti di ricerca. Media e deviazione standard sulle
 coppie risolte: 43 per Roma, 39 per Torino. La colonna "non ottime" conta le
 interrogazioni in cui la variante restituisce un orario di arrivo diverso da
 quello di Dijkstra, che non usando euristiche non puo' essere influenzato da una
@@ -1032,7 +1035,7 @@ valori vengono dalla tabella oraria: archi di duecento o quattrocento metri perc
 prossima a zero, e A* si comporta come Dijkstra pagando in piu' il calcolo della
 distanza.
 
-Tabella 8 — Distribuzione delle velocita' fra fermate consecutive, misurata
+Tabella 9 — Distribuzione delle velocita' fra fermate consecutive, misurata
 sull'orario programmato.
 
 | Citta' | Archi | Mediana | p99 | p99,9 | Massimo | Sopra 150 km/h |
@@ -1119,13 +1122,18 @@ modulo lavora sui ritardi appresi dai dati - cioe' dall'argomento sull'apprendim
 in avanti, e soprattutto nel backtesting - quella copertura si restringe, perche' il
 tempo reale non descrive la stessa rete dell'orario.
 
+Tabella 10 — Linee osservate nel feed real-time su linee programmate nell'orario, per
+tipo di mezzo.
+
 | | tram | metropolitana | autobus | funicolare |
 | --- | ---: | ---: | ---: | ---: |
 | Roma | 0 su 1-4 | **0 su 4** | 310-405 su 423-426 | — |
 | Torino | 8 su 9 | **0 su 1** | 65-100 su 213-215 | 0 su 1 |
 
 *Fonte: `results/copertura_orario.csv`, colonna `copertura_per_tipo`, sedici
-giornate per citta' nella finestra `2026-09-09`; gli intervalli sono i valori minimo
+giornate per citta' nella finestra `2026-09-09`, cioe' dal 25 agosto al 9
+settembre 2026: la colonna `finestra` dei CSV porta la sola data di chiusura; gli
+intervalli sono i valori minimo
 e massimo fra le giornate, e i denominatori variano perche' l'orario cambia. I
 codici sono i `route_type` della specifica GTFS [5].*
 
@@ -1149,7 +1157,7 @@ Sarebbe piu' semplice e non richiederebbe alcun modello dei ritardi. Non funzion
 e la ragione non e' di accuratezza ma di struttura. Una penalizzazione della forma
 "tempo di viaggio piu' lambda per la tensione delle coincidenze" induce **un solo
 ordinamento** sugli itinerari: fissato lambda esiste un migliore, ed e' sempre lo
-stesso. La quantita' P(arrivo <= T) induce invece **una famiglia di ordinamenti
+stesso. La quantita' P(arrivo ≤ T) induce invece **una famiglia di ordinamenti
 indicizzata da T**, e nessuna scelta di lambda puo' riprodurre una famiglia con un
 elemento solo.
 
@@ -1157,6 +1165,8 @@ L'inversione si vede su due itinerari costruiti apposta. Il primo, A, arriva
 cinquanta minuti dopo la partenza secondo l'orario, ma la sua unica coincidenza ha
 due minuti di margine. Il secondo, B, arriva cinquantacinque minuti dopo, con
 dodici minuti di margine.
+
+Tabella 11 — Probabilita' di arrivo entro la scadenza dei due itinerari costruiti A e B.
 
 | Scadenza T | P(A) | P(B) | Migliore |
 | ---: | ---: | ---: | :---: |
@@ -1179,7 +1189,7 @@ risposte. L'esempio rende immediato il meccanismo ma resta un caso costruito: la
 dimostrazione empirica su un campione e' nella valutazione.
 
 **Perche' il prodotto ingenuo delle probabilita' sarebbe sbagliato in questa
-catena.** Calcolare P(arrivo <= T) richiede di comporre le distribuzioni di
+catena.** Calcolare P(arrivo ≤ T) richiede di comporre le distribuzioni di
 ritardo lungo la successione delle tappe. La composizione ovvia — il prodotto
 delle probabilita' di prendere ciascuna coincidenza — e' sbagliata per due ragioni
 di **segno opposto**, e nessuna delle due e' trascurabile. Che siano di segno
@@ -1279,7 +1289,7 @@ recuperi.** Quando la catena perde una coincidenza, il calcolo prosegue sulla
 corsa successiva della stessa linea dalla stessa fermata. *Alternativa scartata:*
 il fallimento secco, in cui perdere una coincidenza azzera la probabilita' di
 arrivo. *Perche' no:* e' molto piu' semplice da calcolare ma rende
-P(arrivo <= T) sistematicamente pessimistica e, soprattutto, cancella il fenomeno
+P(arrivo ≤ T) sistematicamente pessimistica e, soprattutto, cancella il fenomeno
 che la domanda di ricerca vuole misurare, come argomentato nel sommario. *Perche'
 il tetto e' due:* il numero di corse successive da considerare va limitato perche'
 il calcolo termini, e due recuperi coprono, sulle frequenze urbane osservate, un
@@ -1292,7 +1302,7 @@ proprio valore che sul mondo, e andrebbe alzato.
 
 **La griglia temporale della convoluzione: passo di 10 secondi su un orizzonte di
 4 ore.** *Alternative valutate e misurate:* passi di 5, 30 e 60 secondi, riportati
-nella Tabella 9. *Perche' 10:* e' il punto in cui l'errore smette di scendere in
+nella Tabella 12. *Perche' 10:* e' il punto in cui l'errore smette di scendere in
 modo apprezzabile — da 0,0049 a passo 10 a 0,0039 a passo 5 — mentre il costo
 resta praticamente invariato. *Perche' l'orizzonte e' 4 ore:* deve contenere la
 coda della distribuzione dell'orario di arrivo anche dopo due recuperi su una
@@ -1329,7 +1339,7 @@ progetto attorno a un numero inventato, mentre il modello appreso dai dati ha la
 correlazione che i dati mostrano, e l'argomento sull'apprendimento la misura molto
 diversa: 0,96 su Roma e 0,91 su Torino. *Una
 proprieta' utile del parametro:* a correlazione nulla il condizionamento non ha
-effetto e P(arrivo <= T) di una singola tappa coincide con la ripartizione del
+effetto e P(arrivo ≤ T) di una singola tappa coincide con la ripartizione del
 ritardo, ed e' esattamente l'ancoraggio analitico usato nei test.
 
 **L'insieme candidato e' la frontiera di Pareto, e la misura che lo giustifica.**
@@ -1422,7 +1432,7 @@ colonna, e gli script si rifiutano di scrivere senza un permesso esplicito.
 
 **Accuratezza e costo dei due metodi di calcolo.**
 
-Tabella 9 — Accuratezza e costo. L'errore e' lo scarto rispetto a un Monte Carlo
+Tabella 12 — Accuratezza e costo. L'errore e' lo scarto rispetto a un Monte Carlo
 con 200.000 campioni; errore e costo sono media e deviazione standard sulle 136
 valutazioni della griglia. La deviazione del costo misura soprattutto la diversa
 lunghezza delle catene valutate, da zero a tre coincidenze, e non il rumore della
@@ -1452,7 +1462,7 @@ l'approssimazione economica, e accade il contrario: il Monte Carlo con 10.000
 campioni ha **0,0026 di errore contro 0,0049, in 23 millisecondi contro 83**, e non
 esiste una scelta dei parametri per cui la convoluzione risulti preferibile su
 entrambi gli assi. La convoluzione resta pero' il metodo del pianificatore, per una
-proprieta' che la Tabella 9 non misura: e' **deterministica**. Con un errore tipico
+proprieta' che la Tabella 12 non misura: e' **deterministica**. Con un errore tipico
 di 0,0026, due itinerari le cui probabilita' distino meno di quel valore potrebbero
 scambiarsi di posto cambiando il seme del generatore. Fissare il seme rende la scelta
 riproducibile, ma non meno arbitraria: a decidere fra i due sarebbe il seme e non la
@@ -1470,7 +1480,7 @@ Dati grezzi in `results/conv_vs_montecarlo.csv`.](../results/conv_vs_montecarlo.
 
 **La griglia della scadenza, e la dimostrazione empirica di non riducibilita'.**
 
-Tabella 10 — Le tre grandezze al variare del margine sulla scadenza, su quaranta
+Tabella 13 — Le tre grandezze al variare del margine sulla scadenza, su quaranta
 coppie origine-destinazione per citta'. Il guadagno e' la differenza media fra la
 probabilita' della scelta robusta e quella della baseline piu' veloce.
 
@@ -1535,10 +1545,10 @@ solo itinerari con almeno cinque minuti su ogni coincidenza, e fra quelli il piu
 veloce - e' la regola ragionevole che il pianificatore probabilistico deve battere, e
 quando nessun itinerario la soddisfa allenta il vincolo invece di rinunciare. Tutte e
 quattro le strategie scelgono dallo stesso insieme di candidati e sono valutate con lo
-stesso calcolo di P(arrivo <= T), quindi il confronto misura la strategia di scelta e
+stesso calcolo di P(arrivo ≤ T), quindi il confronto misura la strategia di scelta e
 non il metodo di valutazione.
 
-Tabella 11 — Probabilita' media di arrivo entro la scadenza, su tutte le coppie e
+Tabella 14 — Probabilita' media di arrivo entro la scadenza, su tutte le coppie e
 tutti i margini della griglia.
 
 | Strategia | Roma | Torino |
@@ -1550,7 +1560,7 @@ tutti i margini della griglia.
 
 Il robusto supera la piu' veloce di cinque-sei punti mediati su tutta la griglia, 0,555
 contro 0,501 su Roma e 0,570 contro 0,509 su Torino, comprese le scadenze degeneri agli
-estremi; nell'intervallo utile la Tabella 10 mostra otto-dieci punti. Il robusto **non
+estremi; nell'intervallo utile la Tabella 13 mostra otto-dieci punti. Il robusto **non
 perde mai** contro nessuna baseline, su tutte e 480 le combinazioni di citta', coppia e
 margine, ma questo **non e' un risultato: e' un controllo di correttezza**, perche' le
 strategie scelgono dallo stesso insieme e il robusto massimizza per definizione la
@@ -1561,7 +1571,7 @@ Inatteso e' invece che il **margine fisso sia la peggiore delle tre baseline su 
 all'arrivo del piu' veloce, imporre cinque minuti su **ogni** coincidenza costringe a
 itinerari sensibilmente piu' lenti, e lo svantaggio di partenza supera il beneficio: la
 regola si difende dalle coincidenze perse **senza guardare alla scadenza**, che e' il
-vincolo del problema, mentre P(arrivo <= T) contiene T. Le deviazioni standard delle
+vincolo del problema, mentre P(arrivo ≤ T) contiene T. Le deviazioni standard delle
 ultime due righe, oltre 0,41, confermano che sono strategie che funzionano molto bene su
 alcune coppie e molto male su altre.
 
@@ -1633,13 +1643,16 @@ prova a se'. Il dimensionamento
 reale della raccolta dentro quella finestra, e cio' che ne sopravvive fino alla
 tabella stimata, e' il seguente.
 
+Tabella 15 — Dimensioni della raccolta nella finestra di stima e coppie che ne
+sopravvivono.
+
 | | Roma | Torino |
 | --- | ---: | ---: |
 | giornate nella finestra | 16 | 16 |
 | `stop_time_update` letti | 286.539.573 | 30.903.705 |
 | righe conservate dalla deduplica | 211.769.671 | 21.957.502 |
-| quota conservata (giornate a cadenza piena) | 0,7446 +/- 0,0114 | 0,7149 +/- 0,0273 |
-| valori per passaggio (giornate a cadenza piena) | 20,04 +/- 0,91 | 7,08 +/- 0,29 |
+| quota conservata (giornate a cadenza piena) | 0,7446 ± 0,0114 | 0,7149 ± 0,0273 |
+| valori per passaggio (giornate a cadenza piena) | 20,04 ± 0,91 | 7,08 ± 0,29 |
 | coppie di stima (addestramento + taratura) | 1.169.608 | 2.200.003 |
 | coppie di verifica (4 giornate) | 543.922 | 811.915 |
 
@@ -1664,12 +1677,12 @@ dell'emissione, e su **Torino su un'unica popolazione che comprende tutte le
 coppie**, il cui dato non e' un ritardo osservato ma l'ultima stima del produttore
 prima che la fermata sparisca dal feed. Quanto **prima** venga emessa decide quanto
 la limitazione sia severa, ed e' misurato: la mediana dell'anticipo sul transito
-atteso vale **25 +/- 12 secondi** fra le sedici giornate, con il primo quartile
+atteso vale **25 ± 12 secondi** fra le sedici giornate, con il primo quartile
 appena sotto lo zero e il terzo intorno ai due minuti (*fonte:
 `results/anticipo_ultima_revisione.csv`, colonne `anticipo_p25`,
 `anticipo_mediana`, `anticipo_p75` e `quota_positivi`, media e deviazione fra
 giornate*). Il dato torinese e' dunque molto piu' vicino a un fatto compiuto di
-quanto il solo nome "previsione" lasci pensare, e per il **34,8% +/- 4,7%** dei
+quanto il solo nome "previsione" lasci pensare, e per il **34,8% ± 4,7%** dei
 passaggi il transito atteso era gia' trascorso al momento della pubblicazione.
 Le due perdite non sono percio'
 confrontabili fra loro come se
@@ -1769,7 +1782,7 @@ ritardi diversi, e un antenato piu' lontano conserva un residuo di informazione 
 condizionata ed e' reale nella rappresentazione discretizzata pur non esistendo nel
 processo. La misura che lo quantifica e' netta: su una catena costruita in modo da
 essere markoviana in senso esatto, l'informazione mutua condizionata vale 0,01174
-bit contro un riferimento per permutazione di 0,00087 +/- 0,00007, cioe' **tredici
+bit contro un riferimento per permutazione di 0,00087 ± 0,00007, cioe' **tredici
 volte** il riferimento, con un eccesso pari a centocinquanta volte la sua incertezza
 (*fonte:
 `results/catena_costruita.csv`, riga `otto bin del progetto` della catena
@@ -1785,7 +1798,9 @@ riducono l'approssimazione e moltiplicano le celle peggiorando la stima: e' un
 compromesso, ed e' un limite del modello da dichiarare.
 
 **Il secondo antenato porta informazione e non entra nella rete, e le due
-affermazioni non si contraddicono.** Il criterio che distingue l'artefatto dalla
+affermazioni non si contraddicono.** Indicando con `R0` il bin del ritardo a una
+fermata e con `R-1` e `R-2` quelli alle due fermate precedenti della stessa corsa,
+il secondo antenato e' `R-2`. Il criterio che distingue l'artefatto dalla
 struttura e' il verso con cui l'eccesso di informazione varia al raffinarsi dei bin:
 sulla catena markoviana costruita l'eccesso si dissolve - dal **3,83%** con quattro
 bin allo **0,14%** con venti, non in modo monotono ma con una direzione
@@ -1799,6 +1814,9 @@ colonna*). Sui dati veri non si dissolve, ma cala in modo regolare, e vale fra l
 e il 5,6% di cio' che il primo antenato gia' spiega. "Non si dissolve" non implica
 pero' "aggiungi l'arco": implica "misura quanto vale". La misura e' stata fatta due
 volte, con esiti di segno opposto.
+
+Tabella 16 — Guadagno relativo della perdita fuori campione aggiungendo l'arco dal
+secondo antenato.
 
 | | senza contesto | dentro il modello con contesto | osservazioni per cella con l'arco |
 | --- | ---: | ---: | ---: |
@@ -1924,13 +1942,15 @@ rigiocabili invece di trenta** e pesava nella media fra giornate quanto le altre
 causa e' nel dato pubblicato, e la documenta il paragrafo seguente. Escludendo con una
 regola fissata prima di guardarne l'esito le giornate che contribuiscono meno della
 meta' delle coppie richieste, i due insiemi coincidono a quindici e a trenta minuti di
-margine, e le deviazioni si stringono da +/-3,5 e +/-10,4 a +/-1,9 per tutti e due. Si
+margine, e le deviazioni si stringono da ±3,5 e ±10,4 a ±1,9 per tutti e due. Si
 adottano gli `ottili`, che vincevano sul guadagno, e si dichiara che `decisione`
 avrebbe dato gli stessi risultati.
 
 **La copertura dell'orario statico, e due giornate in cui manca.** Si dava per scontato
 che una corsa vista nel feed esistesse nell'archivio di quel giorno. Misurata su tutte
 e trentadue le giornate, la divisione e' netta e senza zona grigia.
+
+Tabella 17 — Copertura dell'orario statico sui dati real-time, per giornata.
 
 | | giornate | righe con orario | `trip_id` riconosciuti |
 | --- | ---: | ---: | ---: |
@@ -1955,6 +1975,8 @@ controlli permanenti - `SOGLIA_COPERTURA_ORARIO` vale 0,90 in `src/delays/contes
 
 **Le due giornate mal coperte restano nei campioni di questo capitolo, ed e' il limite
 piu' serio dei dati qui usati.**
+
+Tabella 18 — Peso delle due giornate mal coperte nei rispettivi insiemi.
 
 | | insieme | coppie constatate | quota del proprio insieme |
 | --- | --- | ---: | ---: |
@@ -2012,11 +2034,11 @@ prima che la fermata sparisca dal feed. Non e' scritta a mano nel codice:
 `Citta.scale` guarda quel massimo e passa a una dimensione sola sotto la soglia.
 
 **Dentro un bin si assume la distribuzione di massima entropia.** Il pianificatore
-chiede `P(arrivo <= T)` per un istante, mentre la tabella conosce solo un intervallo.
+chiede `P(arrivo ≤ T)` per un istante, mentre la tabella conosce solo un intervallo.
 Si assume **uniforme nei bin limitati** ed **esponenziale nei due bin aperti verso
 l'infinito**, con la media misurata dentro quel bin. *Alternative scartate:*
 concentrare la massa di ogni bin nel suo valore medio, che farebbe saltare
-`P(arrivo <= T)` al variare di T di un secondo - un artefatto su cui il pianificatore
+`P(arrivo ≤ T)` al variare di T di un secondo - un artefatto su cui il pianificatore
 sceglierebbe; assegnare ai bin aperti un'ampiezza convenzionale, che inventerebbe il
 parametro che pesa di piu', dato che i bin aperti raccolgono fra il 2,4% e il 62,3%
 della massa a seconda dei bordi. *Perche' massima entropia:* e' l'unico punto in cui il
@@ -2097,6 +2119,8 @@ dell'intervallo, che per i due bin aperti non esisterebbe.
 **Le concentrazioni scelte dalla taratura.** Sono l'iperparametro della scala, uno
 per gradino, scelti per discesa coordinata sulle giornate di taratura.
 
+Tabella 19 — Concentrazioni del priore scelte dalla taratura, per gradino.
+
 | gradino | Roma (constatazioni) | Torino (popolazione unica) |
 | --- | ---: | ---: |
 | bin | 100.000 | 5.000 |
@@ -2116,6 +2140,8 @@ perche' il peso che la cella conserva sui propri conteggi vale `N / (N + alfa)`.
 gradino ad `alfa` massimo sta dunque chiedendo di somigliare al genitore quanto la
 griglia gli concede, e la domanda non e' se allargare la griglia ma **quanto sia
 gia' vicino**. E' un confronto di matrici, e si fa senza rieseguire nulla.
+
+Tabella 20 — Distanza fra ciascun gradino e il suo genitore nella scala stimata.
 
 | gradino | citta' | alfa | scarto massimo per cella | divergenza media (bit) | celle |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -2150,7 +2176,7 @@ appoggiavano; poiche' il peso che una cella conserva sui propri conteggi vale
 `N / (N + alfa)`, e il livello per tipo di Roma ha **otto celle sole** su 1,17 milioni
 di coppie, la griglia e' stata portata a **cento milioni** e l'esperimento rifatto. La
 perdita non si muove: sulla scala principale romana passa da 0,9437 a 0,9426 bit, cioe'
-**un millesimo**, contro una deviazione fra giornate di +/-0,064, e su Torino da
+**un millesimo**, contro una deviazione fra giornate di ±0,064, e su Torino da
 1,1260 a 1,1261; la scelta dei bordi non cambia. Su Torino i due gradini all'estremo
 passano da quattro millesimi e mezzo millesimo a **sei centomillesimi e cinque
 milionesimi**: era davvero un troncamento. Su Roma invece la taratura del livello per
@@ -2186,6 +2212,8 @@ pagare** le celle fini, non ad aggiungerne il contenuto.
 **La scelta dei bordi.** Il confronto fra i cinque candidati, sul banco di prova
 tenuto fuori sia dalla stima sia dalla verifica.
 
+Tabella 21 — Confronto fra i cinque candidati per i bordi dei bin, sul banco di prova.
+
 | candidato | estremi (s) | guadagno Roma | guadagno Torino | massa bin aperti Roma | massa bin aperti Torino | ampiezza confusa Roma | ampiezza confusa Torino |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | attuali | -60 0 60 120 300 600 1200 | 1,4071 | 1,2270 | 0,6228 | 0,4566 | 201,0 s | 122,2 s |
@@ -2214,11 +2242,13 @@ risultati.
 risponde e' se la scala serva davvero, cioe' se batta sia il modello che stima tutto
 al livello piu' fine sia quello che si ferma al livello grossolano.
 
+Tabella 22 — Perdita logaritmica della scala completa contro i suoi due estremi, in bit.
+
 | scala | gradini | perdita Roma (constatazioni) | perdita Torino (tutte) |
 | --- | ---: | ---: | ---: |
-| **scala completa** | 5 | **0,9426 +/- 0,0642** | **1,1261 +/- 0,0303** |
-| solo livello fine | 1 | 1,2402 +/- 0,3588 | 1,1917 +/- 0,0867 |
-| solo tipo di linea | 1 | 0,9572 +/- 0,0698 | 1,1380 +/- 0,0318 |
+| **scala completa** | 5 | **0,9426 ± 0,0642** | **1,1261 ± 0,0303** |
+| solo livello fine | 1 | 1,2402 ± 0,3588 | 1,1917 ± 0,0867 |
+| solo tipo di linea | 1 | 0,9572 ± 0,0698 | 1,1380 ± 0,0318 |
 | entropia marginale | — | 2,9979 | 2,6600 |
 | guadagno della scala completa | — | 2,0553 | 1,5338 |
 
@@ -2250,12 +2280,15 @@ incatenati non e' esprimibile in quella forma, perche' il contesto puo' solo
 infittirsi. Si risponde inserendo il gradino delle previsioni fini appena prima di
 quello finale e confrontando.
 
+Tabella 23 — Perdita sulle constatazioni e sulle previsioni al variare del ruolo delle
+previsioni nella scala, Roma.
+
 | scala | gradini | perdita sulle constatazioni | perdita sulle previsioni |
 | --- | ---: | ---: | ---: |
-| constatazioni sole | 5 | 0,9426 +/- 0,0642 | 0,9261 +/- 0,0360 |
-| previsioni al livello fine | 6 | 0,9401 +/- 0,0656 | 0,9066 +/- 0,0355 |
-| previsioni a ogni livello | 10 | 0,9417 +/- 0,0634 | 0,9114 +/- 0,0326 |
-| previsioni sole | 5 | 0,9552 +/- 0,0617 | 0,8830 +/- 0,0296 |
+| constatazioni sole | 5 | 0,9426 ± 0,0642 | 0,9261 ± 0,0360 |
+| previsioni al livello fine | 6 | 0,9401 ± 0,0656 | 0,9066 ± 0,0355 |
+| previsioni a ogni livello | 10 | 0,9417 ± 0,0634 | 0,9114 ± 0,0326 |
+| previsioni sole | 5 | 0,9552 ± 0,0617 | 0,8830 ± 0,0296 |
 
 *Fonte: `results/stima_rete.csv`, citta' `roma`, colonne `perdita`/`deviazione` e
 `perdita_previsioni`/`deviazione_previsioni`, bordi `ottili`; Torino non compare
@@ -2281,6 +2314,8 @@ l'evento previsto sia poi accaduto. Le coppie sono (probabilita' attribuita al b
 realizzato, perche' un modello che sbaglia i bin che non escono mai e' comunque
 sbagliato.
 
+Tabella 24 — Calibrazione del modello stimato sulle quattro giornate di verifica.
+
 | classe di probabilita' | Roma attesa | Roma osservata | Roma coppie | Torino attesa | Torino osservata | Torino coppie |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0,0 - 0,1 | 0,0101 | 0,0116 | 3.310.651 | 0,0081 | 0,0098 | 4.599.931 |
@@ -2305,7 +2340,7 @@ leggermente **ottimista**, cioe' promette qualche punto in piu' di quanto osserv
 su Roma circa 0,57 contro 0,53 nella classe 0,5-0,6 e 0,66 contro 0,64 nella
 successiva, con le cifre piene in tabella. Non e' un dettaglio indifferente per
 questo progetto, perche' il
-pianificatore robusto sceglie l'itinerario che massimizza `P(arrivo <= T)` e un
+pianificatore robusto sceglie l'itinerario che massimizza `P(arrivo ≤ T)` e un
 modello ottimista sovrastima la probabilita' di tutti i candidati: finche'
 l'ottimismo e' uniforme non sposta la graduatoria, ma va dichiarato che la
 probabilita' stampata accanto a un itinerario e' un paio di punti sopra la frequenza
@@ -2317,15 +2352,18 @@ L'argomento precedente aveva assunto un parametro scalare in [0, 1] per la
 trasmissione del ritardo lungo la corsa e aveva usato **0,70**, dichiarandolo un
 numero scelto per buon senso in attesa della misura. Questa e' la misura.
 
+Tabella 25 — Correlazione fra ritardo a monte e a valle lungo la corsa, dati reali
+contro valore sintetico.
+
 | | Roma | Torino |
 | --- | ---: | ---: |
-| Pearson sui secondi, tutte le coppie | 0,9634 +/- 0,0100 | 0,9148 +/- 0,0165 |
-| Spearman sui secondi, tutte le coppie | 0,9839 +/- 0,0028 | 0,9380 +/- 0,0051 |
-| Pearson dentro i bordi dei bin | 0,9657 +/- 0,0067 | 0,9474 +/- 0,0014 |
-| Spearman dentro i bordi dei bin | 0,9667 +/- 0,0063 | 0,9351 +/- 0,0016 |
-| correlazione implicita nella matrice stimata | 0,9631 +/- 0,0006 | 0,9207 +/- 0,0034 |
-| quota di coppie dentro i bordi | 0,7324 +/- 0,0110 | 0,8599 +/- 0,0261 |
-| quota di transizioni identiche al secondo | 0,0435 +/- 0,0124 | 0,0116 +/- 0,0006 |
+| Pearson sui secondi, tutte le coppie | 0,9634 ± 0,0100 | 0,9148 ± 0,0165 |
+| Spearman sui secondi, tutte le coppie | 0,9839 ± 0,0028 | 0,9380 ± 0,0051 |
+| Pearson dentro i bordi dei bin | 0,9657 ± 0,0067 | 0,9474 ± 0,0014 |
+| Spearman dentro i bordi dei bin | 0,9667 ± 0,0063 | 0,9351 ± 0,0016 |
+| correlazione implicita nella matrice stimata | 0,9631 ± 0,0006 | 0,9207 ± 0,0034 |
+| quota di coppie dentro i bordi | 0,7324 ± 0,0110 | 0,8599 ± 0,0261 |
+| quota di transizioni identiche al secondo | 0,0435 ± 0,0124 | 0,0116 ± 0,0006 |
 | valore sintetico dell'argomento precedente | 0,70 | 0,70 |
 
 *Fonte: `results/correlazione_rete.csv`, riga `fascia = tutte`, media e deviazione su
@@ -2420,26 +2458,26 @@ Sotto un budget globale la dominanza cade, perche' un itinerario che arriva prim
 puo' **consumare cambi che serviranno piu' avanti**. Il caso seguente lo dimostra
 in modo verificabile a mano.
 
-> Viaggio in tre tappe, tetto globale di **quattro cambi**, sosta minima di cinque
+> Viaggio di tre tratte, tetto globale di **quattro cambi**, sosta minima di cinque
 > minuti a ogni tappa intermedia.
 >
-> *Prima tappa*, con finestra 09:00–09:15: l'itinerario `X1` arriva alle 09:05 con
-> tre cambi, l'itinerario `X2` alle 09:12 con un cambio. Entrambi rispettano la
-> finestra.
-> *Seconda tappa*: `Y1` esige di essere pronti alle 09:10 e costa un cambio, `Y2`
+> *Prima tratta*, verso una tappa con finestra 09:00–09:15: l'itinerario `X1`
+> arriva alle 09:05 con tre cambi, l'itinerario `X2` alle 09:12 con un cambio.
+> Entrambi rispettano la finestra.
+> *Seconda tratta*: `Y1` esige di essere pronti alle 09:10 e costa un cambio, `Y2`
 > alle 09:20 e ne costa due.
-> *Terza tappa*: un solo itinerario, che esige di essere pronti alle 09:55 e costa
+> *Terza tratta*: un solo itinerario, che esige di essere pronti alle 09:55 e costa
 > un cambio.
 >
 > La strategia sequenziale sceglie `X1`, perche' arriva prima. Con la sosta di
 > cinque minuti puo' poi prendere `Y1`, che parte esattamente alle 09:10: ha speso
-> quattro cambi, e alla terza tappa ne servirebbe un quinto. **Dichiara l'istanza
+> quattro cambi, e alla terza tratta ne servirebbe un quinto. **Dichiara l'istanza
 > infattibile.**
 >
 > Scegliendo invece `X2`, che arriva **sette minuti piu' tardi**, la sosta impone
 > di attendere fino alle 09:17 e quindi di prendere `Y2`. Il totale e'
 > 1 + 2 + 1 = quattro cambi esatti, e il viaggio si conclude. **La soluzione
-> esiste**, e per trovarla bisogna scegliere sulla prima tappa un itinerario
+> esiste**, e per trovarla bisogna scegliere sulla prima tratta un itinerario
 > peggiore sul criterio locale.
 
 E' l'assenza di sottostruttura ottima, ed e' cio' che distingue un problema di
@@ -2461,7 +2499,7 @@ sopra le strutture gia' esistenti, e l'esperimento riusa il grafo tempo-espanso 
 il pianificatore degli argomenti precedenti.
 
 E' originale di questo progetto, e per questo esposto nel sommario, il
-controesempio a tre tappe che dimostra l'assenza di sottostruttura ottima sotto un
+controesempio a tre tratte che dimostra l'assenza di sottostruttura ottima sotto un
 budget globale.
 
 ## Decisioni di Progetto
@@ -2488,7 +2526,7 @@ tetto e' quel minimo piu' un margine che varia da zero a tre. *Perche' cosi':* u
 tetto fisso confronterebbe istanze non confrontabili, perche' un viaggio fra
 periferie richiede intrinsecamente piu' cambi di uno in centro, e un tetto sotto
 il minimo renderebbe l'istanza infattibile per aritmetica invece che per
-interazione fra le tappe — misurando la nostra scelta della soglia e non il
+interazione fra le tratte — misurando la nostra scelta della soglia e non il
 fenomeno. *Perche' il minimo per tratta e' un limite inferiore valido:* minimizza
 ogni tratta ignorando precedenza e finestre, quindi non puo' superare il consumo
 di una soluzione vera, ed e' anche il limite usato per potare la ricerca completa.
@@ -2520,7 +2558,7 @@ tratta che richiedesse un'attesa piu' lunga non verrebbe trovata affatto.
 
 **Le catene che si interrompono si conservano per il prefisso.** Se la terza
 tratta di una catena non ha alcun itinerario nella finestra, le prime due restano
-utilizzabili come istanza a due tappe. *Perche' non si scarta tutto:* butterebbe
+utilizzabili come istanza a due tratte. *Perche' non si scarta tutto:* butterebbe
 via istanze valide e farebbe sembrare il fenomeno piu' raro di quanto sia. Una
 catena viene scartata solo sotto le due tratte, sotto le quali non esiste viaggio
 multi-tappa.
@@ -2539,7 +2577,7 @@ successioni di cinque fermate, con un seme dichiarato, fra le fermate
 effettivamente servite; da ogni successione si ricavano i domini tratta per
 tratta, interrogando il pianificatore da tre istanti di disponibilita' sfalsati di
 dieci minuti. Da ogni catena si ritagliano poi i viaggi a due, tre e quattro
-tappe, e per ciascuno si fanno variare i tetti sui cambi da zero a tre sopra il
+tratte, e per ciascuno si fanno variare i tetti sui cambi da zero a tre sopra il
 minimo ottenibile. Le catene utilizzabili sono state **20 su 25 a Roma** e **17 su
 25 a Torino**: le altre si interrompono sotto le due tratte perche' una tratta non
 ha alcun itinerario nella finestra, ed e' la stessa limitazione gia' misurata
@@ -2553,13 +2591,13 @@ il primo requisito perche' il problema sia interessante.
 
 **Il risultato principale.** Su **244 istanze risolubili, la strategia sequenziale
 ne dichiara infattibili 45, cioe' il 18,4% ± 2,5%**: 16,5% ± 3,4% a Roma e
-20,3% ± 3,6% a Torino, con l'errore standard binomiale descritto sotto la Tabella 12.
+20,3% ± 3,6% a Torino, con l'errore standard binomiale descritto nella didascalia della Tabella 26.
 Quasi
 una istanza su cinque richiede di tornare indietro su una scelta gia' fatta. Il
 fenomeno costruito a mano nel sommario non e' dunque una curiosita' di laboratorio:
 e' frequente.
 
-Tabella 12 — Effetto del margine sul tetto dei cambi. Il margine e' lo scarto fra
+Tabella 26 — Effetto del margine sul tetto dei cambi. Il margine e' lo scarto fra
 il tetto imposto e il minimo ottenibile guardando ogni tratta separatamente;
 margine zero significa che ogni tratta deve usare il proprio itinerario con meno
 cambi. Aggregata sui viaggi a due, tre e quattro tratte. Accanto a ogni percentuale
@@ -2605,12 +2643,12 @@ tabella: il 26,7% di Roma sono quattro casi su quindici e il 40,0% di Torino sei
 su quindici, e uno o due casi in piu' o in meno sposterebbero la percentuale di
 sei o sette punti. Vanno lette come indicazione della direzione, non come stima
 del valore. Le righe a margine due e tre, con denominatori fra 37 e 43, reggono
-invece un'interpretazione quantitativa. La stessa cautela vale per la Tabella 13,
-dove il 33,3% di Roma a quattro tappe sono **quattro casi su dodici**, mentre
-l'11,8% a due tappe poggia su 68: la monotonia della colonna e' credibile perche'
+invece un'interpretazione quantitativa. La stessa cautela vale per la Tabella 27,
+dove il 33,3% di Roma a quattro tratte sono **quattro casi su dodici**, mentre
+l'11,8% a due tratte poggia su 68: la monotonia della colonna e' credibile perche'
 si presenta identica su entrambe le citta', benche' gli errori standard delle righe
-adiacenti si sovrappongano, ma il valore dell'ultima riga
-di Roma non lo e' altrettanto. In generale, in queste due tabelle il denominatore
+adiacenti si sovrappongano, mentre il valore dell'ultima riga di Roma e' poco
+solido. In generale, in queste due tabelle il denominatore
 cala proprio dove la percentuale cresce, e leggere le percentuali senza guardare
 la colonna "risolubili" porterebbe a sopravvalutare gli estremi.
 
@@ -2620,9 +2658,9 @@ quando e' generoso, il che e' coerente con il fatto che il minimo per tratta e' 
 limite inferiore non raggiungibile: nulla garantisce che esista un'assegnazione
 che lo realizzi su tutte le tratte contemporaneamente.
 
-Tabella 13 — Effetto del numero di tappe, aggregata sui quattro margini.
+Tabella 27 — Effetto del numero di tratte, aggregata sui quattro margini.
 
-| Citta' | Tappe | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
+| Citta' | Tratte | Istanze | Risolubili | Il greedy risolve | Il greedy sbaglia |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Roma | 2 | 80 | 68 | 60 | 8 (11,8% ± 3,9%) |
 | Roma | 3 | 64 | 41 | 33 | 8 (19,5% ± 6,2%) |
@@ -2633,24 +2671,24 @@ Tabella 13 — Effetto del numero di tappe, aggregata sui quattro margini.
 
 Questa e' la lettura piu' pulita dell'esperimento, perche' la crescita e'
 **monotona su entrambe le citta' senza eccezioni**: 11,8%, 19,5%, 33,3% a Roma e
-17,2%, 20,0%, 26,7% a Torino. Ogni tappa aggiunta rende piu' probabile che una
+17,2%, 20,0%, 26,7% a Torino. Ogni tratta aggiunta rende piu' probabile che una
 scelta locale ottima precluda il resto del viaggio, ed e' esattamente cio' che ci
 si attende quando le variabili sono accoppiate da un vincolo di somma: piu' sono
 le variabili che condividono un budget, piu' modi ci sono di spenderlo male. Su un
-viaggio a quattro tappe a Roma la strategia sequenziale sbaglia in **un caso su
+viaggio di quattro tratte a Roma la strategia sequenziale sbaglia in **un caso su
 tre**.
 
-La colonna **risolubili** cala al crescere delle tappe — 68, 41, 12 a Roma — per
+La colonna **risolubili** cala al crescere delle tratte — 68, 41, 12 a Roma — per
 due ragioni distinte che vale la pena separare: le catene lunghe sono meno
 numerose, perche' alcune si interrompono prima; e a parita' di margine un viaggio
-con piu' tappe ha piu' vincoli da soddisfare contemporaneamente. Il calo e' piu'
+con piu' tratte ha piu' vincoli da soddisfare contemporaneamente. Il calo e' piu'
 marcato a Roma, dove restano dodici istanze risolubili su quarantaquattro a
-quattro tappe: e' la riga a cui si applica la cautela enunciata sopra sulla
+quattro tratte: e' la riga a cui si applica la cautela enunciata sopra sulla
 sottigliezza della base.
 
 **Il costo della risoluzione e' trascurabile, e la conseguenza non e' ovvia.** Il
 risolutore completo esplora in media 209 assegnazioni parziali, con un massimo di
-3.115, e impiega **0,07 ms in media e 1,1 ms nel caso peggiore**; a quattro tappe
+3.115, e impiega **0,07 ms in media e 1,1 ms nel caso peggiore**; a quattro tratte
 la media sale a 410 nodi e 0,13 ms. Il confronto con l'argomento sulla base di
 conoscenza e' istruttivo: li' il costo era interamente di istanziazione e non di
 ricerca, e qui accade qualcosa di analogo ma spostato di un livello. **Tutto il
@@ -2705,7 +2743,7 @@ quella misura, ed e' la sola che risponde alla domanda da cui il progetto e' nat
 **Che cosa il backtesting fa.** Per ciascuna coppia origine-destinazione e per
 ciascuna scadenza si calcolano **due** itinerari sulla stessa frontiera di Pareto:
 quello che minimizza l'orario teorico di arrivo, e quello che massimizza
-`P(arrivo <= T)` secondo il modello appreso. Entrambi vengono poi **rigiocati sui
+`P(arrivo ≤ T)` secondo il modello appreso. Entrambi vengono poi **rigiocati sui
 ritardi che quel giorno sono stati osservati davvero**, fermata per fermata: si parte
 all'orario previsto, si applica a ogni passaggio il ritardo registrato nel feed, si
 verifica se la coincidenza successiva sia ancora prendibile, e se non lo e' si prende
@@ -2758,8 +2796,8 @@ nell'argomento precedente non decida i risultati. In tutto **5.208 istanze**, di
 
 **Su quale parte della rete la misura valga.** Non ogni itinerario e' rigiocabile:
 servono i ritardi osservati di tutte le sue tratte, e il tempo reale non copre tutta
-la rete che l'orario descrive. Delle coppie esaminate ne sopravvive il **53,80% +/-
-4,37% su Roma** e il **48,69% +/- 12,01% su Torino**. E' una selezione **non casuale**,
+la rete che l'orario descrive. Delle coppie esaminate ne sopravvive il **53,80% ±
+4,37% su Roma** e il **48,69% ± 12,01% su Torino**. E' una selezione **non casuale**,
 che favorisce le linee frequenti e ben coperte, e va sommata al limite piu' grave
 dichiarato nell'argomento sull'incertezza: su Roma il feed real-time porta i soli
 autobus di superficie e **nessuna** delle quattro linee di metropolitana, su Torino
@@ -2771,7 +2809,7 @@ per quelle sottoreti, scelte dai produttori dei dati e non da noi.
 Non c'e' letteratura nuova da citare: il backtesting non impiega alcun formalismo che
 le sezioni precedenti non abbiano gia' introdotto. Usa il pianificatore
 multi-criterio dell'argomento sulla ricerca per produrre la frontiera di Pareto, il
-calcolo di `P(arrivo <= T)` dell'argomento sull'incertezza per sceglierne un elemento,
+calcolo di `P(arrivo ≤ T)` dell'argomento sull'incertezza per sceglierne un elemento,
 e la tabella stimata nell'argomento sull'apprendimento come modello dei ritardi,
 tradotta nel contratto `ModelloRitardo` da `src/delays/bayesiano.py`. Il calcolo e' in
 **NumPy** [10] e **pandas** [6], la lettura dei dati colonnari in **pyarrow**.
@@ -2845,8 +2883,8 @@ letto 1.433 dump e scritto 18,4 milioni di righe come sempre.
 torinese toglie la fermata dal `trip_updates` appena il mezzo vi transita, quindi
 l'ultima riga disponibile di ciascun passaggio e' l'ultima **stima** del produttore e
 non una constatazione. Quanto quell'ultima stima sia vicina al fatto e' misurato:
-**25 +/- 12 secondi** di anticipo mediano sul transito atteso, con il primo quartile
-sotto lo zero - il **34,8% +/- 4,7%** delle righe e' pubblicato **dopo** il transito
+**25 ± 12 secondi** di anticipo mediano sul transito atteso, con il primo quartile
+sotto lo zero - il **34,8% ± 4,7%** delle righe e' pubblicato **dopo** il transito
 atteso - e il terzo intorno ai due minuti. La limitazione e' quindi molto piu'
 lieve di quanto la parola "previsione" lasci pensare, ma resta: i risultati
 torinesi misurano quanto
@@ -2875,14 +2913,16 @@ Roma e quattro su Torino, per la stessa ragione per cui la giornata magra e' esc
 
 **Il beneficio: viaggi arrivati entro la scadenza.**
 
+Tabella 28 — Quota di viaggi arrivati entro la scadenza, per strategia e margine.
+
 | margine | Roma, piu' veloce | Roma, robusto | Roma, differenza | Torino, piu' veloce | Torino, robusto | Torino, differenza |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 min | 0,3778 +/- 0,1171 | 0,3889 +/- 0,1347 | +0,0111 +/- 0,0192 | 0,5000 +/- 0,0817 | 0,4917 +/- 0,0918 | **-0,0083 +/- 0,0167** |
-| 5 min | 0,5111 +/- 0,0839 | 0,5444 +/- 0,0192 | +0,0333 +/- 0,0667 | 0,7250 +/- 0,0788 | 0,7333 +/- 0,1277 | +0,0083 +/- 0,0833 |
-| 10 min | 0,6222 +/- 0,0694 | 0,6556 +/- 0,0192 | +0,0333 +/- 0,0882 | 0,8250 +/- 0,0569 | 0,8500 +/- 0,0793 | +0,0250 +/- 0,0569 |
-| **15 min** | 0,6778 +/- 0,0694 | **0,7778 +/- 0,0192** | **+0,1000 +/- 0,0667** | 0,8583 +/- 0,0319 | 0,8583 +/- 0,0918 | **0,0000 +/- 0,0609** |
-| **20 min** | 0,7222 +/- 0,0509 | **0,8667 +/- 0,0577** | **+0,1444 +/- 0,0385** | 0,8750 +/- 0,0319 | 0,9167 +/- 0,0793 | +0,0417 +/- 0,0569 |
-| 30 min | 0,8000 +/- 0,0882 | 0,9000 +/- 0,0577 | +0,1000 +/- 0,0333 | 0,9250 +/- 0,0319 | 0,9583 +/- 0,0319 | +0,0333 +/- 0,0272 |
+| 0 min | 0,3778 ± 0,1171 | 0,3889 ± 0,1347 | +0,0111 ± 0,0192 | 0,5000 ± 0,0817 | 0,4917 ± 0,0918 | **-0,0083 ± 0,0167** |
+| 5 min | 0,5111 ± 0,0839 | 0,5444 ± 0,0192 | +0,0333 ± 0,0667 | 0,7250 ± 0,0788 | 0,7333 ± 0,1277 | +0,0083 ± 0,0833 |
+| 10 min | 0,6222 ± 0,0694 | 0,6556 ± 0,0192 | +0,0333 ± 0,0882 | 0,8250 ± 0,0569 | 0,8500 ± 0,0793 | +0,0250 ± 0,0569 |
+| **15 min** | 0,6778 ± 0,0694 | **0,7778 ± 0,0192** | **+0,1000 ± 0,0667** | 0,8583 ± 0,0319 | 0,8583 ± 0,0918 | **0,0000 ± 0,0609** |
+| **20 min** | 0,7222 ± 0,0509 | **0,8667 ± 0,0577** | **+0,1444 ± 0,0385** | 0,8750 ± 0,0319 | 0,9167 ± 0,0793 | +0,0417 ± 0,0569 |
+| 30 min | 0,8000 ± 0,0882 | 0,9000 ± 0,0577 | +0,1000 ± 0,0333 | 0,9250 ± 0,0319 | 0,9583 ± 0,0319 | +0,0333 ± 0,0272 |
 
 *Fonte: `results/backtest_riepilogo.csv`, bordi `ottili`, colonne `quota_entro` e
 `deviazione_entro`; media e deviazione su 3 giornate (Roma) e 4 (Torino), 90 e 120
@@ -2892,6 +2932,8 @@ quindi piu' stretta di quanto le deviazioni delle due colonne lascerebbero crede
 
 **Il prezzo: tempo nominale che il robusto paga.** La stessa tabella, sulle sole
 istanze in cui le due strategie scelgono diversamente.
+
+Tabella 29 — Tempo nominale pagato dal robusto sulle istanze divergenti.
 
 | margine | Roma, divergenti | Roma, costo mediano | Roma, massimo | Torino, divergenti | Torino, costo mediano | Torino, massimo |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -2931,14 +2973,16 @@ perche' il margine e' zero: e' aritmetica, non un comportamento.
 
 **Le coincidenze perse, che sono la grandezza nominata nella domanda di ricerca.**
 
+Tabella 30 — Coincidenze perse per viaggio, per strategia e margine.
+
 | margine | Roma, piu' veloce | Roma, robusto | Torino, piu' veloce | Torino, robusto |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 min | 0,4222 +/- 0,1171 | 0,3556 +/- 0,0509 | 0,3417 +/- 0,1641 | 0,3250 +/- 0,1596 |
-| 5 min | 0,4222 +/- 0,1171 | 0,3667 +/- 0,0882 | 0,3417 +/- 0,1641 | 0,2583 +/- 0,1101 |
-| 10 min | 0,4222 +/- 0,1171 | 0,3556 +/- 0,1072 | 0,3417 +/- 0,1641 | 0,2250 +/- 0,1287 |
-| 15 min | 0,4222 +/- 0,1171 | 0,3222 +/- 0,1072 | 0,3417 +/- 0,1641 | 0,1667 +/- 0,1305 |
-| 20 min | 0,4222 +/- 0,1171 | **0,2000 +/- 0,0882** | 0,3417 +/- 0,1641 | 0,1583 +/- 0,1258 |
-| 30 min | 0,4222 +/- 0,1171 | **0,1889 +/- 0,1262** | 0,3417 +/- 0,1641 | **0,1167 +/- 0,0694** |
+| 0 min | 0,4222 ± 0,1171 | 0,3556 ± 0,0509 | 0,3417 ± 0,1641 | 0,3250 ± 0,1596 |
+| 5 min | 0,4222 ± 0,1171 | 0,3667 ± 0,0882 | 0,3417 ± 0,1641 | 0,2583 ± 0,1101 |
+| 10 min | 0,4222 ± 0,1171 | 0,3556 ± 0,1072 | 0,3417 ± 0,1641 | 0,2250 ± 0,1287 |
+| 15 min | 0,4222 ± 0,1171 | 0,3222 ± 0,1072 | 0,3417 ± 0,1641 | 0,1667 ± 0,1305 |
+| 20 min | 0,4222 ± 0,1171 | **0,2000 ± 0,0882** | 0,3417 ± 0,1641 | 0,1583 ± 0,1258 |
+| 30 min | 0,4222 ± 0,1171 | **0,1889 ± 0,1262** | 0,3417 ± 0,1641 | **0,1167 ± 0,0694** |
 
 *Fonte: `results/backtest_riepilogo.csv`, colonna `coincidenze_perse`, bordi `ottili`;
 le deviazioni sono fra giornate, ricalcolate da `results/backtest.csv`. La strategia
@@ -2950,7 +2994,7 @@ margine, in modo monotono su Torino e su Roma dal primo margine non nullo in poi
 trenta minuti il robusto perde **meno
 della meta'** delle coincidenze del piu' veloce su Roma (0,1889 contro 0,4222) e **un
 terzo** su Torino (0,1167 contro 0,3417). La differenza appaiata fra giornate vale a
-trenta minuti -0,233 +/- 0,153 su Roma e -0,225 +/- 0,145 su Torino: il segno e'
+trenta minuti -0,233 ± 0,153 su Roma e -0,225 ± 0,145 su Torino: il segno e'
 stabile, l'ampiezza varia molto da un giorno all'altro.
 
 **Per quale meccanismo, misurato.** La strategia di riferimento ha un numero medio di
@@ -2964,6 +3008,8 @@ invece che per allargarle**, e la discesa e' progressiva perche' lo spazio cresc
 
 Quanto del vantaggio passi di li' si misura restringendo alle istanze in cui le due
 strategie scelgono itinerari con lo **stesso numero di cambi**:
+
+Tabella 31 — Coincidenze perse per viaggio sulle istanze divergenti, per gruppo.
 
 | citta' | gruppo | istanze | perse, veloce | perse, robusto | differenza |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -2981,6 +3027,8 @@ Il campione a parita' di cambi e' pero' piccolo - trentotto istanze su Roma e
 cinquantuno su Torino, cioe' cinque-undici per ciascuno dei sei margini - e riportarlo
 margine per margine darebbe celle che il caso muove a piacere. Aggregato in due soli
 gruppi di margini, che e' quanto il campione sostiene:
+
+Tabella 32 — Coincidenze perse a parita' di cambi, per gruppo di margini.
 
 | citta' | margini | istanze | perse, veloce | perse, robusto | differenza |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -3015,6 +3063,8 @@ sua dimostrazione.
 istanze in cui le due scelgono lo stesso itinerario, dove la differenza e' nulla per
 costruzione. Restringendo alle sole divergenti:
 
+Tabella 33 — Quota di arrivi entro la scadenza sulle sole istanze divergenti.
+
 | margine | Roma, divergenti | piu' veloce | robusto | Torino, divergenti | piu' veloce | robusto |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0 min | 13 | 0,1310 | 0,2619 | 9 | 0,4583 | 0,3958 |
@@ -3042,6 +3092,8 @@ domande diverse e vanno tenute separate.
 
 **Quante giornate hanno segno positivo.** E' la verifica che il risultato non venga da
 una giornata sola. Sulla quota di arrivi entro la scadenza, per margine:
+
+Tabella 34 — Segno della differenza fra le strategie, giornata per giornata.
 
 | margine | Roma (3 giornate) | Torino (4 giornate) |
 | ---: | --- | --- |
@@ -3099,6 +3151,8 @@ rispettivamente.*
 sceglie, stampa accanto all'itinerario la probabilita' che gli attribuisce, e nel
 backtesting si puo' confrontarla con la frequenza con cui quei viaggi sono poi arrivati.
 
+Tabella 35 — Probabilita' dichiarata dal robusto contro frequenza osservata di arrivo.
+
 | margine | Roma, dichiarata | Roma, osservata | Torino, dichiarata | Torino, osservata |
 | ---: | ---: | ---: | ---: | ---: |
 | 0 min | 0,3378 | 0,3889 | 0,3758 | 0,4917 |
@@ -3120,6 +3174,8 @@ alla maledizione del vincitore.
 fattori - per ogni cambio, la probabilita' che il modello attribuisce al tenerlo contro
 la frequenza con cui e' stato tenuto davvero - i due livelli si separano:
 
+Tabella 36 — Calibrazione sulla singola coincidenza e sul viaggio intero.
+
 | livello | Roma, n | Roma, attesa | Roma, osservata | Roma, scarto | Torino, n | Torino, scarto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | la singola coincidenza | 1.666 | 0,7758 | 0,7269 | **-0,0489** | 1.116 | **-0,0890** |
@@ -3134,6 +3190,8 @@ Sulla singola coincidenza il modello e' **ottimista** - promette il 78% e ne tie
 dieci e sei punti. Se la composizione fosse fedele, una stima ottimista su ogni fattore
 darebbe un prodotto ottimista: il cambio di segno viene percio' dal modo in cui i
 fattori sono messi insieme. E la divergenza cresce con la lunghezza della catena:
+
+Tabella 37 — Scarto di calibrazione per numero di coincidenze composte.
 
 | coincidenze | Roma, scarto coincidenza | Roma, scarto viaggio | divergenza | Torino, coinc. | Torino, viaggio | divergenza |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -3172,6 +3230,9 @@ probabilita' dichiarata - l'unico raggruppamento che misuri la calibrazione, per
 un'informazione disponibile al momento della scelta - il modello risulta **ben
 calibrato quando e' sicuro e fortemente pessimista quando e' dubbioso**:
 
+Tabella 38 — Scarto fra frequenza osservata e probabilita' dichiarata, per classe di
+probabilita'.
+
 | classe dichiarata | Roma, istanze | Roma, scarto | Torino, istanze | Torino, scarto |
 | --- | ---: | ---: | ---: | ---: |
 | 0,0 - 0,2 | 59 | **+0,2698** | 43 | +0,1427 |
@@ -3192,6 +3253,8 @@ verificata.
 **Una correzione a un parametro esiste, e non e' adottata.** Sostituendo alla
 probabilita' dichiarata `p` la quantita' `p^gamma` e cercando il `gamma` che minimizza
 lo scarto medio fra classi:
+
+Tabella 39 — Correzione della probabilita' dichiarata con un esponente gamma.
 
 | | scarto medio prima | gamma migliore | scarto medio dopo |
 | --- | ---: | ---: | ---: |
@@ -3238,7 +3301,7 @@ coincidenze perse e' netto, e a parita' di cambi ne sopravvive circa la meta'.
 
 ## Che cosa il progetto ha risposto
 
-La domanda chiedeva se un itinerario scelto massimizzando `P(arrivo <= T)` perdesse
+La domanda chiedeva se un itinerario scelto massimizzando `P(arrivo ≤ T)` perdesse
 meno coincidenze di uno scelto minimizzando l'orario teorico. La risposta e' **si'**,
 con un prezzo che la formulazione iniziale non prevedeva.
 
@@ -3261,8 +3324,8 @@ contro -0,0667, -0,1750 contro -0,1000), a venti e trenta il rapporto si inverte
 punti percentuali o piu'** fra quindici e trenta minuti, con tutte e tre le giornate di
 segno positivo; su Torino resta **fra zero e quattro punti**, e a ogni margine fino a
 venti minuti almeno una giornata su quattro ha segno negativo. A **margine nullo** non e' distinguibile da
-zero su nessuna delle due citta' - differenze appaiate di +0,011 +/- 0,019 su Roma e
--0,008 +/- 0,017 su Torino -
+zero su nessuna delle due citta' - differenze appaiate di +0,011 ± 0,019 su Roma e
+-0,008 ± 0,017 su Torino -
 mentre sulle coincidenze perse il robusto ne perde comunque 0,0667 in meno su Roma e
 0,0167 in meno su Torino.
 
@@ -3282,7 +3345,7 @@ I cinque moduli formano una catena. La base di conoscenza in ASP deriva dai dati
 grezzi la relazione di trasbordo e la consegna al grafo tempo-espanso; la ricerca
 multi-criterio vi produce la frontiera delle soluzioni non dominate; il modulo
 probabilistico compone lungo le coincidenze le distribuzioni stimate dal modulo di
-apprendimento e sceglie l'itinerario che massimizza `P(arrivo <= T)`; il
+apprendimento e sceglie l'itinerario che massimizza `P(arrivo ≤ T)`; il
 soddisfacimento di vincoli riusa la stessa frontiera per il viaggio a piu' tappe. La
 prova che i moduli si parlino e' che **un difetto di uno si manifesta nella misura di
 un altro**.
@@ -3318,7 +3381,7 @@ Roma**, della stessa settimana, dentro una finestra estiva - dal 25 agosto al 9
 settembre - in cui le reti sono in orario ridotto: tutti i numeri valgono per quelle
 due settimane, e l'estensione naturale e' rieseguire su una finestra piu' lunga. Su
 **Torino** il dato di verifica e' l'ultima stima del produttore e non un transito
-osservato, per quanto vicina al fatto: **25 +/- 12 secondi** di anticipo mediano, con
+osservato, per quanto vicina al fatto: **25 ± 12 secondi** di anticipo mediano, con
 il **34,8%** delle righe pubblicato dopo il transito atteso. Su **Roma** il tempo reale
 copre solo la rete di superficie: l'orario dichiara quattro linee di metropolitana con
 **6.614 corse programmate**, ma delle linee osservate in tempo reale, fra 310 e 405
@@ -3341,7 +3404,7 @@ parametro scalare, e usa come candidati la frontiera di Pareto, abbastanza ricca
 (ampiezza media 0,42 ± 0,28 a margine non nullo) ma non costruita nella dimensione
 dei margini. La concentrazione
 del priore **non e' identificabile** da questi dati: configurazioni distanti sei ordini
-di grandezza danno perdite che differiscono di cinque decimillesimi, contro +/-0,064
+di grandezza danno perdite che differiscono di cinque decimillesimi, contro ±0,064
 fra giornate, e sui viaggi 5.207 istanze su 5.208 scelgono lo stesso itinerario.
 
 **Il viaggio multi-tappa** resta senza la codifica dei vincoli in Answer Set
